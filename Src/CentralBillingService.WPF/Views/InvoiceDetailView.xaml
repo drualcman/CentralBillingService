@@ -1,0 +1,304 @@
+<UserControl x:Class="CentralBillingService.WPF.Views.InvoiceDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:conv="clr-namespace:CentralBillingService.WPF.Converters"
+             Background="{StaticResource ContentBackground}">
+
+    <UserControl.Resources>
+        <conv:StatusToBrushConverter   x:Key="StatusBrush" />
+        <conv:StatusToLabelConverter   x:Key="StatusLabel" />
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:BoolToVisibilityConverter x:Key="InvBoolToVis" Invert="True" />
+        <conv:NullToVisibilityConverter x:Key="HasValue" />
+
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontSize"     Value="11" />
+            <Setter Property="FontWeight"   Value="SemiBold" />
+            <Setter Property="Foreground"   Value="#64748B" />
+            <Setter Property="Margin"       Value="0,0,0,10" />
+        </Style>
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="11" />
+            <Setter Property="Foreground" Value="#94A3B8" />
+            <Setter Property="Margin"     Value="0,0,0,2" />
+        </Style>
+        <Style x:Key="FieldValue" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="13" />
+            <Setter Property="Foreground" Value="#1E293B" />
+            <Setter Property="Margin"     Value="0,0,0,12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="White"
+                BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+            <Grid Margin="24,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0"
+                        Style="{StaticResource MaterialDesignIconButton}"
+                        Command="{Binding GoBackCommand}"
+                        ToolTip="Volver al listado">
+                    <materialDesign:PackIcon Kind="ArrowLeft" Width="22" Height="22" />
+                </Button>
+
+                <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding InvoiceNumber}"
+                               FontSize="18" FontWeight="SemiBold" Foreground="#1E293B" />
+                    <TextBlock Text="{Binding BillingSource.DisplayName}"
+                               FontSize="12" Foreground="#64748B" />
+                </StackPanel>
+
+                <!-- Status chip -->
+                <Border Grid.Column="2" CornerRadius="12"
+                        Background="{Binding Invoice.Status, Converter={StaticResource StatusBrush}}"
+                        Padding="14,6" VerticalAlignment="Center"
+                        Visibility="{Binding Invoice, Converter={StaticResource HasValue}}">
+                    <TextBlock Text="{Binding Invoice.Status, Converter={StaticResource StatusLabel}}"
+                               Foreground="White" FontWeight="SemiBold" FontSize="12" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid>
+            <!-- Loading -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,60,0,0"
+                        Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True" Width="48" Height="48" />
+            </StackPanel>
+
+            <!-- Invoice detail -->
+            <StackPanel Margin="24" MaxWidth="900"
+                        Visibility="{Binding Invoice, Converter={StaticResource HasValue}}">
+
+                <!-- Tamper warning banner -->
+                <Border Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1"
+                        CornerRadius="8" Margin="0,0,0,16" Padding="16,12"
+                        Visibility="{Binding Invoice.HasTamper, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="AlertCircle" Foreground="#DC2626"
+                                                 Width="20" Height="20" VerticalAlignment="Center"
+                                                 Margin="0,0,10,0" />
+                        <TextBlock Foreground="#DC2626" FontWeight="SemiBold" VerticalAlignment="Center"
+                                   TextWrapping="Wrap">
+                            ALERTA: Esta factura ha sido modificada tras su emisión. Los datos pueden haber sido manipulados. Verifique el hash con el QR original.
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Rectificative info banner -->
+                <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1"
+                        CornerRadius="8" Margin="0,0,0,16" Padding="16,12"
+                        Visibility="{Binding Invoice.IsRectificative, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <materialDesign:PackIcon Kind="FileEditOutline" Foreground="#1D4ED8"
+                                                     Width="20" Height="20" VerticalAlignment="Center"
+                                                     Margin="0,0,10,0" />
+                            <TextBlock Foreground="#1D4ED8" FontWeight="Bold" FontSize="13"
+                                       VerticalAlignment="Center">
+                                <Run Text="FACTURA RECTIFICATIVA — Corrige: " />
+                                <Run Text="{Binding Invoice.OriginalInvoiceNumber}" />
+                            </TextBlock>
+                        </StackPanel>
+                        <TextBlock Foreground="#1E40AF" FontSize="12" Margin="30,0,0,0"
+                                   TextWrapping="Wrap">
+                            <Run Text="Motivo: " FontWeight="SemiBold" />
+                            <Run Text="{Binding Invoice.RectificationReason}" />
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Totals row -->
+                <UniformGrid Columns="4" Margin="0,0,0,20">
+                    <materialDesign:Card Margin="0,0,8,0" Padding="16"
+                                         UniformCornerRadius="10"
+                                         materialDesign:ElevationAssist.Elevation="Dp1">
+                        <StackPanel>
+                            <TextBlock Text="TOTAL EUR" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="{Binding Invoice.TotalEur.Formatted}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#1E293B" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Margin="4,0" Padding="16"
+                                         UniformCornerRadius="10"
+                                         materialDesign:ElevationAssist.Elevation="Dp1">
+                        <StackPanel>
+                            <TextBlock Text="BASE IMPONIBLE" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="{Binding Invoice.TaxableBaseEur.Formatted}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#1E293B" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Margin="4,0" Padding="16"
+                                         UniformCornerRadius="10"
+                                         materialDesign:ElevationAssist.Elevation="Dp1">
+                        <StackPanel>
+                            <TextBlock Text="IVA" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="{Binding Invoice.TotalTaxAmountEur.Formatted}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#1E293B" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Margin="8,0,0,0" Padding="16"
+                                         UniformCornerRadius="10"
+                                         materialDesign:ElevationAssist.Elevation="Dp1">
+                        <StackPanel>
+                            <TextBlock Text="FECHA EMISIÓN" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="{Binding Invoice.IssueDate, StringFormat=dd/MM/yyyy}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#1E293B" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                </UniformGrid>
+
+                <!-- Parties -->
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <materialDesign:Card Grid.Column="0" Padding="20" UniformCornerRadius="10"
+                                         materialDesign:ElevationAssist.Elevation="Dp1">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                <materialDesign:PackIcon Kind="AccountOutline"
+                                                         Foreground="#6366F1" Margin="0,0,8,0"
+                                                         VerticalAlignment="Center" />
+                                <TextBlock Text="EMISOR" Style="{StaticResource SectionHeader}"
+                                           Margin="0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Nombre" />
+                            <TextBlock Style="{StaticResource FieldValue}"
+                                       Text="{Binding Invoice.Issuer.DisplayName}" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="NIF" />
+                            <TextBlock Style="{StaticResource FieldValue}"
+                                       Text="{Binding Invoice.Issuer.TaxIdValue}" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Email" />
+                            <TextBlock Style="{StaticResource FieldValue}"
+                                       Text="{Binding Invoice.Issuer.Email}" />
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <materialDesign:Card Grid.Column="2" Padding="20" UniformCornerRadius="10"
+                                         materialDesign:ElevationAssist.Elevation="Dp1">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                <materialDesign:PackIcon Kind="BusinessOutline"
+                                                         Foreground="#6366F1" Margin="0,0,8,0"
+                                                         VerticalAlignment="Center" />
+                                <TextBlock Text="DESTINATARIO" Style="{StaticResource SectionHeader}"
+                                           Margin="0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Nombre" />
+                            <TextBlock Style="{StaticResource FieldValue}"
+                                       Text="{Binding Invoice.Recipient.DisplayName}" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="NIF" />
+                            <TextBlock Style="{StaticResource FieldValue}"
+                                       Text="{Binding Invoice.Recipient.TaxIdValue}" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Email" />
+                            <TextBlock Style="{StaticResource FieldValue}"
+                                       Text="{Binding Invoice.Recipient.Email}" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Dirección" />
+                            <TextBlock Style="{StaticResource FieldValue}"
+                                       Text="{Binding Invoice.Recipient.AddressLine1}" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                </Grid>
+
+                <!-- Lines -->
+                <materialDesign:Card Margin="0,0,0,16" Padding="20" UniformCornerRadius="10"
+                                     materialDesign:ElevationAssist.Elevation="Dp1">
+                    <StackPanel>
+                        <TextBlock Text="LÍNEAS" Style="{StaticResource SectionHeader}" />
+                        <DataGrid ItemsSource="{Binding Invoice.Lines}"
+                                  Style="{StaticResource MaterialDesignDataGrid}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  GridLinesVisibility="Horizontal"
+                                  HorizontalGridLinesBrush="#F1F5F9"
+                                  RowHeight="44">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="#"
+                                                    Binding="{Binding LineNumber}"
+                                                    Width="40" />
+                                <DataGridTextColumn Header="Descripción"
+                                                    Binding="{Binding Description}"
+                                                    Width="*" />
+                                <DataGridTextColumn Header="Cant."
+                                                    Binding="{Binding Quantity}"
+                                                    Width="60" />
+                                <DataGridTextColumn Header="Precio unit."
+                                                    Binding="{Binding UnitPriceEur.Formatted}"
+                                                    Width="120" />
+                                <DataGridTextColumn Header="IVA %"
+                                                    Binding="{Binding TaxRatePercentage, StringFormat='{}{0}%'}"
+                                                    Width="70" />
+                                <DataGridTextColumn Header="Total EUR"
+                                                    Binding="{Binding TotalEur.Formatted}"
+                                                    Width="120" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- Payment & Hash -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <materialDesign:Card Grid.Column="0" Padding="20" UniformCornerRadius="10"
+                                         materialDesign:ElevationAssist.Elevation="Dp1">
+                        <StackPanel>
+                            <TextBlock Text="PAGO" Style="{StaticResource SectionHeader}" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Método" />
+                            <TextBlock Style="{StaticResource FieldValue}"
+                                       Text="{Binding Invoice.PaymentMethod}" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Referencia" />
+                            <TextBlock Style="{StaticResource FieldValue}"
+                                       Text="{Binding Invoice.PaymentReference}" />
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <materialDesign:Card Grid.Column="2" Padding="20" UniformCornerRadius="10"
+                                         materialDesign:ElevationAssist.Elevation="Dp1">
+                        <StackPanel>
+                            <TextBlock Text="VERIFACTU / HASH" Style="{StaticResource SectionHeader}" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Hash SHA-256" />
+                            <TextBlock Text="{Binding Invoice.Hash}"
+                                       FontFamily="Consolas" FontSize="11"
+                                       Foreground="#475569"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,8" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Hash anterior" />
+                            <TextBlock Text="{Binding Invoice.PreviousHash}"
+                                       FontFamily="Consolas" FontSize="11"
+                                       Foreground="#94A3B8"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                </Grid>
+
+            </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

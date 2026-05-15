@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "CentralBillingService.AzureFunction.API": {
+      "commandName": "Project",
+      "commandLineArgs": "host start --useHttps --port 44369 --cors * --cert \"c:\\ssl\\localhost.pfx\" --password \"password\"",
+      "launchBrowser": false
+    }
+  }
+}

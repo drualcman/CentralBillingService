@@ -1,0 +1,28 @@
+<Application x:Class="CentralBillingService.WPF.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <materialDesign:BundledTheme BaseTheme="Light"
+                                             PrimaryColor="Green"
+                                             SecondaryColor="Teal" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Sidebar colors -->
+            <SolidColorBrush x:Key="SidebarBackground"  Color="#064E3B" />
+            <SolidColorBrush x:Key="SidebarText"        Color="#D1FAE5" />
+            <SolidColorBrush x:Key="SidebarSelected"    Color="#059669" />
+            <SolidColorBrush x:Key="SidebarHover"       Color="#065F46" />
+            <SolidColorBrush x:Key="ContentBackground"  Color="#F0FDF4" />
+
+            <!-- Status colors -->
+            <SolidColorBrush x:Key="StatusIssued"       Color="#10B981" />
+            <SolidColorBrush x:Key="StatusRectified"    Color="#F59E0B" />
+            <SolidColorBrush x:Key="StatusCancelled"    Color="#EF4444" />
+            <SolidColorBrush x:Key="StatusDraft"        Color="#94A3B8" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

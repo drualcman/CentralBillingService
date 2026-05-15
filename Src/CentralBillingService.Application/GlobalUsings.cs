@@ -1,0 +1,13 @@
+global using CentralBillingService.Application.DTOs;
+global using CentralBillingService.Application.Exceptions;
+global using CentralBillingService.Application.Interfaces;
+global using CentralBillingService.Application.Models;
+global using CentralBillingService.Application.UseCases;
+global using CentralBillingService.Application.ValueObjects;
+global using CentralBillingService.Domain.DTOs;
+global using CentralBillingService.Domain.Entities;
+global using CentralBillingService.Domain.Exceptions;
+global using CentralBillingService.Domain.Interfaces;
+global using CentralBillingService.Domain.Models;
+global using CentralBillingService.Domain.Services;
+global using CentralBillingService.Domain.ValueObjects;

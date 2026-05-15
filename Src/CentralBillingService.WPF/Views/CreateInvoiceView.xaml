@@ -1,0 +1,349 @@
+<UserControl x:Class="CentralBillingService.WPF.Views.CreateInvoiceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:conv="clr-namespace:CentralBillingService.WPF.Converters"
+             xmlns:vm="clr-namespace:CentralBillingService.WPF.ViewModels"
+             xmlns:models="clr-namespace:CentralBillingService.WPF.Models"
+             Background="{StaticResource ContentBackground}">
+
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:BoolToVisibilityConverter x:Key="InvBoolToVis" Invert="True" />
+        <conv:NullToVisibilityConverter x:Key="HasValue" />
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#64748B" />
+            <Setter Property="Margin"     Value="0,0,0,12" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="White"
+                BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+            <Grid Margin="24,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Style="{StaticResource MaterialDesignIconButton}"
+                        Command="{Binding CancelCommand}" ToolTip="Cancelar">
+                    <materialDesign:PackIcon Kind="ArrowLeft" Width="22" Height="22" />
+                </Button>
+                <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                    <TextBlock Text="Nueva Factura" FontSize="18" FontWeight="SemiBold"
+                               Foreground="#1E293B" />
+                    <TextBlock Text="{Binding BillingSource.DisplayName}"
+                               FontSize="12" Foreground="#64748B" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Two-column body -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="420" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT: Invoice data + Recipient -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto"
+                          Background="White"
+                          BorderBrush="#E2E8F0" BorderThickness="0,0,1,0">
+                <StackPanel Margin="20">
+
+                    <!-- Success banner -->
+                    <Border Background="#ECFDF5" CornerRadius="8" Padding="16,12" Margin="0,0,0,14"
+                            Visibility="{Binding Success, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CheckCircleOutline"
+                                                     Foreground="#10B981" Margin="0,0,10,0"
+                                                     VerticalAlignment="Center" />
+                            <TextBlock Text="Factura creada correctamente." Foreground="#065F46"
+                                       FontWeight="Medium" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Error banner -->
+                    <Border Background="#FEF2F2" CornerRadius="8" Padding="16,12" Margin="0,0,0,14"
+                            Visibility="{Binding ErrorMessage, Converter={StaticResource HasValue}}">
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="#DC2626"
+                                   TextWrapping="Wrap" />
+                    </Border>
+
+                    <!-- Save to master feedback -->
+                    <Border Background="#ECFDF5" CornerRadius="8" Padding="14,10" Margin="0,0,0,14"
+                            Visibility="{Binding SaveToMasterMessage, Converter={StaticResource HasValue}}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CheckCircleOutline" Foreground="#10B981"
+                                                     Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding SaveToMasterMessage}" Foreground="#065F46"
+                                       FontSize="12" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Invoice header data -->
+                    <materialDesign:Card Padding="16" Margin="0,0,0,14" UniformCornerRadius="10"
+                                         materialDesign:ElevationAssist.Elevation="Dp1">
+                        <StackPanel>
+                            <TextBlock Text="DATOS DE LA FACTURA" Style="{StaticResource SectionHeader}" />
+                            <UniformGrid Columns="2">
+                                <ComboBox Margin="0,0,6,12"
+                                          materialDesign:HintAssist.Hint="Serie *"
+                                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                          IsEditable="True"
+                                          Text="{Binding Serie}"
+                                          ItemsSource="{Binding AvailableSeries}"
+                                          DisplayMemberPath="Code" />
+                                <ComboBox Margin="6,0,0,12"
+                                          materialDesign:HintAssist.Hint="Moneda origen *"
+                                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                          SelectedItem="{Binding OriginCurrencyCode}"
+                                          ItemsSource="{x:Static vm:CreateInvoiceViewModel.CurrencyCodes}" />
+                                <DatePicker Margin="0,0,6,12"
+                                            materialDesign:HintAssist.Hint="Fecha emisión *"
+                                            Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                            SelectedDate="{Binding IssueDate}" />
+                                <ComboBox Margin="6,0,0,12"
+                                          materialDesign:HintAssist.Hint="Método de pago *"
+                                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                          SelectedItem="{Binding PaymentMethod}"
+                                          ItemsSource="{x:Static vm:CreateInvoiceViewModel.PaymentMethods}" />
+                                <TextBox Margin="0,0,6,12"
+                                         materialDesign:HintAssist.Hint="Referencia de pago *"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding PaymentReference}" />
+                                <TextBox Margin="6,0,0,12"
+                                         materialDesign:HintAssist.Hint="Datos de transacción"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding TransactionData}" />
+                            </UniformGrid>
+                            <TextBox materialDesign:HintAssist.Hint="Notas"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     Text="{Binding Notes}"
+                                     AcceptsReturn="True" MinLines="2" />
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- Recipient -->
+                    <materialDesign:Card Padding="16" Margin="0,0,0,14" UniformCornerRadius="10"
+                                         materialDesign:ElevationAssist.Elevation="Dp1">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <TextBlock Text="DESTINATARIO" Style="{StaticResource SectionHeader}"
+                                           VerticalAlignment="Center" Margin="0" />
+                                <Button HorizontalAlignment="Right"
+                                        Style="{StaticResource MaterialDesignFlatButton}"
+                                        Command="{Binding SaveClientToMasterCommand}"
+                                        ToolTip="Guardar / actualizar este cliente en el maestro de clientes">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="AccountPlus" Margin="0,0,4,0"
+                                                                 Width="16" Height="16" />
+                                        <TextBlock Text="Guardar en maestro" FontSize="12" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            <ComboBox Margin="0,0,0,12"
+                                      materialDesign:HintAssist.Hint="Cargar datos de cliente guardado (opcional)"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                      ItemsSource="{Binding AvailableClients}"
+                                      SelectedItem="{Binding SelectedClient}"
+                                      DisplayMemberPath="DisplayName" />
+                            <UniformGrid Columns="2">
+                                <TextBox Margin="0,0,6,12"
+                                         materialDesign:HintAssist.Hint="Nombre fiscal *"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientLegalName}" />
+                                <TextBox Margin="6,0,0,12"
+                                         materialDesign:HintAssist.Hint="Nombre comercial"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientTradeName}" />
+                                <TextBox Margin="0,0,6,12"
+                                         materialDesign:HintAssist.Hint="NIF / VAT *"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientTaxId}" />
+                                <TextBox Margin="6,0,0,12"
+                                         materialDesign:HintAssist.Hint="País del NIF (ES, GB...)*"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientTaxIdCountry}" />
+                                <TextBox Margin="0,0,6,12"
+                                         materialDesign:HintAssist.Hint="Email *"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientEmail}" />
+                                <TextBox Margin="6,0,0,12"
+                                         materialDesign:HintAssist.Hint="Teléfono"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientPhone}" />
+                                <TextBox Margin="0,0,6,12"
+                                         materialDesign:HintAssist.Hint="Dirección *"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientAddress}" />
+                                <TextBox Margin="6,0,0,12"
+                                         materialDesign:HintAssist.Hint="Ciudad *"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientCity}" />
+                                <TextBox Margin="0,0,6,12"
+                                         materialDesign:HintAssist.Hint="Provincia"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientProvince}" />
+                                <TextBox Margin="6,0,0,12"
+                                         materialDesign:HintAssist.Hint="Código postal *"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientPostalCode}" />
+                                <TextBox Margin="0,0,6,12"
+                                         materialDesign:HintAssist.Hint="País (ES, GB, US...)*"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientCountry}" />
+                            </UniformGrid>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- RIGHT: Lines -->
+            <DockPanel Grid.Column="1">
+                <!-- Lines section header bar -->
+                <Border DockPanel.Dock="Top" Background="White"
+                        BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="20,14">
+                    <Grid>
+                        <TextBlock Text="LÍNEAS DE FACTURA" Style="{StaticResource SectionHeader}"
+                                   VerticalAlignment="Center" Margin="0" />
+                        <Button HorizontalAlignment="Right"
+                                Style="{StaticResource MaterialDesignFlatButton}"
+                                Command="{Binding AddLineCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Plus" Margin="0,0,4,0" />
+                                <TextBlock Text="Añadir línea" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- Lines scrollable list -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Lines}" Margin="20,16">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:InvoiceLineItem}">
+                                <Border BorderBrush="#E2E8F0" BorderThickness="0,0,0,1"
+                                        Padding="0,0,0,12" Margin="0,0,0,12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="100" />
+                                            <ColumnDefinition Width="36" />
+                                            <ColumnDefinition Width="36" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox Grid.Column="0" Margin="0,0,8,0"
+                                                  materialDesign:HintAssist.Hint="Descripción / Producto *"
+                                                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                  IsEditable="True"
+                                                  Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                                                  SelectedItem="{Binding SelectedProduct}"
+                                                  ItemsSource="{Binding DataContext.AvailableProducts,
+                                                      RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  DisplayMemberPath="Description" />
+                                        <TextBox Grid.Column="1" Margin="0,0,8,0"
+                                                 materialDesign:HintAssist.Hint="Cant."
+                                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                 Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBox Grid.Column="2" Margin="0,0,8,0"
+                                                 materialDesign:HintAssist.Hint="Precio unit."
+                                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                 Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged}" />
+                                        <ComboBox Grid.Column="3" Margin="0,0,8,0"
+                                                  materialDesign:HintAssist.Hint="IVA %"
+                                                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                  ItemsSource="{x:Static models:InvoiceLineItem.TaxRates}"
+                                                  SelectedItem="{Binding TaxRate}" />
+                                        <Button Grid.Column="4"
+                                                Style="{StaticResource MaterialDesignIconButton}"
+                                                Foreground="#EF4444"
+                                                Command="{Binding DataContext.RemoveLineCommand,
+                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="TrashCanOutline" />
+                                        </Button>
+                                        <Button Grid.Column="5"
+                                                Style="{StaticResource MaterialDesignIconButton}"
+                                                Foreground="#10B981"
+                                                Command="{Binding DataContext.SaveProductToMasterCommand,
+                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                VerticalAlignment="Center"
+                                                ToolTip="Guardar artículo en el maestro">
+                                            <materialDesign:PackIcon Kind="ContentSaveOutline" />
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Grid>
+
+        <!-- Footer: totals + actions -->
+        <Border Grid.Row="2" Background="White"
+                BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Padding="24,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Live totals -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Margin="0,0,28,0">
+                        <TextBlock Text="BASE IMPONIBLE" FontSize="10" Foreground="#94A3B8" />
+                        <TextBlock Text="{Binding TotalsSubtotal, StringFormat='{}{0:N2} €'}"
+                                   FontSize="14" FontWeight="SemiBold" Foreground="#64748B" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,28,0">
+                        <TextBlock Text="IVA" FontSize="10" Foreground="#94A3B8" />
+                        <TextBlock Text="{Binding TotalsTax, StringFormat='{}{0:N2} €'}"
+                                   FontSize="14" FontWeight="SemiBold" Foreground="#64748B" />
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="TOTAL" FontSize="10" Foreground="#94A3B8" />
+                        <TextBlock Text="{Binding TotalsTotal, StringFormat='{}{0:N2} €'}"
+                                   FontSize="18" FontWeight="Bold" Foreground="#1E293B" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Action buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Style="{StaticResource MaterialDesignFlatButton}"
+                            Command="{Binding CancelCommand}"
+                            IsEnabled="{Binding IsSaving, Converter={StaticResource InvBoolToVis}}"
+                            Margin="0,0,12,0">
+                        Cancelar
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding IsSaving, Converter={StaticResource InvBoolToVis}}"
+                            materialDesign:ButtonAssist.CornerRadius="8"
+                            MinWidth="140">
+                        <StackPanel Orientation="Horizontal">
+                            <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                         IsIndeterminate="True" Width="16" Height="16" Margin="0,0,8,0"
+                                         Visibility="{Binding IsSaving, Converter={StaticResource BoolToVis}}" />
+                            <TextBlock Text="Emitir Factura" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

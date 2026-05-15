@@ -1,0 +1,14 @@
+global using CentralBillingService.Application.Models;
+global using CentralBillingService.Domain.Entities;
+global using CentralBillingService.Domain.Helpers;
+global using CentralBillingService.Infrastructure.Entities;
+global using CentralBillingService.Infrastructure.Interfaces;
+global using CentralBillingService.Persistence.SqlServer.Contetxs;
+global using CentralBillingService.Persistence.SqlServer.Entities;
+global using CentralBillingService.Persistence.SqlServer.Mappers;
+global using CentralBillingService.Persistence.SqlServer.Options;
+global using ISO9001.Core.Entities;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.EntityFrameworkCore.Design;
+global using Microsoft.Extensions.Options;
+global using System.Linq.Expressions;

@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Documentation/">
+    <File Path="Documentation/dev_full_plan.md" />
+    <File Path="Documentation/dev_week_plan.md" />
+  </Folder>
+  <Project Path="Src/CentralBillingService.Application/CentralBillingService.Application.csproj" Id="790b2c54-e07c-475b-9908-48a2fb2e35b2" />
+  <Project Path="Src/CentralBillingService.AzureFunction.API/CentralBillingService.AzureFunction.API.csproj" Id="b7b5c080-88ba-43f5-bb44-02babb66ed57" />
+  <Project Path="Src/CentralBillingService.Client/CentralBillingService.Client.csproj" Id="dfe0b0cf-8a6a-4826-9c02-55e4ea8f8bdc" />
+  <Project Path="Src/CentralBillingService.Domain/CentralBillingService.Domain.csproj" Id="ef5eaa66-809a-4945-95d7-4bb2f4e7219d" />
+  <Project Path="Src/CentralBillingService.Infrastructure/CentralBillingService.Infrastructure.csproj" Id="a48f8a93-af55-4126-a961-d4a561612056" />
+  <Project Path="Src/CentralBillingService.Persistence.SqlServer/CentralBillingService.Persistence.SqlServer.csproj" Id="950e08c2-7d79-48bc-a317-f60e57378104" />
+  <Project Path="Src/CentralBillingService.WPF/CentralBillingService.WPF.csproj" />
+  <Project Path="Tests/CentralBillingService.Tests/CentralBillingService.Tests.csproj" />
+</Solution>

@@ -1,0 +1,11 @@
+global using CentralBillingService.Domain.DTOs;
+global using CentralBillingService.Domain.Entities;
+global using CentralBillingService.Domain.Exceptions;
+global using CentralBillingService.Domain.Interfaces;
+global using CentralBillingService.Domain.Models;
+global using CentralBillingService.Domain.Options;
+global using CentralBillingService.Domain.Services;
+global using CentralBillingService.Domain.ValueObjects;
+global using Microsoft.Extensions.Configuration;
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Options;
