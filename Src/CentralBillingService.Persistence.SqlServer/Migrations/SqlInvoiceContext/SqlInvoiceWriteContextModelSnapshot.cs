@@ -159,6 +159,10 @@ namespace CentralBillingService.Persistence.SqlServer.Migrations.SqlInvoiceConte
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<string>("QrCodeBlobUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("RecipientAddressCountryCode")
                         .IsRequired()
                         .HasMaxLength(2)

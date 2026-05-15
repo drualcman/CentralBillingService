@@ -74,6 +74,7 @@ internal static class InvoiceMapper
         PaymentReference = invoice.PaymentReference,
         PaymentMethod = invoice.PaymentMethod,
         TransactionData = invoice.TransactionData,
+        QrCodeBlobUrl = invoice.QrCodeBlobUrl,
 
         Lines = invoice.Lines.Select(l => ToLineEntity(l, invoice.Id)).ToList(),
     };
@@ -211,7 +212,8 @@ internal static class InvoiceMapper
                                     : null,
             notes: e.Notes,
             transactionData: e.TransactionData,
-            paymentMethod: e.PaymentMethod);
+            paymentMethod: e.PaymentMethod,
+            qrCodeBlobUrl: e.QrCodeBlobUrl);
     }
 
     internal static RectificativeInvoice ToRectificativeDomain(InvoiceEntity e)

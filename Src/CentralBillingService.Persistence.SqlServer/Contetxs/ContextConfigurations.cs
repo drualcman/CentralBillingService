@@ -71,6 +71,7 @@ internal static class ContextConfigurations
 
             e.Property(x => x.RectifiedByNumber).HasMaxLength(30);
             e.Property(x => x.Notes).HasMaxLength(1000);
+            e.Property(x => x.QrCodeBlobUrl).HasMaxLength(500);
 
             // Indexes
             e.HasIndex(x => x.InvoiceNumber).IsUnique();

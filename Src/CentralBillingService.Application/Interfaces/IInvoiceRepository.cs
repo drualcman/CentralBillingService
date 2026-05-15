@@ -65,4 +65,5 @@ public interface IInvoiceRepository
         RectificativeInvoice rectificative,
         RectificativeInvoice updatedOriginal,
         CancellationToken cancellationToken = default);
+
 }

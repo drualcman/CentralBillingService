@@ -34,9 +34,11 @@ Internal flow:
 2. Reserves the next invoice number (via `IInvoiceNumberProviderFactory`)
 3. Reads the last hash for the serie (chain continuity)
 4. Calls `CreateInvoiceService` in the Domain layer
-5. Persists via `IInvoiceRepository`
-6. Dispatches post-creation events (`IInvoiceEventDispatcher`)
-7. Returns `InvoiceResult`
+5. Computes the deterministic QR blob URL and attaches it to the invoice (`IBlobStorageService.GetBlobUrl`) — no upload, no network call
+6. Persists via `IInvoiceRepository` — the invoice is stored with the QR URL already set
+7. Enqueues a QR generation job (`IQrCodeJobQueue`) — best-effort; the invoice is already persisted even if enqueueing fails
+8. Dispatches post-creation events (`IInvoiceEventDispatcher`)
+9. Returns `InvoiceResult`
 
 ### `RectifyInvoiceUseCase`
 
@@ -88,11 +90,50 @@ Handles an invoice creation request that arrived via a message queue (async flow
 Task ExecuteAsync(CreateInvoiceCommand command, CancellationToken ct);
 ```
 
+### `GenerateInvoiceQrUseCase`
+
+Background use case that generates the QR code PNG and uploads it to blob storage. Triggered asynchronously by `GenerateInvoiceQrFunction` after the invoice has already been persisted.
+
+```csharp
+Task ExecuteAsync(GenerateInvoiceQrCommand command, CancellationToken ct);
+```
+
+Internal flow:
+1. Builds the verification URL from the invoice fields (`IInvoiceVerificationUrlProvider`)
+2. Generates the QR PNG (`IQrCodeGenerator`)
+3. Uploads to blob storage under `qr/{billingSource}/{invoiceNumber}.png` (`IBlobStorageService`)
+
+No database access. The blob URL was pre-computed and stored in step 5 of `CreateInvoiceUseCase`.
+
 ---
 
 ## Application Ports (Interfaces)
 
 These are the contracts the Application layer requires from Infrastructure. They are defined here and implemented in `CentralBillingService.Infrastructure` and `CentralBillingService.Persistence.SqlServer`.
+
+### `IBlobStorageService`
+
+Abstracts Azure Blob Storage for QR code images. Two operations:
+
+```csharp
+// Pure URI construction — no network call. Safe to call in the hot creation path.
+string GetBlobUrl(string blobName);
+
+// Uploads content and returns the public URL.
+Task<string> UploadAsync(string blobName, byte[] content, string contentType, CancellationToken ct);
+```
+
+`GetBlobUrl` computes the public blob URL deterministically from the storage account, container, and blob name. Used by `CreateInvoiceUseCase` to pre-attach the QR URL before persisting.
+
+### `IQrCodeJobQueue`
+
+Enqueues a QR generation job to an Azure Storage Queue so that image creation and upload happen asynchronously.
+
+```csharp
+Task EnqueueAsync(GenerateInvoiceQrCommand command, CancellationToken ct);
+```
+
+`CreateInvoiceUseCase` calls this after `SaveAsync`. Failures are swallowed — the invoice is already persisted with the correct blob URL. The background job (`GenerateInvoiceQrFunction`) materialises the PNG later.
 
 ### `IInvoiceRepository`
 
@@ -141,6 +182,7 @@ Task InvoiceCreatedAsync(Invoice invoice, CancellationToken ct);
 Implementations may trigger PDF generation, email notifications, fiscal system notifications, queue publishing, etc.
 
 ### `IInvoiceResultQueuePublisher`
+
 
 Publishes invoice operation results to a message queue (for async consumer notification).
 
@@ -257,6 +299,20 @@ public class GetInvoiceQuery
     public Guid? Id { get; set; }
     public string? InvoiceNumber { get; set; }  // at least one must be provided
 }
+```
+
+### `GenerateInvoiceQrCommand`
+
+The queue message payload sent from `CreateInvoiceUseCase` to `GenerateInvoiceQrUseCase`. Carries all the data needed to build the verification URL in the background — no database read required.
+
+```csharp
+public sealed record GenerateInvoiceQrCommand(
+    string InvoiceNumber,
+    string BillingSource,
+    string Hash,
+    DateOnly IssueDate,
+    decimal TotalEurAmount,
+    string IssuerTaxId);
 ```
 
 ---

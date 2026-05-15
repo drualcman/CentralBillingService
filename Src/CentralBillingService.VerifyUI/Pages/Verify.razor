@@ -1,0 +1,126 @@
+@page "/"
+@inject HttpClient Http
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+
+        <div class="text-center mb-4">
+            <h4 class="fw-bold">Invoice Verification</h4>
+        </div>
+
+        @if (_invoiceNumber is null || _hash is null)
+        {
+            <div class="alert alert-warning">
+                <strong>Invalid QR code.</strong> No invoice number or hash found in this URL.
+            </div>
+        }
+        else if (_loading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Verifying…</span>
+                </div>
+                <p class="mt-3 text-muted">Verifying invoice <strong>@_invoiceNumber</strong>…</p>
+            </div>
+        }
+        else if (_error is not null)
+        {
+            <div class="alert alert-danger">
+                <strong>Could not verify.</strong> @_error
+            </div>
+            <div class="text-center mt-3">
+                <button class="btn btn-outline-secondary" @onclick="VerifyAsync">Retry</button>
+            </div>
+        }
+        else if (_result is not null)
+        {
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+
+                    <div class="text-center mb-4">
+                        @if (_result.IsValid)
+                        {
+                            <div class="display-6 text-success mb-2">&#10003;</div>
+                            <h5 class="text-success fw-bold">Invoice verified</h5>
+                        }
+                        else
+                        {
+                            <div class="display-6 text-danger mb-2">&#10007;</div>
+                            <h5 class="text-danger fw-bold">Verification failed</h5>
+                        }
+                        @if (_result.Message is not null)
+                        {
+                            <p class="text-muted small">@_result.Message</p>
+                        }
+                    </div>
+
+                    <hr />
+
+                    <dl class="row mb-0">
+                        <dt class="col-sm-6">Invoice number</dt>
+                        <dd class="col-sm-6 font-monospace">@_result.InvoiceNumber</dd>
+
+                        <dt class="col-sm-6">Document hash matches</dt>
+                        <dd class="col-sm-6">
+                            <StatusBadge Value="@_result.DocumentHashMatches" />
+                        </dd>
+
+                        <dt class="col-sm-6">Integrity verified</dt>
+                        <dd class="col-sm-6">
+                            <StatusBadge Value="@_result.IntegrityVerified" />
+                        </dd>
+
+                        <dt class="col-sm-6">Hash</dt>
+                        <dd class="col-sm-6">
+                            <span class="font-monospace small text-break">@_result.Hash</span>
+                        </dd>
+                    </dl>
+
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "invoiceNumber")]
+    private string? _invoiceNumber { get; set; }
+
+    [SupplyParameterFromQuery(Name = "hash")]
+    private string? _hash { get; set; }
+
+    private VerifyInvoiceResponse? _result;
+    private bool _loading;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await VerifyAsync();
+
+    private async Task VerifyAsync()
+    {
+        if (_invoiceNumber is null || _hash is null)
+            return;
+
+        _loading = true;
+        _error = null;
+        _result = null;
+
+        try
+        {
+            var url = $"api/invoices/{Uri.EscapeDataString(_invoiceNumber)}/verify?hash={Uri.EscapeDataString(_hash)}";
+            _result = await Http.GetFromJsonAsync<VerifyInvoiceResponse>(url);
+        }
+        catch (HttpRequestException ex)
+        {
+            _error = $"The verification service is unavailable. ({ex.StatusCode})";
+        }
+        catch (Exception)
+        {
+            _error = "An unexpected error occurred while contacting the verification service.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

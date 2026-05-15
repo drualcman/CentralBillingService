@@ -99,6 +99,12 @@ public sealed class Invoice
 
     public bool HasTamper { get; private set; }
 
+    /// <summary>
+    /// URL of the QR code image stored in blob storage.
+    /// Null until the QR has been generated and uploaded after invoice creation.
+    /// </summary>
+    public string? QrCodeBlobUrl { get; private set; }
+
     // ── Constructor privado ────────────────────────────────────────────────
 
     private Invoice(
@@ -252,7 +258,8 @@ public sealed class Invoice
         InvoiceNumber? rectifiedBy,
         string? notes,
         string? transactionData = null,
-        string? paymentMethod = null)
+        string? paymentMethod = null,
+        string? qrCodeBlobUrl = null)
     {
         var invoice = new Invoice(
             id, number, billingSource, issuer, recipient,
@@ -262,8 +269,15 @@ public sealed class Invoice
 
         invoice.Status = status;
         invoice.RectifiedBy = rectifiedBy;
+        invoice.QrCodeBlobUrl = qrCodeBlobUrl;
         return invoice;
     }
+
+    /// <summary>
+    /// Records the blob URL where this invoice's QR code image is stored.
+    /// Called by the application layer after the QR is generated and uploaded.
+    /// </summary>
+    public void AttachQrCode(string blobUrl) => QrCodeBlobUrl = blobUrl;
 
     // ── Transiciones de estado ─────────────────────────────────────────────
 

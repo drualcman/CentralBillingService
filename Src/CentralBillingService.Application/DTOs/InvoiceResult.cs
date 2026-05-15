@@ -47,4 +47,10 @@ public sealed class InvoiceResult
 
     /// <summary>For rectificative invoices: the stated reason for rectification.</summary>
     public string? RectificationReason { get; init; }
+
+    /// <summary>
+    /// Public URL of the QR code image in blob storage.
+    /// Null if the QR has not been generated yet (best-effort post-creation step).
+    /// </summary>
+    public string? QrCodeBlobUrl { get; init; }
 }

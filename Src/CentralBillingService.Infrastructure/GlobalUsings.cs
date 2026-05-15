@@ -1,7 +1,11 @@
 global using CentralBillingService.Application.DTOs;
 global using CentralBillingService.Application.Interfaces;
 global using CentralBillingService.Application.Models;
+global using CentralBillingService.Infrastructure.BlobStorage;
+global using CentralBillingService.Infrastructure.QrCode;
+global using CentralBillingService.Infrastructure.Queue;
 global using CentralBillingService.Infrastructure.Verification;
+global using Microsoft.Extensions.Options;
 global using CentralBillingService.Domain.Entities;
 global using CentralBillingService.Domain.Exceptions;
 global using CentralBillingService.Domain.Interfaces;

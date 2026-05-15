@@ -92,6 +92,9 @@ public sealed class InvoiceEntity
     public string PaymentReference { get; set; } = string.Empty;
     public string? TransactionData { get; set; }
 
+    // ── QR code ───────────────────────────────────────────────────────────
+    public string? QrCodeBlobUrl { get; set; }
+
     // ── Navigation ────────────────────────────────────────────────────────
     public ICollection<InvoiceLineEntity> Lines { get; set; } = [];
 }

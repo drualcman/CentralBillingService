@@ -13,6 +13,8 @@ Concrete implementations of the interfaces defined in the Domain and Application
 - [Verification URL Providers](#verification-url-providers)
 - [Exchange Rates](#exchange-rates)
 - [Invoice Number Providers](#invoice-number-providers)
+- [Blob Storage](#blob-storage)
+- [QR Code Job Queue](#qr-code-job-queue)
 - [Event Dispatching](#event-dispatching)
 - [Result Publishing and Callbacks](#result-publishing-and-callbacks)
 - [ISO 9001 Audit Logging](#iso-9001-audit-logging)
@@ -99,6 +101,32 @@ Configuration (under each billing source in `appsettings.json`):
 
 ---
 
+## Blob Storage
+
+### `AzureBlobStorageService` → `IBlobStorageService`
+
+Manages QR code images in Azure Blob Storage. Two operations:
+
+- `GetBlobUrl(blobName)` — **pure URI computation, no network call**. Instantiates a `BlobContainerClient` locally and returns `container.GetBlobClient(blobName).Uri.ToString()`. Called by `CreateInvoiceUseCase` in the hot path to pre-attach the public URL before persisting the invoice.
+- `UploadAsync(blobName, bytes, contentType, ct)` — uploads content and returns the public URL.
+
+Connection string and container name come from `CbsOptions.QrBlobConnectionString` and `CbsOptions.QrBlobContainerName`.
+
+---
+
+## QR Code Job Queue
+
+### `AzureQueueQrCodeJobQueue` → `IQrCodeJobQueue`
+
+Sends QR generation jobs to an Azure Storage Queue. Called by `CreateInvoiceUseCase` after the invoice is persisted. Failure is swallowed — the invoice already has the correct blob URL stored; the background job merely materialises the PNG.
+
+Message format: `GenerateInvoiceQrCommand` serialized as JSON.
+
+Connection string: `CbsOptions.QrBlobConnectionString` (same storage account as blob storage).
+Queue name: `CbsOptions.QrCodeQueueName` (default: `"qr-code-jobs"`).
+
+---
+
 ## Event Dispatching
 
 ### `InvoiceEventDispatcher` → `IInvoiceEventDispatcher`
@@ -150,6 +178,8 @@ Any of the implementations in this project can be swapped without touching the D
 | `IExchangeRateProvider` | `ExchangeRateProviderAdapter` | Implement interface, register your class |
 | `ICurrencyConvertion` | `CurrencyConvertion` | Implement interface, register your class |
 | `IInvoiceNumberProviderStrategy` | `DatabaseNumberProviderStrategy` | Implement interface, register as named strategy |
+| `IBlobStorageService` | `AzureBlobStorageService` | Implement interface, register your class |
+| `IQrCodeJobQueue` | `AzureQueueQrCodeJobQueue` | Implement interface, register your class |
 | `IInvoiceEventDispatcher` | `InvoiceEventDispatcher` | Implement interface, register your class |
 | `IInvoiceResultQueuePublisher` | `InvoiceResultQueuePublisher` | Implement interface, register your class |
 | `IInvoiceResultCallbackNotifier` | `InvoiceResultCallbackNotifier` | Implement interface, register your class |

@@ -28,13 +28,22 @@ public static class ServiceCollectionExtensions
         // Hashing
         services.AddScoped<IInvoiceHasher, Sha256InvoiceHasher>();
 
-        // Verification URL provider — points to this system's own verify endpoint by default.
+        // Verification URL provider — points to the Blazor verify UI by default.
         // Swap for SpanishAeatVerificationUrlProvider when VeriFactu submission is live.
         services.AddSingleton<IInvoiceVerificationUrlProvider>(sp =>
         {
             var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<CbsOptions>>().Value;
-            return new SystemInvoiceVerificationUrlProvider(opts.SystemBaseUrl);
+            return new SystemInvoiceVerificationUrlProvider(opts.VerifyUiBaseUrl);
         });
+
+        // QR code generation
+        services.AddSingleton<IQrCodeGenerator, CentralBillingService.Infrastructure.QrCode.QrCodeGenerator>();
+
+        // Blob storage for QR code images
+        services.AddSingleton<IBlobStorageService, CentralBillingService.Infrastructure.BlobStorage.AzureBlobStorageService>();
+
+        // QR code job queue — sends generation jobs to Azure Storage Queue
+        services.AddScoped<IQrCodeJobQueue, AzureQueueQrCodeJobQueue>();
 
         // Exchange rate
         services.AddHttpClient<ICurrencyConvertion, CurrencyConvertion>(

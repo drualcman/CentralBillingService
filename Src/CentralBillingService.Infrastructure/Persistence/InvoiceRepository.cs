@@ -59,4 +59,5 @@ public sealed class InvoiceRepository : IInvoiceRepository
         RectificativeInvoice updatedOriginal,
         CancellationToken cancellationToken = default) =>
         _write.SaveRectificativeFromRectificativeAsync(rectificative, updatedOriginal, cancellationToken);
+
 }

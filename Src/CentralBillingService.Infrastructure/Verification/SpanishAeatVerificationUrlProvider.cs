@@ -14,6 +14,7 @@ public sealed class SpanishAeatVerificationUrlProvider : IInvoiceVerificationUrl
 {
     public string GetVerificationUrl(
         string invoiceNumber,
+        string hash,
         DateOnly issueDate,
         decimal totalEurAmount,
         string issuerTaxId) =>

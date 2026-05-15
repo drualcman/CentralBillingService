@@ -59,4 +59,5 @@ public interface IInvoiceWriteContext
         RectificativeInvoice rectificative,
         RectificativeInvoice updatedOriginal,
         CancellationToken cancellationToken = default);
+
 }

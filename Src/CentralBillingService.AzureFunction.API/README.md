@@ -183,6 +183,20 @@ Flow:
 2. This function picks it up and calls `ProcessQueuedCreateInvoiceUseCase`
 3. On success, the result is published to the result queue and/or sent to the callback URL
 
+### `GenerateInvoiceQrFunction`
+A queue-triggered function that materialises the QR code PNG for an invoice after it has been persisted. Decoupled from the HTTP creation path so that `POST /api/invoices` always responds as fast as possible.
+
+Queue: configured via the `%QrCodeQueueName%` app setting (connection: `InvoiceCreateQueueStorage`).
+
+Flow:
+1. `CreateInvoiceUseCase` enqueues a `GenerateInvoiceQrCommand` message after persisting the invoice (the blob URL is already stored in the DB at this point)
+2. This function deserialises the message and calls `GenerateInvoiceQrUseCase`
+3. The use case builds the verification URL, generates the PNG, and uploads it to blob storage under `qr/{billingSource}/{invoiceNumber}.png`
+
+**Error handling:**
+- Deserialisation failure → message is discarded (poison message; retrying will never succeed)
+- Generation/upload failure → exception is re-thrown so the Functions runtime retries with exponential backoff
+
 ---
 
 ## Local Development
@@ -251,6 +265,10 @@ Full `local.settings.json` structure for local development:
     "ConnectionString": "Server=.;Database=CBS;Trusted_Connection=True;Encrypt=False;"
   },
   "Cbs": {
+    "QrBlobConnectionString": "UseDevelopmentStorage=true",
+    "QrBlobContainerName": "qr-codes",
+    "QrCodeQueueName": "qr-code-jobs",
+    "VerifyUiBaseUrl": "https://verify.example.com/",
     "BillingSources": [
       {
         "Name": "my-saas",

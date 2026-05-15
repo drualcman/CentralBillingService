@@ -1,25 +1,27 @@
 namespace CentralBillingService.Infrastructure.Verification;
 
 /// <summary>
-/// Returns the URL of this system's own invoice verification endpoint:
-///   GET {baseUrl}/api/invoices/{invoiceNumber}/verify
+/// Points QR codes at the Blazor verification UI with the invoice number and hash
+/// as query parameters. The UI then calls the CBS API to display the verification result.
 ///
-/// This is the default provider. The QR code on invoice PDFs points to this URL
-/// so recipients can verify the invoice directly against this system's records.
+/// URL format: {verifyUiBaseUrl}?invoiceNumber={number}&amp;hash={hash}
+///
+/// Swap for SpanishAeatVerificationUrlProvider when VeriFactu submission is live.
 /// </summary>
 public sealed class SystemInvoiceVerificationUrlProvider : IInvoiceVerificationUrlProvider
 {
-    private readonly string _baseUrl;
+    private readonly string _verifyUiBaseUrl;
 
-    public SystemInvoiceVerificationUrlProvider(string baseUrl)
+    public SystemInvoiceVerificationUrlProvider(string verifyUiBaseUrl)
     {
-        _baseUrl = baseUrl.TrimEnd('/');
+        _verifyUiBaseUrl = verifyUiBaseUrl.TrimEnd('/');
     }
 
     public string GetVerificationUrl(
         string invoiceNumber,
+        string hash,
         DateOnly issueDate,
         decimal totalEurAmount,
         string issuerTaxId) =>
-        $"{_baseUrl}/api/invoices/{Uri.EscapeDataString(invoiceNumber)}/verify";
+        $"{_verifyUiBaseUrl}?invoiceNumber={Uri.EscapeDataString(invoiceNumber)}&hash={Uri.EscapeDataString(hash)}";
 }
