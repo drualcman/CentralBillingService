@@ -24,6 +24,6 @@ public sealed class SystemInvoiceVerificationUrlProvider : IInvoiceVerificationU
         string hash,
         DateOnly issueDate,
         decimal totalEurAmount,
-        string issuerTaxId) =>
-        $"{_verifyUiBaseUrl}?invoiceNumber={Uri.EscapeDataString(invoiceNumber)}&hash={Uri.EscapeDataString(hash)}&billingsource={Uri.EscapeDataString(billingSource)}&issuertaxid={Uri.EscapeDataString(issuerTaxId)}&issuedate={issueDate:dd-MM-yyyy}&amount={totalEurAmount:F2}";
+        string recipientTaxId) =>
+        $"{_verifyUiBaseUrl}?invoiceNumber={Uri.EscapeDataString(invoiceNumber)}&hash={Uri.EscapeDataString(hash)}&billingsource={Uri.EscapeDataString(billingSource)}&recipienttaxid={Uri.EscapeDataString(recipientTaxId)}&issuedate={issueDate.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)}&amount={totalEurAmount.ToString("F2", CultureInfo.InvariantCulture)}";
 }

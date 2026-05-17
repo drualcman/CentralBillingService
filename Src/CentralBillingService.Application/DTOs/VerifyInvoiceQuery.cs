@@ -10,4 +10,19 @@ public sealed class VerifyInvoiceQuery
     /// Used to confirm the document in hand is the original issued invoice.
     /// </summary>
     public required string ProvidedHash { get; init; }
+
+    /// <summary>
+    /// Recipient NIF as encoded in the QR URL — validated against the stored value.
+    /// </summary>
+    public string? ProvidedRecipientTaxId { get; init; }
+
+    /// <summary>
+    /// Issue date as encoded in the QR URL — validated against the stored value.
+    /// </summary>
+    public DateOnly? ProvidedIssueDate { get; init; }
+
+    /// <summary>
+    /// Total amount as encoded in the QR URL — validated against the stored value.
+    /// </summary>
+    public decimal? ProvidedTotalEur { get; init; }
 }

@@ -30,7 +30,7 @@ public sealed class GenerateInvoiceQrUseCase
             command.Hash,
             command.IssueDate,
             command.TotalEurAmount,
-            command.IssuerTaxId);
+            command.RecipientTaxId);
 
         var pngBytes = await _qrGenerator.GenerateAsync(verificationUrl, cancellationToken);
 

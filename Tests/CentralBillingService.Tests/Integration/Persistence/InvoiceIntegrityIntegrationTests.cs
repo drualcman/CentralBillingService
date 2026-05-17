@@ -89,7 +89,6 @@ public sealed class InvoiceIntegrityIntegrationTests(CbsDatabaseFixture fixture)
         var query = new VerifyInvoiceQuery
         {
             BillingSource = billingSource,
-            Secret = "secret123",
             InvoiceNumber = saved.Number.Value,
             ProvidedHash = saved.Hash
         };

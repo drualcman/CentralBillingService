@@ -49,7 +49,10 @@ public sealed class VerifyInvoiceIntegrityUseCase
         if (invoice is not null)
             return BuildResult(
                 query.InvoiceNumber, invoice.Hash, invoice.VerifyIntegrity(_hasher), query.ProvidedHash,
-                invoice.Issuer.TaxId.Value, invoice.Issuer.DisplayName, invoice.IssueDate, invoice.TotalEur.Amount);
+                invoice.Issuer.TaxId.Value, invoice.Issuer.DisplayName,
+                invoice.Recipient.TaxId.Value, invoice.Recipient.DisplayName,
+                invoice.IssueDate, invoice.TotalEur.Amount,
+                query.ProvidedRecipientTaxId, query.ProvidedIssueDate, query.ProvidedTotalEur);
 
         var rectificative = await _repository.FindRectificativeByNumberAsync(
             query.BillingSource, query.InvoiceNumber, cancellationToken);
@@ -57,7 +60,10 @@ public sealed class VerifyInvoiceIntegrityUseCase
         if (rectificative is not null)
             return BuildResult(
                 query.InvoiceNumber, rectificative.Hash, rectificative.VerifyIntegrity(_hasher), query.ProvidedHash,
-                rectificative.Issuer.TaxId.Value, rectificative.Issuer.DisplayName, rectificative.IssueDate, rectificative.TotalEur.Amount);
+                rectificative.Issuer.TaxId.Value, rectificative.Issuer.DisplayName,
+                rectificative.Recipient.TaxId.Value, rectificative.Recipient.DisplayName,
+                rectificative.IssueDate, rectificative.TotalEur.Amount,
+                query.ProvidedRecipientTaxId, query.ProvidedIssueDate, query.ProvidedTotalEur);
 
         throw new InvoiceNotFoundException(query.InvoiceNumber);
     }
@@ -69,19 +75,42 @@ public sealed class VerifyInvoiceIntegrityUseCase
         string providedHash,
         string issuerTaxId,
         string issuerName,
+        string recipientTaxId,
+        string recipientName,
         DateOnly issueDate,
-        decimal totalEur)
+        decimal totalEur,
+        string? providedRecipientTaxId,
+        DateOnly? providedIssueDate,
+        decimal? providedTotalEur)
     {
         bool documentHashMatches = string.Equals(providedHash, storedHash, StringComparison.OrdinalIgnoreCase);
-        bool isValid = documentHashMatches && integrityVerified;
 
-        string message = (documentHashMatches, integrityVerified) switch
-        {
-            (true, true) => "Invoice is authentic: document hash matches and integrity verified.",
-            (true, false) => $"Integrity check failed for '{invoiceNumber}': stored hash does not match recomputed hash. Possible tampering.",
-            (false, true) => "Document hash mismatch: the provided hash does not match the stored one. The document may not be the original issued invoice.",
-            (false, false) => $"Both checks failed for '{invoiceNumber}': document hash mismatch and integrity check failed.",
-        };
+        bool recipientTaxIdMatches = providedRecipientTaxId is null
+            || string.Equals(providedRecipientTaxId.Trim(), recipientTaxId.Trim(), StringComparison.OrdinalIgnoreCase);
+        bool issueDateMatches = providedIssueDate is null || providedIssueDate.Value == issueDate;
+        bool amountMatches = providedTotalEur is null
+            || Math.Round(providedTotalEur.Value, 2, MidpointRounding.AwayFromZero)
+               == Math.Round(totalEur, 2, MidpointRounding.AwayFromZero);
+
+        bool qrDataConsistent = recipientTaxIdMatches && issueDateMatches && amountMatches;
+
+        bool isValid = documentHashMatches && integrityVerified && qrDataConsistent;
+
+        var issues = new List<string>(5);
+        if (!documentHashMatches)
+            issues.Add("document hash mismatch");
+        if (!integrityVerified)
+            issues.Add("integrity check failed — possible tampering");
+        if (!recipientTaxIdMatches)
+            issues.Add("recipient tax ID mismatch");
+        if (!issueDateMatches)
+            issues.Add("issue date mismatch");
+        if (!amountMatches)
+            issues.Add("total amount mismatch");
+
+        string message = issues.Count == 0
+            ? "Invoice is authentic: document hash matches, integrity verified, and QR data consistent."
+            : $"Verification failed for '{invoiceNumber}': {string.Join("; ", issues)}.";
 
         return new VerifyInvoiceResult
         {
@@ -90,9 +119,12 @@ public sealed class VerifyInvoiceIntegrityUseCase
             Hash = storedHash,
             DocumentHashMatches = documentHashMatches,
             IntegrityVerified = integrityVerified,
+            QrDataConsistent = qrDataConsistent,
             Message = message,
             IssuerTaxId = issuerTaxId,
             IssuerName = issuerName,
+            RecipientTaxId = recipientTaxId,
+            RecipientName = recipientName,
             IssueDate = issueDate,
             TotalEur = totalEur,
         };

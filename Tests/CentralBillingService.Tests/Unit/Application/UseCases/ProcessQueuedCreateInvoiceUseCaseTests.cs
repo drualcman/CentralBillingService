@@ -32,6 +32,7 @@ public class ProcessQueuedCreateInvoiceUseCaseTests
             FetchedAt = DateTimeOffset.UtcNow, IsIdentity = true
         },
         Hash = "HASH",
+        PaymentReference = "PAY-001",
         CreatedAt = DateTimeOffset.UtcNow
     };
 

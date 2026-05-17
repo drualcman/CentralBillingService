@@ -25,6 +25,7 @@ global using ISO9001.Core.Entities;
 global using ISO9001.Core.Interfaces.AuditLogs;
 global using ISO9001.Core.Interfaces.IncidentReports;
 global using Microsoft.Extensions.Logging;
+global using System.Globalization;
 global using System.Linq.Expressions;
 global using System.Net.Http.Json;
 global using System.Security.Cryptography;

@@ -11,4 +11,4 @@ public sealed record GenerateInvoiceQrCommand(
     string Hash,
     DateOnly IssueDate,
     decimal TotalEurAmount,
-    string IssuerTaxId);
+    string RecipientTaxId);

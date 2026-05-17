@@ -5,7 +5,8 @@ namespace CentralBillingService.Application.DTOs;
 ///
 /// DocumentHashMatches: the hash from the customer's QR equals the stored hash.
 /// IntegrityVerified: the stored hash equals the hash recomputed from DB fields.
-/// IsValid: both checks passed.
+/// QrDataConsistent: nif/fecha/importe in the QR URL match the stored invoice fields.
+/// IsValid: all checks passed.
 /// </summary>
 public sealed class VerifyInvoiceResult
 {
@@ -14,10 +15,13 @@ public sealed class VerifyInvoiceResult
     public required string Hash { get; init; }
     public required bool DocumentHashMatches { get; init; }
     public required bool IntegrityVerified { get; init; }
+    public required bool QrDataConsistent { get; init; }
     public string? Message { get; init; }
 
     public required string IssuerTaxId { get; init; }
     public required string IssuerName { get; init; }
+    public required string RecipientTaxId { get; init; }
+    public required string RecipientName { get; init; }
     public required DateOnly IssueDate { get; init; }
     public required decimal TotalEur { get; init; }
 }

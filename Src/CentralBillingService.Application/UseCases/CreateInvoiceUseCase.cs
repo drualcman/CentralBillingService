@@ -168,7 +168,7 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
                 invoice.Hash,
                 invoice.IssueDate,
                 invoice.TotalEur.Amount,
-                invoice.Issuer.TaxId.Value);
+                invoice.Recipient.TaxId.Value);
 
             await _qrJobQueue.EnqueueAsync(qrCommand, cancellationToken);
         }

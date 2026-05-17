@@ -19,7 +19,6 @@ public class VerifyInvoiceIntegrityUseCaseTests
         string providedHash = "PLACEHOLDER_HASH") => new()
     {
         BillingSource = "web-test",
-        Secret = "secret123",
         InvoiceNumber = invoiceNumber,
         ProvidedHash = providedHash
     };
@@ -132,7 +131,6 @@ public class VerifyInvoiceIntegrityUseCaseTests
         var query = new VerifyInvoiceQuery
         {
             BillingSource = "",
-            Secret = "secret123",
             InvoiceNumber = "TEST2026-0001",
             ProvidedHash = ""
         };
@@ -146,25 +144,10 @@ public class VerifyInvoiceIntegrityUseCaseTests
         var query = new VerifyInvoiceQuery
         {
             BillingSource = "web-test",
-            Secret = "secret123",
             InvoiceNumber = "",
             ProvidedHash = ""
         };
 
         await Assert.ThrowsAsync<ArgumentException>(() => _useCase.ExecuteAsync(query));
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_throws_when_secret_is_wrong()
-    {
-        var query = new VerifyInvoiceQuery
-        {
-            BillingSource = "web-test",
-            Secret = "wrong-secret",
-            InvoiceNumber = "TEST2026-0001",
-            ProvidedHash = "SOME_HASH"
-        };
-
-        await Assert.ThrowsAsync<DomainException>(() => _useCase.ExecuteAsync(query));
     }
 }

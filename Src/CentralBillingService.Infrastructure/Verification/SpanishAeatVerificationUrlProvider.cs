@@ -18,9 +18,9 @@ public sealed class SpanishAeatVerificationUrlProvider : IInvoiceVerificationUrl
         string hash,
         DateOnly issueDate,
         decimal totalEurAmount,
-        string issuerTaxId) =>
+        string recipientTaxId) =>
         "https://www2.agenciatributaria.gob.es/wlpl/VFPR-CONT/VFPRValidarQR" +
-        $"?nif={Uri.EscapeDataString(issuerTaxId)}" +
+        $"?nif={Uri.EscapeDataString(recipientTaxId)}" +
         $"&numserie={Uri.EscapeDataString(invoiceNumber)}" +
         $"&fecha={issueDate:dd-MM-yyyy}" +
         $"&importe={totalEurAmount:F2}";

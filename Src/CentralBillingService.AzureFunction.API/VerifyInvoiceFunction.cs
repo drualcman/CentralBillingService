@@ -33,10 +33,17 @@ public sealed class VerifyInvoiceFunction
         var qs = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
         var providedHash = qs["hash"];
         var billingSource = qs["billingsource"];
+        var recipientTaxId = qs["recipienttaxid"];
+        var issueDate = qs["issuedate"];
+        var amount = qs["amount"];
 
         if (string.IsNullOrWhiteSpace(providedHash))
             return await req.CreateProblemResponseAsync(
                 HttpStatusCode.BadRequest, "Hash required.", "A document hash must be provided for verification.");
+
+        DateOnly? providedIssueDate = DateOnly.TryParseExact(issueDate, "dd-MM-yyyy", out var parsedDate) ? parsedDate : null;
+        decimal? providedTotalEur = decimal.TryParse(amount, NumberStyles.Number,
+            CultureInfo.InvariantCulture, out var parsedImporte) ? parsedImporte : null;
 
         try
         {
@@ -45,6 +52,9 @@ public sealed class VerifyInvoiceFunction
                 BillingSource = billingSource ?? string.Empty,
                 InvoiceNumber = invoiceNumber,
                 ProvidedHash = providedHash,
+                ProvidedRecipientTaxId = string.IsNullOrWhiteSpace(recipientTaxId) ? null : recipientTaxId,
+                ProvidedIssueDate = providedIssueDate,
+                ProvidedTotalEur = providedTotalEur,
             };
 
             var result = await _useCase.ExecuteAsync(query, cancellationToken);

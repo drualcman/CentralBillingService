@@ -24,5 +24,5 @@ public interface IInvoiceVerificationUrlProvider
         string hash,
         DateOnly issueDate,
         decimal totalEurAmount,
-        string issuerTaxId);
+        string recipientTaxId);
 }
