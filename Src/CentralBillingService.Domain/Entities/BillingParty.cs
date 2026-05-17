@@ -91,7 +91,7 @@ public sealed class BillingParty
     /// El nombre que se muestra en cabecera:
     /// el nombre comercial si existe, el fiscal si no.
     /// </summary>
-    public string DisplayName => TradeName ?? LegalName;
+    public string DisplayName => string.IsNullOrWhiteSpace(TradeName) ? LegalName : TradeName;
 
     public override string ToString() => $"{DisplayName} ({TaxId})";
 }
