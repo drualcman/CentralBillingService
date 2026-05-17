@@ -1,7 +1,9 @@
 global using CentralBillingService.Application.DTOs;
 global using CentralBillingService.Application.UseCases;
+global using CentralBillingService.Domain.Models;
 global using CentralBillingService.Domain.Options;
 global using CentralBillingService.Domain.ValueObjects;
+global using CentralBillingService.Persistence.SqlServer.Options;
 global using CentralBillingService.WPF.Models;
 global using CentralBillingService.WPF.Services;
 global using CentralBillingService.WPF.ViewModels;

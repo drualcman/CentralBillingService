@@ -1,9 +1,3 @@
-using CentralBillingService.Domain.Entities;
-using CentralBillingService.Domain.Models;
-using CentralBillingService.Domain.ValueObjects;
-using CentralBillingService.Persistence.SqlServer.Options;
-using CentralBillingService.WPF.Services;
-
 namespace CentralBillingService.WPF;
 
 public partial class App : System.Windows.Application

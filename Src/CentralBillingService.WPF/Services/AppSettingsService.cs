@@ -11,7 +11,7 @@ public class AppSettingsService
     {
         var json = File.ReadAllText(_path);
         var root = JsonNode.Parse(json)!;
-        var array = root["BillingSources"]?.AsArray() ?? [];
+        var array = root["CbsOptions"]?["BillingSources"]?.AsArray() ?? [];
         var result = new List<BillingSourceRecord>();
 
         foreach (var s in array)
@@ -68,7 +68,7 @@ public class AppSettingsService
             });
         }
 
-        root["BillingSources"] = array;
+        root["CbsOptions"]!["BillingSources"] = array;
         File.WriteAllText(_path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
     }
 }

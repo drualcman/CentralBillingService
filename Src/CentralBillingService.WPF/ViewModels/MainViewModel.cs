@@ -34,10 +34,11 @@ public partial class MainViewModel : ObservableObject
 
     private void LoadBillingSources()
     {
-        var sources = _config.GetSection("BillingSources").GetChildren();
+        var sources = _config.GetSection("CbsOptions:BillingSources").GetChildren();
         foreach (var s in sources)
         {
             var name = s["BillingSource"] ?? "";
+            if (string.IsNullOrEmpty(name)) continue;
             BillingSources.Add(new BillingSourceSummary
             {
                 Name = name,
@@ -47,17 +48,33 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    // Refresh the sidebar list from the file (called after editing billing sources)
+    // Refresh the sidebar list from the file (called after editing billing sources).
+    // Secrets-only sources (not in appsettings.json) are kept from the original config.
     private void ReloadBillingSources()
     {
         BillingSources.Clear();
-        foreach (var s in _appSettingsService.LoadBillingSources())
+
+        var fromFile = _appSettingsService.LoadBillingSources();
+        foreach (var s in fromFile)
             BillingSources.Add(new BillingSourceSummary
             {
                 Name = s.Key,
                 Secret = s.Secret,
                 DisplayName = s.DisplayName,
             });
+
+        var fileKeys = fromFile.Select(s => s.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var s in _config.GetSection("CbsOptions:BillingSources").GetChildren())
+        {
+            var name = s["BillingSource"] ?? "";
+            if (string.IsNullOrEmpty(name) || fileKeys.Contains(name)) continue;
+            BillingSources.Add(new BillingSourceSummary
+            {
+                Name = name,
+                Secret = s["Secret"] ?? "",
+                DisplayName = s["Issuer:TradeName"] ?? s["Issuer:LegalName"] ?? name,
+            });
+        }
     }
 
     partial void OnSelectedBillingSourceChanged(BillingSourceSummary? value)
