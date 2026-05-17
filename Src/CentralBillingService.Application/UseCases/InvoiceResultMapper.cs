@@ -27,6 +27,8 @@ internal static class InvoiceResultMapper
         PreviousHash = invoice.PreviousHash,
         Notes = invoice.Notes,
         CreatedAt = invoice.CreatedAt,
+        PaymentMethod = invoice.PaymentMethod,
+        PaymentReference = invoice.PaymentReference,
         HasTamper = invoice.HasTamper,
         QrCodeBlobUrl = invoice.QrCodeBlobUrl,
     };
@@ -51,6 +53,8 @@ internal static class InvoiceResultMapper
         PreviousHash = invoice.PreviousHash,
         Notes = invoice.Notes,
         CreatedAt = invoice.CreatedAt,
+        PaymentMethod = invoice.PaymentMethod,
+        PaymentReference = invoice.PaymentReference,
         HasTamper = invoice.HasTamper,
         IsRectificative = true,
         OriginalInvoiceNumber = invoice.OriginalInvoiceNumber.Value,

@@ -37,6 +37,8 @@ public sealed class InvoiceResult
 
     public string? Notes { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
+    public string? PaymentMethod { get; init; }
+    public required string PaymentReference { get; init; }
     public bool HasTamper { get; init; }
 
     /// <summary>True when this result was loaded from a rectificative invoice.</summary>

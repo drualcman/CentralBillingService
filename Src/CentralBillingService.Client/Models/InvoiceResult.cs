@@ -19,23 +19,23 @@ public sealed class InvoiceResult
 
     public required IReadOnlyList<InvoiceLineResult> Lines { get; init; }
 
-    // Totals in EUR (functional currency)
     public required MoneyResult TaxableBaseEur { get; init; }
     public required MoneyResult TotalTaxAmountEur { get; init; }
     public required MoneyResult TotalEur { get; init; }
-
-    // Total in the origin currency (what the client sees)
     public required MoneyResult TotalInOriginCurrency { get; init; }
 
-    // Exchange rate snapshot — immutably recorded at invoice creation time
     public required ExchangeRateResult AppliedExchangeRate { get; init; }
 
-    // VeriFactu chain
     public required string Hash { get; init; }
     public string? PreviousHash { get; init; }
 
     public string? Notes { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
-    public required string PaymentMethod { get; init; }
+    public string? PaymentMethod { get; init; }
     public required string PaymentReference { get; init; }
+    public bool HasTamper { get; init; }
+    public bool IsRectificative { get; init; }
+    public string? OriginalInvoiceNumber { get; init; }
+    public string? RectificationReason { get; init; }
+    public string? QrCodeBlobUrl { get; init; }
 }

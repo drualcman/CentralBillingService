@@ -16,4 +16,5 @@ public sealed class PartyResult
     public string? Province { get; init; }
     public required string PostalCode { get; init; }
     public required string AddressCountryCode { get; init; }
+    public string? ExternalId { get; init; }
 }

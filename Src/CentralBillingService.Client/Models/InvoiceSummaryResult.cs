@@ -15,13 +15,9 @@ public sealed class InvoiceSummaryResult
     public required DateOnly IssueDate { get; init; }
     public required MoneyResult TotalEur { get; init; }
     public required MoneyResult TotalInOriginCurrency { get; init; }
-
-    /// <summary>
-    /// True if the invoice was originally requested in a non-EUR currency.
-    /// Useful to quickly identify converted invoices in list views.
-    /// </summary>
     public required bool HasCurrencyConversion { get; init; }
-
-    /// <summary>Non-null if this invoice has been rectified.</summary>
     public string? RectifiedByNumber { get; init; }
+    public bool HasTamper { get; init; }
+    public bool IsRectificative { get; init; }
+    public string? OriginalInvoiceNumber { get; init; }
 }
