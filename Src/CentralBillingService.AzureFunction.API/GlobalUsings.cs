@@ -4,6 +4,7 @@ global using CentralBillingService.Application.UseCases;
 global using CentralBillingService.AzureFunction.API.Helpers;
 global using CentralBillingService.Domain.Exceptions;
 global using CentralBillingService.Domain.Options;
+global using CentralBillingService.Domain.ValueObjects;
 global using CentralBillingService.Persistence.SqlServer.Options;
 global using Microsoft.AspNetCore.Http;
 global using Microsoft.Azure.Functions.Worker;

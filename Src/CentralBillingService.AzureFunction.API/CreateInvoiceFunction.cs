@@ -1,3 +1,5 @@
+using CentralBillingService.AzureFunction.API.Requests;
+
 namespace CentralBillingService.AzureFunction.API;
 
 public sealed class CreateInvoiceFunction
@@ -23,7 +25,7 @@ public sealed class CreateInvoiceFunction
 
         try
         {
-            var request = await HttpRequestBodyHelper.GetRequestedModel<CreateInvoiceCommand>(req, cancellationToken);
+            var request = await HttpRequestBodyHelper.GetRequestedModel<CreateInvoiceRequest>(req, cancellationToken);
 
             command = new CreateInvoiceCommand
             {

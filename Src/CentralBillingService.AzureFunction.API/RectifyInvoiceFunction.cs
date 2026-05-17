@@ -1,3 +1,5 @@
+using CentralBillingService.AzureFunction.API.Requests;
+
 namespace CentralBillingService.AzureFunction.API;
 
 public sealed class RectifyInvoiceFunction
@@ -24,7 +26,7 @@ public sealed class RectifyInvoiceFunction
 
         try
         {
-            var request = await HttpRequestBodyHelper.GetRequestedModel<RectifyInvoiceCommand>(req, cancellationToken);
+            var request = await HttpRequestBodyHelper.GetRequestedModel<RectifyInvoiceRequest>(req, cancellationToken);
 
             // The invoice number comes from the route — override whatever the body says
             command = new RectifyInvoiceCommand()
