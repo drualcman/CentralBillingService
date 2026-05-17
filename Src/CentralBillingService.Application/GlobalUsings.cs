@@ -3,7 +3,6 @@ global using CentralBillingService.Application.Exceptions;
 global using CentralBillingService.Application.Interfaces;
 global using CentralBillingService.Application.Models;
 global using CentralBillingService.Application.UseCases;
-global using CentralBillingService.Application.ValueObjects;
 global using CentralBillingService.Domain.DTOs;
 global using CentralBillingService.Domain.Entities;
 global using CentralBillingService.Domain.Exceptions;

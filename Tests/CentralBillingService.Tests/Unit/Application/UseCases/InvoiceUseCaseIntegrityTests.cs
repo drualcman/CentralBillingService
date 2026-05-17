@@ -131,7 +131,7 @@ public class InvoiceUseCaseIntegrityTests
                 OriginalInvoiceNumber = tampered.Number.Value,
                 RectificativeSerie = "REC",
                 Reason = "Test rectification reason long enough",
-                RectificationType = CentralBillingService.Application.ValueObjects.RectificationType.Substitution,
+                RectificationType = RectificationType.Substitution,
                 PaymentReference = "PAY-REC-001"
             }));
     }

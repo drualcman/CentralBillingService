@@ -1,7 +1,3 @@
-using CentralBillingService.Application.DTOs;
-using CentralBillingService.Application.ValueObjects;
-using CentralBillingService.WPF.Services;
-
 namespace CentralBillingService.WPF.ViewModels;
 
 public partial class RectifyInvoiceViewModel : ObservableObject
@@ -39,8 +35,8 @@ public partial class RectifyInvoiceViewModel : ObservableObject
 
     // Live totals for difference lines
     public decimal TotalsSubtotal => DifferenceLines.Sum(l => l.Quantity * l.UnitPrice);
-    public decimal TotalsTax      => DifferenceLines.Sum(l => l.Quantity * l.UnitPrice * l.TaxRate / 100m);
-    public decimal TotalsTotal    => TotalsSubtotal + TotalsTax;
+    public decimal TotalsTax => DifferenceLines.Sum(l => l.Quantity * l.UnitPrice * l.TaxRate / 100m);
+    public decimal TotalsTotal => TotalsSubtotal + TotalsTax;
 
     public RectifyInvoiceViewModel(
         IServiceScopeFactory scopeFactory,
@@ -56,7 +52,7 @@ public partial class RectifyInvoiceViewModel : ObservableObject
         BillingSource = billingSource;
         OriginalInvoiceNumber = originalInvoiceNumber;
 
-        AvailableSeries   = new ObservableCollection<SeriesRecord>(masterDataStore.LoadSeries());
+        AvailableSeries = new ObservableCollection<SeriesRecord>(masterDataStore.LoadSeries());
         AvailableProducts = new ObservableCollection<ProductRecord>(masterDataStore.LoadProducts());
 
         DifferenceLines.CollectionChanged += OnDiffLinesCollectionChanged;
@@ -66,9 +62,11 @@ public partial class RectifyInvoiceViewModel : ObservableObject
         System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
         if (e.NewItems is not null)
-            foreach (InvoiceLineItem item in e.NewItems) item.PropertyChanged += OnDiffLineChanged;
+            foreach (InvoiceLineItem item in e.NewItems)
+                item.PropertyChanged += OnDiffLineChanged;
         if (e.OldItems is not null)
-            foreach (InvoiceLineItem item in e.OldItems) item.PropertyChanged -= OnDiffLineChanged;
+            foreach (InvoiceLineItem item in e.OldItems)
+                item.PropertyChanged -= OnDiffLineChanged;
         RefreshTotals();
     }
 
@@ -118,9 +116,9 @@ public partial class RectifyInvoiceViewModel : ObservableObject
         DifferenceLines.Add(new InvoiceLineItem
         {
             Description = line.Description,
-            Quantity    = -line.Quantity,
-            UnitPrice   = line.UnitPriceOrigin.Amount,
-            TaxRate     = line.TaxRatePercentage,
+            Quantity = -line.Quantity,
+            UnitPrice = line.UnitPriceOrigin.Amount,
+            TaxRate = line.TaxRatePercentage,
         });
     }
 
@@ -128,7 +126,8 @@ public partial class RectifyInvoiceViewModel : ObservableObject
     async Task Save()
     {
         ErrorMessage = null;
-        if (!Validate()) return;
+        if (!Validate())
+            return;
 
         IsSaving = true;
         try

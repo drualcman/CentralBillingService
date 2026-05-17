@@ -31,7 +31,7 @@ public class RectifyInvoiceUseCaseTests
 
     private static RectifyInvoiceCommand BuildCommand(
         string originalNumber = "TEST2026-0001",
-        CentralBillingService.Application.ValueObjects.RectificationType type = CentralBillingService.Application.ValueObjects.RectificationType.Substitution) =>
+        RectificationType type = RectificationType.Substitution) =>
         new()
         {
             BillingSource = "web-fotos",
@@ -124,7 +124,7 @@ public class RectifyInvoiceUseCaseTests
             OriginalInvoiceNumber = "",
             RectificativeSerie = "REC",
             Reason = "Error en los datos del cliente",
-            RectificationType = CentralBillingService.Application.ValueObjects.RectificationType.Substitution,
+            RectificationType = RectificationType.Substitution,
             PaymentReference = "PAY-002"
         };
 
@@ -141,7 +141,7 @@ public class RectifyInvoiceUseCaseTests
             OriginalInvoiceNumber = "TEST2026-0001",
             RectificativeSerie = "",
             Reason = "Error en los datos del cliente",
-            RectificationType = CentralBillingService.Application.ValueObjects.RectificationType.Substitution,
+            RectificationType = RectificationType.Substitution,
             PaymentReference = "PAY-002"
         };
 
@@ -158,7 +158,7 @@ public class RectifyInvoiceUseCaseTests
             OriginalInvoiceNumber = "TEST2026-0001",
             RectificativeSerie = "REC",
             Reason = "Corto",   // less than 10 chars
-            RectificationType = CentralBillingService.Application.ValueObjects.RectificationType.Substitution,
+            RectificationType = RectificationType.Substitution,
             PaymentReference = "PAY-002"
         };
 
@@ -175,7 +175,7 @@ public class RectifyInvoiceUseCaseTests
             OriginalInvoiceNumber = "TEST2026-0001",
             RectificativeSerie = "REC",
             Reason = "Descuento no aplicado correctamente",
-            RectificationType = CentralBillingService.Application.ValueObjects.RectificationType.Difference,
+            RectificationType = RectificationType.Difference,
             Lines = null,   // required for Difference
             PaymentReference = "PAY-002"
         };

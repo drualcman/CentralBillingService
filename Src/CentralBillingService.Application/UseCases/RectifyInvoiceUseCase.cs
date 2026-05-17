@@ -127,7 +127,7 @@ public sealed class RectifyInvoiceUseCase
             throw new ArgumentException(
                 "Reason must be descriptive (minimum 10 characters).", nameof(command));
 
-        if (command.RectificationType == ValueObjects.RectificationType.Difference &&
+        if (command.RectificationType == RectificationType.Difference &&
             (command.Lines is null || command.Lines.Count == 0))
             throw new ArgumentException(
                 "Lines are required for Difference rectification type.", nameof(command));
@@ -139,7 +139,7 @@ public sealed class RectifyInvoiceUseCase
         Secret = cmd.Secret,
         Reason = cmd.Reason,
         RectificativeSerie = cmd.RectificativeSerie,
-        RectificationType = cmd.RectificationType == ValueObjects.RectificationType.Substitution
+        RectificationType = cmd.RectificationType == RectificationType.Substitution
             ? Domain.ValueObjects.RectificationType.Substitution
             : Domain.ValueObjects.RectificationType.Difference,
         Lines = cmd.Lines?.Select(l => new InvoiceLineData

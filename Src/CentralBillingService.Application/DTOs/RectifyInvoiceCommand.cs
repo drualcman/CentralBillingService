@@ -29,7 +29,7 @@ public sealed class RectifyInvoiceCommand
     public required string RectificativeSerie { get; init; }
 
     public required string Reason { get; init; }
-    public required ValueObjects.RectificationType RectificationType { get; init; }
+    public required RectificationType RectificationType { get; init; }
 
     /// <summary>
     /// Required only for Difference rectifications.
