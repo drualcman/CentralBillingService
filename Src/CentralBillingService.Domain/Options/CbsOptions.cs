@@ -22,8 +22,8 @@ public class CbsOptions
     public string QrBlobConnectionString { get; set; } = string.Empty;
 
     /// <summary>Blob container name where QR code PNGs are stored.</summary>
-    public string QrBlobContainerName { get; set; } = "qr-codes";
+    public string QrBlobContainerName { get; set; } = "cbs-qr-codes";
 
     /// <summary>Azure Storage Queue name where QR generation jobs are sent.</summary>
-    public string QrCodeQueueName { get; set; } = "qr-code-jobs";
+    public string QrCodeQueueName { get; set; } = "cbs-qr-code-jobs";
 }

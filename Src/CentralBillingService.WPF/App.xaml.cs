@@ -18,7 +18,12 @@ public partial class App : System.Windows.Application
             .ConfigureAppConfiguration((_, config) =>
             {
                 config.SetBasePath(AppContext.BaseDirectory)
-                      .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
+                      .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+#if DEBUG
+            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddUserSecrets<App>()
+#endif
+            ;
             })
             .ConfigureServices((context, services) =>
             {

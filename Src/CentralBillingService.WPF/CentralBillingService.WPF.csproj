@@ -8,6 +8,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>CentralBillingService.WPF</RootNamespace>
     <AssemblyName>CentralBillingService.WPF</AssemblyName>
+	  <UserSecretsId>6db9d990-38a5-4cd3-b8c7-f2ecdd680a8b</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

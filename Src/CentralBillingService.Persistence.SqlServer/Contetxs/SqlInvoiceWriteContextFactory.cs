@@ -12,7 +12,7 @@ internal class SqlInvoiceWriteContextFactory : IDesignTimeDbContextFactory<SqlIn
             new DatabaseOptions
             {
                 //copy here the conection string you want to use when apply some mgration
-                CbsDb1 = "Server=(localdb)\\MSSQLLocalDB;Database=cbsdb;Trusted_Connection=True;MultipleActiveResultSets=true"
+                CbsDb = "Server=(localdb)\\MSSQLLocalDB;Database=cbsdb;Trusted_Connection=True;MultipleActiveResultSets=true"
 
             });
         return new SqlInvoiceWriteContext(DBOptions);

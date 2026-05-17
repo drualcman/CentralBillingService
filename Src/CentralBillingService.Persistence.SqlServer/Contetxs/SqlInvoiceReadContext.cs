@@ -14,7 +14,7 @@ internal sealed class SqlInvoiceReadContext(IOptions<DatabaseOptions> dbOptions)
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlServer(dbOptions.Value.CbsDb1,
+        optionsBuilder.UseSqlServer(dbOptions.Value.CbsDb,
            sqlOptions => sqlOptions.EnableRetryOnFailure(
                maxRetryCount: 3,
                maxRetryDelay: TimeSpan.FromSeconds(10),

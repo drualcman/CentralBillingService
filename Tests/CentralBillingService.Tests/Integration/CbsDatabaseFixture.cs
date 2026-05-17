@@ -10,7 +10,7 @@ public sealed class CbsDatabaseFixture : IAsyncLifetime
         "Server=(localdb)\\MSSQLLocalDB;Database=cbsdb_tests;Trusted_Connection=True;MultipleActiveResultSets=true";
 
     public IOptions<DatabaseOptions> Options { get; } =
-        Microsoft.Extensions.Options.Options.Create(new DatabaseOptions { CbsDb1 = ConnectionString });
+        Microsoft.Extensions.Options.Options.Create(new DatabaseOptions { CbsDb = ConnectionString });
 
     public async Task InitializeAsync()
     {

@@ -12,7 +12,7 @@ internal class Iso9001ContextFactory : IDesignTimeDbContextFactory<Iso9001Contex
             new DatabaseOptions
             {
                 //copy here the conection string you want to use when apply some mgration
-                Iso9001Db1 = "Server=(localdb)\\MSSQLLocalDB;Database=iso9001db;Trusted_Connection=True;MultipleActiveResultSets=true"
+                Iso9001Db = "Server=(localdb)\\MSSQLLocalDB;Database=iso9001db;Trusted_Connection=True;MultipleActiveResultSets=true"
             });
         return new Iso9001Context(DBOptions);
     }

@@ -7,11 +7,7 @@ internal sealed class Iso9001Context(IOptions<DatabaseOptions> dbOptions) : DbCo
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-#if DEBUG
-        optionsBuilder.UseSqlServer(dbOptions.Value.Iso9001Db1,
-#else
         optionsBuilder.UseSqlServer(dbOptions.Value.Iso9001Db,
-#endif
            sqlOptions =>
            {
                sqlOptions.EnableRetryOnFailure(
