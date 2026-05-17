@@ -36,4 +36,5 @@ public sealed class RectificativeInvoiceResult
     public string? Notes { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
     public bool HasTamper { get; init; }
+    public string? QrCodeBlobUrl { get; init; }
 }

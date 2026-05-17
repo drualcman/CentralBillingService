@@ -22,8 +22,6 @@ public class CreateInvoiceUseCaseTests
         blobStorage.GetBlobUrl(Arg.Any<string>())
             .Returns("https://storage.test/qr/test.png");
 
-        var qrJobQueue = Substitute.For<IQrCodeJobQueue>();
-
         _numberProviderFactory.GetFor(Arg.Any<BillingSourceConfig>()).Returns(_numberProvider);
         _numberProvider
             .ReserveNextNumberAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -34,7 +32,7 @@ public class CreateInvoiceUseCaseTests
 
         _useCase = new CreateInvoiceUseCase(
             domainService, registry, _repository, _eventDispatcher,
-            _numberProviderFactory, blobStorage, qrJobQueue);
+            _numberProviderFactory, blobStorage);
     }
 
     private static CreateInvoiceCommand BuildCommand(string currencyCode = "EUR") => new()

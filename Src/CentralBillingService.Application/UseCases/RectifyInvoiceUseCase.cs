@@ -24,6 +24,7 @@ public sealed class RectifyInvoiceUseCase
     private readonly IInvoiceEventDispatcher _eventDispatcher;
     private readonly IInvoiceHasher _hasher;
     private readonly IInvoiceNumberProviderFactory _numberProviderFactory;
+    private readonly IBlobStorageService _blobStorage;
 
     public RectifyInvoiceUseCase(
         RectifyInvoiceService domainService,
@@ -31,7 +32,8 @@ public sealed class RectifyInvoiceUseCase
         IInvoiceRepository repository,
         IInvoiceEventDispatcher eventDispatcher,
         IInvoiceHasher hasher,
-        IInvoiceNumberProviderFactory numberProviderFactory)
+        IInvoiceNumberProviderFactory numberProviderFactory,
+        IBlobStorageService blobStorage)
     {
         _domainService = domainService;
         _registry = registry;
@@ -39,6 +41,7 @@ public sealed class RectifyInvoiceUseCase
         _eventDispatcher = eventDispatcher;
         _hasher = hasher;
         _numberProviderFactory = numberProviderFactory;
+        _blobStorage = blobStorage;
     }
 
     public async Task<RectifyInvoiceResult> ExecuteAsync(
@@ -68,6 +71,11 @@ public sealed class RectifyInvoiceUseCase
 
             var domainResult = await _domainService.ExecuteAsync(
                 domainRequest, originalInvoice, reservedNumber, previousHash, cancellationToken);
+
+            // Compute the QR blob URL deterministically from the invoice number and attach it
+            // before persisting — the URL is stable regardless of when the image is generated.
+            var blobName = $"qr/{domainResult.Rectificative.BillingSource}/{domainResult.Rectificative.Number.Value}.png";
+            domainResult.Rectificative.AttachQrCode(_blobStorage.GetBlobUrl(blobName));
 
             await _repository.SaveRectificativeAsync(
                 domainResult.Rectificative, domainResult.UpdatedOriginal, cancellationToken);
@@ -99,6 +107,9 @@ public sealed class RectifyInvoiceUseCase
 
         var domainResult2 = await _domainService.ExecuteFromRectificativeAsync(
             domainRequest, originalRectificative, reservedNumber2, previousHash2, cancellationToken);
+
+        var blobName2 = $"qr/{domainResult2.Rectificative.BillingSource}/{domainResult2.Rectificative.Number.Value}.png";
+        domainResult2.Rectificative.AttachQrCode(_blobStorage.GetBlobUrl(blobName2));
 
         await _repository.SaveRectificativeFromRectificativeAsync(
             domainResult2.Rectificative, domainResult2.UpdatedOriginal, cancellationToken);
@@ -162,9 +173,8 @@ public sealed class RectifyInvoiceUseCase
     {
         try
         {
-            if (updatedOriginal is not null)
-                await _eventDispatcher.InvoiceRectifiedAsync(
-                    rectificative, updatedOriginal, cancellationToken);
+            await _eventDispatcher.InvoiceRectifiedAsync(
+                rectificative, updatedOriginal, cancellationToken);
         }
         catch (Exception ex)
         {

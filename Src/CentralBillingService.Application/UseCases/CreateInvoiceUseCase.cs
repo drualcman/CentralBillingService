@@ -26,7 +26,6 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
     private readonly IInvoiceEventDispatcher _eventDispatcher;
     private readonly IInvoiceNumberProviderFactory _numberProviderFactory;
     private readonly IBlobStorageService _blobStorage;
-    private readonly IQrCodeJobQueue _qrJobQueue;
 
     public CreateInvoiceUseCase(
         CreateInvoiceService domainService,
@@ -34,8 +33,7 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
         IInvoiceRepository repository,
         IInvoiceEventDispatcher eventDispatcher,
         IInvoiceNumberProviderFactory numberProviderFactory,
-        IBlobStorageService blobStorage,
-        IQrCodeJobQueue qrJobQueue)
+        IBlobStorageService blobStorage)
     {
         _domainService = domainService;
         _registry = registry;
@@ -43,7 +41,6 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
         _eventDispatcher = eventDispatcher;
         _numberProviderFactory = numberProviderFactory;
         _blobStorage = blobStorage;
-        _qrJobQueue = qrJobQueue;
     }
 
     public async Task<InvoiceResult> ExecuteAsync(
@@ -89,10 +86,6 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
 
         // 7. Persist — the invoice is stored with its QR URL already set
         await _repository.SaveAsync(invoice, cancellationToken);
-
-        // 8. Enqueue QR image generation (best-effort — never rolls back the invoice)
-        await EnqueueQrCodeSafelyAsync(invoice, cancellationToken);
-
         // 9. Dispatch events — failures here do NOT roll back the invoice
         await DispatchSafelyAsync(invoice, cancellationToken);
 
@@ -157,29 +150,6 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
         PaymentReference = cmd.PaymentReference,
         TransactionData = cmd.TransactionData
     };
-
-    private async Task EnqueueQrCodeSafelyAsync(Invoice invoice, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var qrCommand = new GenerateInvoiceQrCommand(
-                invoice.Number.Value,
-                invoice.BillingSource,
-                invoice.Hash,
-                invoice.IssueDate,
-                invoice.TotalEur.Amount,
-                invoice.Recipient.TaxId.Value);
-
-            await _qrJobQueue.EnqueueAsync(qrCommand, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            // Non-critical — the invoice is persisted with its pre-computed QR URL.
-            // The QR image will be absent until the job is re-queued or retried.
-            // TODO: inject ILogger<CreateInvoiceUseCase> and log ex here.
-            _ = ex;
-        }
-    }
 
     private async Task DispatchSafelyAsync(Invoice invoice, CancellationToken cancellationToken)
     {

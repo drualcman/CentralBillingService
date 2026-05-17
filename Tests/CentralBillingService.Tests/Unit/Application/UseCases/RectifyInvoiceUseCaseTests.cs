@@ -18,6 +18,10 @@ public class RectifyInvoiceUseCaseTests
         _numberProvider = Substitute.For<IInvoiceNumberProvider>();
         _numberProviderFactory = Substitute.For<IInvoiceNumberProviderFactory>();
 
+        var blobStorage = Substitute.For<IBlobStorageService>();
+        blobStorage.GetBlobUrl(Arg.Any<string>())
+            .Returns("https://storage.test/qr/test.png");
+
         _numberProviderFactory.GetFor(Arg.Any<BillingSourceConfig>()).Returns(_numberProvider);
         _numberProvider
             .ReserveNextNumberAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -26,7 +30,7 @@ public class RectifyInvoiceUseCaseTests
             .GetLastHashAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns((string?)null);
 
-        _useCase = new RectifyInvoiceUseCase(domainService, registry, _repository, _eventDispatcher, new FakeInvoiceHasher(), _numberProviderFactory);
+        _useCase = new RectifyInvoiceUseCase(domainService, registry, _repository, _eventDispatcher, new FakeInvoiceHasher(), _numberProviderFactory, blobStorage);
     }
 
     private static RectifyInvoiceCommand BuildCommand(

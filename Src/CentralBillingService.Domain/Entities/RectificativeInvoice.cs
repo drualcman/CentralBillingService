@@ -97,6 +97,12 @@ public sealed class RectificativeInvoice
     public string? TransactionData { get; init; }
     public bool HasTamper { get; private set; }
 
+    /// <summary>
+    /// URL of the QR code image stored in blob storage.
+    /// Null until the QR has been generated and uploaded after invoice creation.
+    /// </summary>
+    public string? QrCodeBlobUrl { get; private set; }
+
     // ── Constructor privado ────────────────────────────────────────────────
 
     private RectificativeInvoice(
@@ -332,7 +338,8 @@ public sealed class RectificativeInvoice
         string? notes,
         InvoiceNumber? rectifiedBy = null,
         string? transactionData = null,
-        string? paymentMethod = null)
+        string? paymentMethod = null,
+        string? qrCodeBlobUrl = null)
     {
         var invoice = new RectificativeInvoice(
             id, number, billingSource, originalNumber, originalIssueDate,
@@ -343,6 +350,8 @@ public sealed class RectificativeInvoice
 
         invoice.Status = status;
         invoice.RectifiedBy = rectifiedBy;
+        if (qrCodeBlobUrl is not null)
+            invoice.AttachQrCode(qrCodeBlobUrl);
         return invoice;
     }
 
@@ -421,6 +430,12 @@ public sealed class RectificativeInvoice
         HasTamper = !isValid;
         return isValid;
     }
+
+    /// <summary>
+    /// Records the blob URL where this invoice's QR code image is stored.
+    /// Called by the application layer after the QR is generated and uploaded.
+    /// </summary>
+    public void AttachQrCode(string blobUrl) => QrCodeBlobUrl = blobUrl;
 
     public override string ToString() =>
         $"{Number} [REC→{OriginalInvoiceNumber}] | {Recipient.DisplayName} | {TotalEur} | {Status}";

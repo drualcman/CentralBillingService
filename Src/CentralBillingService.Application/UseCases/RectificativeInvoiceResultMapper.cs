@@ -30,5 +30,6 @@ internal static class RectificativeInvoiceResultMapper
         Notes = invoice.Notes,
         CreatedAt = invoice.CreatedAt,
         HasTamper = invoice.HasTamper,
+        QrCodeBlobUrl = invoice.QrCodeBlobUrl,
     };
 }

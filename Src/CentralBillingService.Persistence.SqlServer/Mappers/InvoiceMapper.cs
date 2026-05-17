@@ -145,6 +145,7 @@ internal static class InvoiceMapper
         PaymentReference = invoice.PaymentReference,
         PaymentMethod = invoice.PaymentMethod,
         TransactionData = invoice.TransactionData,
+        QrCodeBlobUrl = invoice.QrCodeBlobUrl,
 
         Lines = invoice.Lines.Select(l => ToLineEntity(l, invoice.Id)).ToList(),
     };
@@ -262,7 +263,8 @@ internal static class InvoiceMapper
                 ? InvoiceNumber.CreateFromFormatted(e.RectifiedByNumber)
                 : null,
             transactionData: e.TransactionData,
-            paymentMethod: e.PaymentMethod);
+            paymentMethod: e.PaymentMethod,
+            qrCodeBlobUrl: e.QrCodeBlobUrl);
     }
 
     private static InvoiceLine ToLineDomain(InvoiceLineEntity l, string invoiceCurrencyCode)
