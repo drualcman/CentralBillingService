@@ -1,5 +1,3 @@
-using CentralBillingService.AzureFunction.API.Requests;
-
 namespace CentralBillingService.AzureFunction.API;
 
 public sealed class CreateInvoiceFunction

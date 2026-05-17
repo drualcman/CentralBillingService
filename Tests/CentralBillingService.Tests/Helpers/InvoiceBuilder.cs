@@ -36,7 +36,7 @@ public static class InvoiceBuilder
         {
             BillingSource = billingSource,
             Secret = secret,
-            Issuer = DefaultIssuer()
+            Issuer = IssuerConfig.From(DefaultIssuer())
         };
 
     public static BillingSourceRegistry DefaultRegistry(

@@ -12,7 +12,7 @@ public class BillingSourceRegistryTests
             {
                 BillingSource = billingSource,
                 Secret = secret,
-                Issuer = InvoiceBuilder.DefaultIssuer()
+                Issuer = IssuerConfig.From(InvoiceBuilder.DefaultIssuer())
             }]
         });
         return new BillingSourceRegistry(options);
@@ -105,13 +105,13 @@ public class BillingSourceRegistryTests
                 {
                     BillingSource = "web-fotos",
                     Secret = "secret1",
-                    Issuer = InvoiceBuilder.DefaultIssuer()
+                    Issuer = IssuerConfig.From(InvoiceBuilder.DefaultIssuer())
                 },
                 new BillingSourceConfig
                 {
                     BillingSource = "web-cripto",
                     Secret = "secret2",
-                    Issuer = InvoiceBuilder.DefaultIssuer()
+                    Issuer = IssuerConfig.From(InvoiceBuilder.DefaultIssuer())
                 }
             ]
         });

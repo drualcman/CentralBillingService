@@ -78,7 +78,7 @@ public class ProcessQueuedCreateInvoiceUseCaseTests
         {
             BillingSource = billingSource,
             Secret = secret,
-            Issuer = InvoiceBuilder.DefaultIssuer(),
+            Issuer = IssuerConfig.From(InvoiceBuilder.DefaultIssuer()),
             ResultQueue = resultQueue,
             Callback = callback
         };

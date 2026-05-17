@@ -2,6 +2,7 @@ global using CentralBillingService.Application.DTOs;
 global using CentralBillingService.Application.Exceptions;
 global using CentralBillingService.Application.UseCases;
 global using CentralBillingService.AzureFunction.API.Helpers;
+global using CentralBillingService.AzureFunction.API.Requests;
 global using CentralBillingService.Domain.Exceptions;
 global using CentralBillingService.Domain.Options;
 global using CentralBillingService.Domain.ValueObjects;

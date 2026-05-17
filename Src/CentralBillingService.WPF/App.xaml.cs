@@ -76,26 +76,26 @@ public partial class App : System.Windows.Application
     private static BillingSourceConfig BuildBillingSourceConfig(IConfigurationSection s)
     {
         var i = s.GetSection("Issuer");
-        var taxId = TaxId.Create(i["TaxIdValue"] ?? "", i["TaxIdCountryCode"] ?? "ES");
-        var address = PostalAddress.Create(
-            line1: i["AddressLine1"] ?? "",
-            city: i["City"] ?? "",
-            postalCode: i["PostalCode"] ?? "",
-            countryCode: i["AddressCountryCode"] ?? "ES",
-            province: i["Province"]);
-        var issuer = BillingParty.Create(
-            legalName: i["LegalName"] ?? "",
-            taxId: taxId,
-            address: address,
-            email: i["Email"] ?? "",
-            tradeName: i["TradeName"],
-            phone: i["Phone"],
-            website: i["Website"]);
         return new BillingSourceConfig
         {
             BillingSource = s["BillingSource"] ?? "",
             Secret = s["Secret"] ?? "",
-            Issuer = issuer,
+            Issuer = new IssuerConfig
+            {
+                LegalName = i["LegalName"] ?? "",
+                TradeName = i["TradeName"],
+                TaxIdValue = i["TaxIdValue"] ?? "",
+                TaxIdCountryCode = i["TaxIdCountryCode"] ?? "ES",
+                Email = i["Email"] ?? "",
+                Phone = i["Phone"],
+                Website = i["Website"],
+                AddressLine1 = i["AddressLine1"] ?? "",
+                AddressLine2 = i["AddressLine2"],
+                City = i["City"] ?? "",
+                Province = i["Province"],
+                PostalCode = i["PostalCode"] ?? "",
+                AddressCountryCode = i["AddressCountryCode"] ?? "ES",
+            },
         };
     }
 }

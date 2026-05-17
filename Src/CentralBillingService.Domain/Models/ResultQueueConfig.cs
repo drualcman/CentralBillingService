@@ -2,6 +2,6 @@ namespace CentralBillingService.Domain.Models;
 
 public sealed class ResultQueueConfig
 {
-    public required string ConnectionString { get; init; }
-    public required string QueueName { get; init; }
+    public string ConnectionString { get; set; } = "";
+    public string QueueName { get; set; } = "";
 }

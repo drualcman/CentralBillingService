@@ -2,11 +2,11 @@ namespace CentralBillingService.Domain.Models;
 
 public sealed class CallbackConfig
 {
-    public required string Url { get; init; }
+    public string Url { get; set; } = "";
 
     /// <summary>HTTP header name for auth (e.g. "Authorization", "X-Api-Key").</summary>
-    public string? AuthHeader { get; init; }
+    public string? AuthHeader { get; set; }
 
     /// <summary>Value for the auth header.</summary>
-    public string? AuthToken { get; init; }
+    public string? AuthToken { get; set; }
 }

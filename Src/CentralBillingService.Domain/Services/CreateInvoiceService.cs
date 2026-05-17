@@ -73,7 +73,7 @@ public sealed class CreateInvoiceService
         var invoice = Invoice.Create(
             number: invoiceNumber,
             billingSource: request.BillingSource,
-            issuer: sourceConfig.Issuer,
+            issuer: sourceConfig.Issuer.ToBillingParty(),
             recipient: recipient,
             issueDate: issueDate,
             lines: lines,

@@ -1,5 +1,3 @@
-using CentralBillingService.Application.DTOs;
-
 namespace CentralBillingService.AzureFunction.API.Requests;
 
 internal sealed class CreateInvoiceRequest
