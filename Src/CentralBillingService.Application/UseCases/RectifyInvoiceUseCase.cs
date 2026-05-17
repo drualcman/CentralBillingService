@@ -74,7 +74,7 @@ public sealed class RectifyInvoiceUseCase
 
             // Compute the QR blob URL deterministically from the invoice number and attach it
             // before persisting — the URL is stable regardless of when the image is generated.
-            var blobName = $"qr/{domainResult.Rectificative.BillingSource}/{domainResult.Rectificative.Number.Value}.png";
+            var blobName = $"{domainResult.Rectificative.BillingSource}/{domainResult.Rectificative.Number.Value}.png";
             domainResult.Rectificative.AttachQrCode(_blobStorage.GetBlobUrl(blobName));
 
             await _repository.SaveRectificativeAsync(
@@ -108,7 +108,7 @@ public sealed class RectifyInvoiceUseCase
         var domainResult2 = await _domainService.ExecuteFromRectificativeAsync(
             domainRequest, originalRectificative, reservedNumber2, previousHash2, cancellationToken);
 
-        var blobName2 = $"qr/{domainResult2.Rectificative.BillingSource}/{domainResult2.Rectificative.Number.Value}.png";
+        var blobName2 = $"{domainResult2.Rectificative.BillingSource}/{domainResult2.Rectificative.Number.Value}.png";
         domainResult2.Rectificative.AttachQrCode(_blobStorage.GetBlobUrl(blobName2));
 
         await _repository.SaveRectificativeFromRectificativeAsync(

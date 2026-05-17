@@ -1,5 +1,3 @@
-using Azure.Storage.Queues;
-
 namespace CentralBillingService.Infrastructure.Queue;
 
 /// <summary>
@@ -19,7 +17,8 @@ public sealed class AzureQueueQrCodeJobQueue : IQrCodeJobQueue
 
     public async Task EnqueueAsync(GenerateInvoiceQrCommand command, CancellationToken cancellationToken = default)
     {
-        var client = new QueueClient(_connectionString, _queueName);
+        var client = new QueueClient(_connectionString, _queueName,
+            new QueueClientOptions { MessageEncoding = QueueMessageEncoding.Base64 });
         await client.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
 
         var json = JsonSerializer.Serialize(command);

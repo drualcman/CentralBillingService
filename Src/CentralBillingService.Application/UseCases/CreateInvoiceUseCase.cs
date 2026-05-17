@@ -81,7 +81,7 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
 
         // Compute the QR blob URL deterministically from the invoice number and attach it
         // before persisting — the URL is stable regardless of when the image is generated.
-        var blobName = $"qr/{invoice.BillingSource}/{invoice.Number.Value}.png";
+        var blobName = $"{invoice.BillingSource}/{invoice.Number.Value}.png";
         invoice.AttachQrCode(_blobStorage.GetBlobUrl(blobName));
 
         // 7. Persist — the invoice is stored with its QR URL already set

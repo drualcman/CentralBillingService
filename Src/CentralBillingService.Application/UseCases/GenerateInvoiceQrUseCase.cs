@@ -34,7 +34,7 @@ public sealed class GenerateInvoiceQrUseCase
 
         var pngBytes = await _qrGenerator.GenerateAsync(verificationUrl, cancellationToken);
 
-        var blobName = $"qr/{command.BillingSource}/{command.InvoiceNumber}.png";
+        var blobName = $"{command.BillingSource}/{command.InvoiceNumber}.png";
         await _blobStorage.UploadAsync(blobName, pngBytes, "image/png", cancellationToken);
     }
 }
