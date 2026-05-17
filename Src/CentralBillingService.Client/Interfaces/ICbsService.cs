@@ -2,7 +2,7 @@ namespace CentralBillingService.Client.Interfaces;
 
 public interface ICbsService
 {
-    Task<InvoiceCreateReult> CreateInvoiceAsync(CreateInvoiceCommand invoiceData);
+    Task<InvoiceCreateResult> CreateInvoiceAsync(CreateInvoiceCommand invoiceData);
     Task<RectifyInvoiceResult> RectifyInvoiceAsync(string invoiceNumber, RectifyInvoiceCommand invoiceData);
     Task<InvoiceResult> GetInvoiceAsync(string invoiceNumber);
     Task<InvoiceListResult> GetInvoicesAsync(GetInvoicesQuery? filter = null);

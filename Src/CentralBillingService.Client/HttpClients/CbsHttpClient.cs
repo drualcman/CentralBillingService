@@ -1,15 +1,14 @@
 namespace CentralBillingService.Client.HttpClients;
 
-internal class CbsHttpClient(
-    HttpClient client,
-    IOptions<CbsOptions> options) : ICbsService
+internal class CbsHttpClient(HttpClient client) : ICbsService
 {
-    public async Task<InvoiceCreateReult> CreateInvoiceAsync(CreateInvoiceCommand invoiceData)
+    public async Task<InvoiceCreateResult> CreateInvoiceAsync(CreateInvoiceCommand invoiceData)
     {
         var response = await client.PostAsJsonAsync("invoices", invoiceData);
         response.EnsureSuccessStatusCode();
-        InvoiceResult result = await response.Content.ReadFromJsonAsync<InvoiceResult>();
-        return new InvoiceCreateReult()
+        var result = await response.Content.ReadFromJsonAsync<InvoiceResult>()
+            ?? throw new InvalidOperationException("Response body was empty or could not be deserialized.");
+        return new InvoiceCreateResult
         {
             InvoiceNumber = result.InvoiceNumber,
             Hash = result.Hash,
@@ -21,14 +20,16 @@ internal class CbsHttpClient(
     {
         var response = await client.PostAsJsonAsync($"invoices/{invoiceNumber}/rectify", invoiceData);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<RectifyInvoiceResult>();
+        return await response.Content.ReadFromJsonAsync<RectifyInvoiceResult>()
+            ?? throw new InvalidOperationException("Response body was empty or could not be deserialized.");
     }
 
     public async Task<InvoiceResult> GetInvoiceAsync(string invoiceNumber)
     {
         var response = await client.GetAsync($"invoices/{invoiceNumber}");
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<InvoiceResult>();
+        return await response.Content.ReadFromJsonAsync<InvoiceResult>()
+            ?? throw new InvalidOperationException("Response body was empty or could not be deserialized.");
     }
 
     public async Task<InvoiceListResult> GetInvoicesAsync(GetInvoicesQuery? filter = null)
@@ -36,14 +37,16 @@ internal class CbsHttpClient(
         var url = BuildInvoicesUrl(filter);
         var response = await client.GetAsync(url);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<InvoiceListResult>();
+        return await response.Content.ReadFromJsonAsync<InvoiceListResult>()
+            ?? throw new InvalidOperationException("Response body was empty or could not be deserialized.");
     }
 
     public async Task<VerifyInvoiceResult> VerifyInvoiceAsync(string invoiceNumber, string documentHash)
     {
         var response = await client.GetAsync($"invoices/{invoiceNumber}/verify?hash={Uri.EscapeDataString(documentHash)}");
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<VerifyInvoiceResult>();
+        return await response.Content.ReadFromJsonAsync<VerifyInvoiceResult>()
+            ?? throw new InvalidOperationException("Response body was empty or could not be deserialized.");
     }
 
     private static string BuildInvoicesUrl(GetInvoicesQuery? filter)

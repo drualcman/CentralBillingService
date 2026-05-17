@@ -2,9 +2,9 @@
 
 public class CbsOptions
 {
-    public static string SectionKey = nameof(CbsOptions);
-    public string Uri { get; set; }
-    public string BillingSource { get; set; }
-    public string AppKey { get; set; }
-    public string AppSecret { get; set; }
+    public const string SectionKey = nameof(CbsOptions);
+    public string Uri { get; set; } = string.Empty;
+    public string BillingSource { get; set; } = string.Empty;
+    public string AppKey { get; set; } = string.Empty;
+    public string AppSecret { get; set; } = string.Empty;
 }
