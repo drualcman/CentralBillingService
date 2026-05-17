@@ -39,6 +39,22 @@ public sealed class BillingSourceRegistry
             $"Unrecognized billing source: '{billingSource}'. ");
     }
 
+    /// <summary>
+    /// Obtiene la configuración de emisor y serie para un origen dado.
+    /// </summary>
+    public BillingSourceConfig GetConfig(string billingSource)
+    {
+        var key = billingSource?.ToLowerInvariant()
+            ?? throw new ArgumentNullException(nameof(billingSource));
+
+        if (_configs.TryGetValue(key, out var config))
+        {
+            return config;
+        }
+        throw new DomainException(
+            $"Unrecognized billing source: '{billingSource}'. ");
+    }
+
     public bool IsRegistered(string billingSource) =>
         !string.IsNullOrWhiteSpace(billingSource) &&
         _configs.ContainsKey(billingSource.ToLowerInvariant());

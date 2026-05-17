@@ -19,6 +19,7 @@ public interface IInvoiceVerificationUrlProvider
     /// can confirm the specific document version matches what was issued.
     /// </summary>
     string GetVerificationUrl(
+        string billingSource,
         string invoiceNumber,
         string hash,
         DateOnly issueDate,

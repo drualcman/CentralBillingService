@@ -15,4 +15,9 @@ public sealed class VerifyInvoiceResult
     public required bool DocumentHashMatches { get; init; }
     public required bool IntegrityVerified { get; init; }
     public string? Message { get; init; }
+
+    public required string IssuerTaxId { get; init; }
+    public required string IssuerName { get; init; }
+    public required DateOnly IssueDate { get; init; }
+    public required decimal TotalEur { get; init; }
 }

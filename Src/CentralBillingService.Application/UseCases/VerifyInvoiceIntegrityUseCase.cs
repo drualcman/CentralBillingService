@@ -41,19 +41,23 @@ public sealed class VerifyInvoiceIntegrityUseCase
         if (string.IsNullOrWhiteSpace(query.ProvidedHash))
             throw new ArgumentException("ProvidedHash is required.", nameof(query.ProvidedHash));
 
-        _registry.GetConfig(query.BillingSource, query.Secret);
+        _registry.GetConfig(query.BillingSource);
 
         var invoice = await _repository.FindByNumberAsync(
             query.BillingSource, query.InvoiceNumber, cancellationToken);
 
         if (invoice is not null)
-            return BuildResult(query.InvoiceNumber, invoice.Hash, invoice.VerifyIntegrity(_hasher), query.ProvidedHash);
+            return BuildResult(
+                query.InvoiceNumber, invoice.Hash, invoice.VerifyIntegrity(_hasher), query.ProvidedHash,
+                invoice.Issuer.TaxId.Value, invoice.Issuer.DisplayName, invoice.IssueDate, invoice.TotalEur.Amount);
 
         var rectificative = await _repository.FindRectificativeByNumberAsync(
             query.BillingSource, query.InvoiceNumber, cancellationToken);
 
         if (rectificative is not null)
-            return BuildResult(query.InvoiceNumber, rectificative.Hash, rectificative.VerifyIntegrity(_hasher), query.ProvidedHash);
+            return BuildResult(
+                query.InvoiceNumber, rectificative.Hash, rectificative.VerifyIntegrity(_hasher), query.ProvidedHash,
+                rectificative.Issuer.TaxId.Value, rectificative.Issuer.DisplayName, rectificative.IssueDate, rectificative.TotalEur.Amount);
 
         throw new InvoiceNotFoundException(query.InvoiceNumber);
     }
@@ -62,16 +66,20 @@ public sealed class VerifyInvoiceIntegrityUseCase
         string invoiceNumber,
         string storedHash,
         bool integrityVerified,
-        string providedHash)
+        string providedHash,
+        string issuerTaxId,
+        string issuerName,
+        DateOnly issueDate,
+        decimal totalEur)
     {
         bool documentHashMatches = string.Equals(providedHash, storedHash, StringComparison.OrdinalIgnoreCase);
         bool isValid = documentHashMatches && integrityVerified;
 
         string message = (documentHashMatches, integrityVerified) switch
         {
-            (true,  true)  => "Invoice is authentic: document hash matches and integrity verified.",
-            (true,  false) => $"Integrity check failed for '{invoiceNumber}': stored hash does not match recomputed hash. Possible tampering.",
-            (false, true)  => "Document hash mismatch: the provided hash does not match the stored one. The document may not be the original issued invoice.",
+            (true, true) => "Invoice is authentic: document hash matches and integrity verified.",
+            (true, false) => $"Integrity check failed for '{invoiceNumber}': stored hash does not match recomputed hash. Possible tampering.",
+            (false, true) => "Document hash mismatch: the provided hash does not match the stored one. The document may not be the original issued invoice.",
             (false, false) => $"Both checks failed for '{invoiceNumber}': document hash mismatch and integrity check failed.",
         };
 
@@ -83,6 +91,10 @@ public sealed class VerifyInvoiceIntegrityUseCase
             DocumentHashMatches = documentHashMatches,
             IntegrityVerified = integrityVerified,
             Message = message,
+            IssuerTaxId = issuerTaxId,
+            IssuerName = issuerName,
+            IssueDate = issueDate,
+            TotalEur = totalEur,
         };
     }
 }

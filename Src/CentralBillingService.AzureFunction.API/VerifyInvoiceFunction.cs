@@ -32,6 +32,7 @@ public sealed class VerifyInvoiceFunction
     {
         var qs = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
         var providedHash = qs["hash"];
+        var billingSource = qs["billingsource"];
 
         if (string.IsNullOrWhiteSpace(providedHash))
             return await req.CreateProblemResponseAsync(
@@ -41,8 +42,7 @@ public sealed class VerifyInvoiceFunction
         {
             var query = new VerifyInvoiceQuery
             {
-                BillingSource = RequestHelper.GetBillingSource(req),
-                Secret = RequestHelper.GetSecret(req),
+                BillingSource = billingSource ?? string.Empty,
                 InvoiceNumber = invoiceNumber,
                 ProvidedHash = providedHash,
             };

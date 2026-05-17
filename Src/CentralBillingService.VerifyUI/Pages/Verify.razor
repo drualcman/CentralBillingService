@@ -4,10 +4,6 @@
 <div class="row justify-content-center">
     <div class="col-12 col-md-8 col-lg-6">
 
-        <div class="text-center mb-4">
-            <h4 class="fw-bold">Invoice Verification</h4>
-        </div>
-
         @if (_invoiceNumber is null || _hash is null)
         {
             <div class="alert alert-warning">
@@ -34,47 +30,83 @@
         }
         else if (_result is not null)
         {
-            <div class="card shadow-sm border-0">
+            <div class="card shadow border-0 overflow-hidden">
+
+                <div class="p-4 text-center text-white @(_result.IsValid ? "bg-success" : "bg-danger")">
+                    <div style="font-size: 3rem; line-height: 1;">
+                        @(_result.IsValid ? "✓" : "✗")
+                    </div>
+                    <h5 class="fw-bold mt-2 mb-0">
+                        @(_result.IsValid ? "Invoice verified" : "Verification failed")
+                    </h5>
+                    @if (_result.Message is not null)
+                    {
+                        <p class="mb-0 mt-1 small" style="opacity: .8;">@_result.Message</p>
+                    }
+                </div>
+
                 <div class="card-body p-4">
 
-                    <div class="text-center mb-4">
-                        @if (_result.IsValid)
+                    <div class="row g-3 mb-4">
+
+                        @if (_result.IssuerName is not null)
                         {
-                            <div class="display-6 text-success mb-2">&#10003;</div>
-                            <h5 class="text-success fw-bold">Invoice verified</h5>
+                            <div class="col-12">
+                                <div class="p-3 rounded-3 bg-light">
+                                    <div class="small text-muted mb-1">Issuer</div>
+                                    <div class="fw-semibold">@_result.IssuerName</div>
+                                    @if (_result.IssuerTaxId is not null)
+                                    {
+                                        <div class="small text-muted font-monospace mt-1">@_result.IssuerTaxId</div>
+                                    }
+                                </div>
+                            </div>
                         }
-                        else
+
+                        <div class="col-sm-6">
+                            <div class="p-3 rounded-3 bg-light h-100">
+                                <div class="small text-muted mb-1">Invoice number</div>
+                                <div class="fw-semibold font-monospace">@_result.InvoiceNumber</div>
+                            </div>
+                        </div>
+
+                        @if (_result.IssueDate is not null)
                         {
-                            <div class="display-6 text-danger mb-2">&#10007;</div>
-                            <h5 class="text-danger fw-bold">Verification failed</h5>
+                            <div class="col-sm-6">
+                                <div class="p-3 rounded-3 bg-light h-100">
+                                    <div class="small text-muted mb-1">Issue date</div>
+                                    <div class="fw-semibold">@_result.IssueDate.Value.ToString("dd/MM/yyyy")</div>
+                                </div>
+                            </div>
                         }
-                        @if (_result.Message is not null)
+
+                        @if (_result.TotalEur is not null)
                         {
-                            <p class="text-muted small">@_result.Message</p>
+                            <div class="col-12">
+                                <div class="p-3 rounded-3 bg-light d-flex align-items-center justify-content-between">
+                                    <div class="small text-muted">Total amount</div>
+                                    <div class="fw-bold fs-5">@_result.TotalEur.Value.ToString("N2") €</div>
+                                </div>
+                            </div>
                         }
+
                     </div>
 
-                    <hr />
-
-                    <dl class="row mb-0">
-                        <dt class="col-sm-6">Invoice number</dt>
-                        <dd class="col-sm-6 font-monospace">@_result.InvoiceNumber</dd>
-
-                        <dt class="col-sm-6">Document hash matches</dt>
-                        <dd class="col-sm-6">
-                            <StatusBadge Value="@_result.DocumentHashMatches" />
-                        </dd>
-
-                        <dt class="col-sm-6">Integrity verified</dt>
-                        <dd class="col-sm-6">
-                            <StatusBadge Value="@_result.IntegrityVerified" />
-                        </dd>
-
-                        <dt class="col-sm-6">Hash</dt>
-                        <dd class="col-sm-6">
-                            <span class="font-monospace small text-break">@_result.Hash</span>
-                        </dd>
-                    </dl>
+                    <div class="border-top pt-3">
+                        <div class="small fw-semibold text-muted text-uppercase mb-2" style="letter-spacing: .06em;">
+                            Security checks
+                        </div>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <StatusBadge Value="@_result.DocumentHashMatches" />
+                                <span class="small">Document authenticity</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <StatusBadge Value="@_result.IntegrityVerified" />
+                                <span class="small">Record integrity</span>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
             </div>
@@ -89,6 +121,9 @@
 
     [SupplyParameterFromQuery(Name = "hash")]
     private string? _hash { get; set; }
+
+    [SupplyParameterFromQuery(Name = "billingsource")]
+    private string? BillingSource { get; set; }
 
     private VerifyInvoiceResponse? _result;
     private bool _loading;
@@ -107,7 +142,7 @@
 
         try
         {
-            var url = $"invoices/{Uri.EscapeDataString(_invoiceNumber)}/verify?hash={Uri.EscapeDataString(_hash)}";
+            var url = $"invoices/{Uri.EscapeDataString(_invoiceNumber)}/verify?hash={Uri.EscapeDataString(_hash)}&billingsource={Uri.EscapeDataString(BillingSource)}";
             _result = await Http.GetFromJsonAsync<VerifyInvoiceResponse>(url);
         }
         catch (HttpRequestException ex)

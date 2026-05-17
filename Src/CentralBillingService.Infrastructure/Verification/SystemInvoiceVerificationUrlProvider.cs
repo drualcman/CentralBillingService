@@ -1,11 +1,12 @@
 namespace CentralBillingService.Infrastructure.Verification;
 
 /// <summary>
-/// Points QR codes at the Blazor verification UI with the invoice number and hash
-/// as query parameters. The UI then calls the CBS API to display the verification result.
+/// Points QR codes at the Blazor verification UI.
 ///
-/// URL format: {verifyUiBaseUrl}?invoiceNumber={number}&amp;hash={hash}
+/// URL format: {verifyUiBaseUrl}?invoiceNumber={n}&amp;hash={h}&amp;billingsource={bs}&amp;nif={taxId}&amp;fecha={date}&amp;importe={amount}
 ///
+/// Same parameters as SpanishAeatVerificationUrlProvider (except invoiceNumber vs numserie
+/// and the extra hash+billingsource needed by the CBS verify endpoint).
 /// Swap for SpanishAeatVerificationUrlProvider when VeriFactu submission is live.
 /// </summary>
 public sealed class SystemInvoiceVerificationUrlProvider : IInvoiceVerificationUrlProvider
@@ -18,10 +19,11 @@ public sealed class SystemInvoiceVerificationUrlProvider : IInvoiceVerificationU
     }
 
     public string GetVerificationUrl(
+        string billingSource,
         string invoiceNumber,
         string hash,
         DateOnly issueDate,
         decimal totalEurAmount,
         string issuerTaxId) =>
-        $"{_verifyUiBaseUrl}?invoiceNumber={Uri.EscapeDataString(invoiceNumber)}&hash={Uri.EscapeDataString(hash)}";
+        $"{_verifyUiBaseUrl}?invoiceNumber={Uri.EscapeDataString(invoiceNumber)}&hash={Uri.EscapeDataString(hash)}&billingsource={Uri.EscapeDataString(billingSource)}&issuertaxid={Uri.EscapeDataString(issuerTaxId)}&issuedate={issueDate:dd-MM-yyyy}&amount={totalEurAmount:F2}";
 }

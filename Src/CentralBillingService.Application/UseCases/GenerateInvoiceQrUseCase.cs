@@ -25,6 +25,7 @@ public sealed class GenerateInvoiceQrUseCase
     public async Task ExecuteAsync(GenerateInvoiceQrCommand command, CancellationToken cancellationToken = default)
     {
         var verificationUrl = _urlProvider.GetVerificationUrl(
+            command.BillingSource,
             command.InvoiceNumber,
             command.Hash,
             command.IssueDate,

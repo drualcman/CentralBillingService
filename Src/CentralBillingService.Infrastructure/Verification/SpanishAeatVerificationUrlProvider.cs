@@ -13,6 +13,7 @@ namespace CentralBillingService.Infrastructure.Verification;
 public sealed class SpanishAeatVerificationUrlProvider : IInvoiceVerificationUrlProvider
 {
     public string GetVerificationUrl(
+        string billingSource,
         string invoiceNumber,
         string hash,
         DateOnly issueDate,
