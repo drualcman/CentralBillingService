@@ -1,6 +1,3 @@
-using CentralBillingService.Domain.Helpers;
-using CentralBillingService.Domain.Options;
-
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>

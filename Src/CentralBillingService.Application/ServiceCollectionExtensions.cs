@@ -17,7 +17,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddBillingApplication(
         this IServiceCollection services)
     {
-        services.AddSingleton<BillingSourceRegistry>();
         services.AddScoped<CreateInvoiceUseCase>();
         services.AddScoped<ICreateInvoiceUseCase>(sp => sp.GetRequiredService<CreateInvoiceUseCase>());
         services.AddScoped<GetInvoiceUseCase>();
