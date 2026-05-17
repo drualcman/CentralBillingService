@@ -107,7 +107,7 @@
 
         try
         {
-            var url = $"api/invoices/{Uri.EscapeDataString(_invoiceNumber)}/verify?hash={Uri.EscapeDataString(_hash)}";
+            var url = $"invoices/{Uri.EscapeDataString(_invoiceNumber)}/verify?hash={Uri.EscapeDataString(_hash)}";
             _result = await Http.GetFromJsonAsync<VerifyInvoiceResponse>(url);
         }
         catch (HttpRequestException ex)
