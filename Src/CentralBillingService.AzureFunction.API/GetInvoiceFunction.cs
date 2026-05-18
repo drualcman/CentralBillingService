@@ -51,6 +51,12 @@ public sealed class GetInvoiceFunction
             return await req.CreateProblemResponseAsync(
                 HttpStatusCode.InternalServerError, "Data integrity violation.", ex.Message);
         }
+        catch (DomainException ex)
+        {
+            _logger.LogWarning(ex, "Domain rule violation creating invoice.");
+            return await req.CreateProblemResponseAsync(
+                HttpStatusCode.UnprocessableEntity, "Business rule violation.", ex.Message);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error retrieving invoice {InvoiceNumber}.", invoiceNumber);

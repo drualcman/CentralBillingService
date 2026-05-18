@@ -4,7 +4,7 @@ namespace CentralBillingService.Domain.Exceptions;
 /// Thrown when an invoice's stored hash does not match its recomputed hash,
 /// indicating possible external tampering with the persisted data.
 /// </summary>
-public sealed class InvoiceTamperingDetectedException : Exception
+public sealed class InvoiceTamperingDetectedException : DomainException
 {
     public string InvoiceNumber { get; }
     public string StoredHash { get; }

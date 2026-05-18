@@ -5,7 +5,7 @@
 /// that is not in the required status.
 /// The caller maps this to a 409 Conflict response.
 /// </summary>
-public sealed class InvalidInvoiceStatusException : Exception
+public sealed class InvalidInvoiceStatusException : DomainException
 {
     public InvalidInvoiceStatusException(string invoiceNumber, string currentStatus, string requiredStatus)
         : base($"Invoice '{invoiceNumber}' is in status '{currentStatus}', expected '{requiredStatus}'.")

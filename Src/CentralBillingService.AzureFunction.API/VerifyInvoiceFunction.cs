@@ -25,7 +25,7 @@ public sealed class VerifyInvoiceFunction
     /// </summary>
     [Function(nameof(VerifyInvoiceFunction))]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "invoices/{invoiceNumber}/verify")]
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "invoices/{invoiceNumber}/verify")]
         HttpRequestData req,
         string invoiceNumber,
         CancellationToken cancellationToken)
@@ -78,6 +78,12 @@ public sealed class VerifyInvoiceFunction
             _logger.LogWarning(ex, "Invoice {InvoiceNumber} not found for verification.", invoiceNumber);
             return await req.CreateProblemResponseAsync(
                 HttpStatusCode.NotFound, "Invoice not found.", ex.Message);
+        }
+        catch (DomainException ex)
+        {
+            _logger.LogWarning(ex, "Domain rule violation creating invoice.");
+            return await req.CreateProblemResponseAsync(
+                HttpStatusCode.UnprocessableEntity, "Business rule violation.", ex.Message);
         }
         catch (Exception ex)
         {

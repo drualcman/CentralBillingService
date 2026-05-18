@@ -9,7 +9,7 @@ namespace CentralBillingService.Domain.Exceptions;
 /// el dominio la conoce porque afecta directamente a si se puede
 /// crear una factura o no.
 /// </summary>
-public sealed class ExchangeRateUnavailableException : Exception
+public sealed class ExchangeRateUnavailableException : DomainException
 {
     public Currency From { get; }
     public Currency To { get; }
