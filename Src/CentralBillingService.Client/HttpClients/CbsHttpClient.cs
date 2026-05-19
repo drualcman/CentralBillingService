@@ -58,6 +58,15 @@ internal class CbsHttpClient(HttpClient client, IOptions<CbsOptions> options) : 
             ?? throw new InvalidOperationException("Response body was empty or could not be deserialized.");
     }
 
+    public async Task<string> GetInvoicePdfAsync(string invoiceNumber)
+    {
+        var url = $"invoices/{invoiceNumber}/pdf?billingsource={Uri.EscapeDataString(options.Value.BillingSource)}";
+        var response = await client.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<string>()
+            ?? throw new InvalidOperationException("Response body was empty or could not be deserialized.");
+    }
+
     private static string BuildInvoicesUrl(GetInvoicesQuery? filter)
     {
         if (filter is null)

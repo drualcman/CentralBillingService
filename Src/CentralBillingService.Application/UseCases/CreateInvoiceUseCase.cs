@@ -1,3 +1,5 @@
+using CentralBillingService.Domain.Helpers;
+
 namespace CentralBillingService.Application.UseCases;
 
 /// <summary>
@@ -80,9 +82,9 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
             domainRequest, reservedNumber, previousHash, cancellationToken);
 
         // Compute the QR blob URL deterministically from the invoice number and attach it
-        // before persisting — the URL is stable regardless of when the image is generated.
-        var blobName = $"{invoice.BillingSource}/{invoice.Number.Value}.png";
-        invoice.AttachQrCode(_blobStorage.GetBlobUrl(blobName));
+        // before persisting — the URL is stable regardless of when the image is generated.        
+        invoice.AttachQrCode(_blobStorage.GetQrUrl(
+            InvoiceHelper.GetQrFileName(invoice.BillingSource, invoice.Number.Value)));
 
         // 7. Persist — the invoice is stored with its QR URL already set
         await _repository.SaveAsync(invoice, cancellationToken);

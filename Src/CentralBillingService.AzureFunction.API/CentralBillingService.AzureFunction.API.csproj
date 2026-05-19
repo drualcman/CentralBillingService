@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CentralBillingService.Persistence.SqlServer\CentralBillingService.Persistence.SqlServer.csproj" />
-    <ProjectReference Include="..\CentralBillingService.Reports\CentralBillingService.Reports.csproj" />
   </ItemGroup>
 
 </Project>

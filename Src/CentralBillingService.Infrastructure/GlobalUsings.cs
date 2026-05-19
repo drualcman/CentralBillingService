@@ -1,5 +1,8 @@
+global using Azure.Storage.Blobs;
+global using Azure.Storage.Blobs.Models;
 global using Azure.Storage.Queues;
 global using CentralBillingService.Application.DTOs;
+global using CentralBillingService.Application.Events.Arguments;
 global using CentralBillingService.Application.Interfaces;
 global using CentralBillingService.Application.Models;
 global using CentralBillingService.Domain.Entities;

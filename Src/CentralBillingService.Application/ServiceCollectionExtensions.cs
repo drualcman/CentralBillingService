@@ -17,6 +17,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddBillingApplication(
         this IServiceCollection services)
     {
+        services.AddApplicationEvents();
         services.AddScoped<CreateInvoiceUseCase>();
         services.AddScoped<ICreateInvoiceUseCase>(sp => sp.GetRequiredService<CreateInvoiceUseCase>());
         services.AddScoped<GetInvoiceUseCase>();
@@ -26,6 +27,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<CheckInvoiceIntegrityUseCase>();
         services.AddScoped<ProcessQueuedCreateInvoiceUseCase>();
         services.AddScoped<GenerateInvoiceQrUseCase>();
+        services.AddScoped<GenerateInvoiceReportUseCase>();
+        services.AddScoped<GenerateInvoiceUseCase>();
 
         return services;
     }

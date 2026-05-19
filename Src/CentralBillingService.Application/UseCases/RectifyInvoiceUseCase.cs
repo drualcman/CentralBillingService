@@ -74,14 +74,15 @@ public sealed class RectifyInvoiceUseCase
 
             // Compute the QR blob URL deterministically from the invoice number and attach it
             // before persisting — the URL is stable regardless of when the image is generated.
-            var blobName = $"{domainResult.Rectificative.BillingSource}/{domainResult.Rectificative.Number.Value}.png";
-            domainResult.Rectificative.AttachQrCode(_blobStorage.GetBlobUrl(blobName));
+            domainResult.Rectificative.AttachQrCode(
+                _blobStorage.GetQrUrl(
+                    InvoiceHelper.GetQrFileName(domainResult.Rectificative.BillingSource, domainResult.Rectificative.Number.Value)));
 
             await _repository.SaveRectificativeAsync(
                 domainResult.Rectificative, domainResult.UpdatedOriginal, cancellationToken);
 
             await DispatchSafelyAsync(
-                domainResult.Rectificative, domainResult.UpdatedOriginal, cancellationToken);
+                domainResult.Rectificative, cancellationToken);
 
             return new RectifyInvoiceResult
             {
@@ -108,14 +109,14 @@ public sealed class RectifyInvoiceUseCase
         var domainResult2 = await _domainService.ExecuteFromRectificativeAsync(
             domainRequest, originalRectificative, reservedNumber2, previousHash2, cancellationToken);
 
-        var blobName2 = $"{domainResult2.Rectificative.BillingSource}/{domainResult2.Rectificative.Number.Value}.png";
-        domainResult2.Rectificative.AttachQrCode(_blobStorage.GetBlobUrl(blobName2));
+        domainResult2.Rectificative.AttachQrCode(_blobStorage
+            .GetQrUrl(InvoiceHelper.GetQrFileName(domainResult2.Rectificative.BillingSource, domainResult2.Rectificative.Number.Value)));
 
         await _repository.SaveRectificativeFromRectificativeAsync(
             domainResult2.Rectificative, domainResult2.UpdatedOriginal, cancellationToken);
 
         await DispatchSafelyAsync(
-            domainResult2.Rectificative, null, cancellationToken);
+            domainResult2.Rectificative, cancellationToken);
 
         return new RectifyInvoiceResult
         {
@@ -151,8 +152,8 @@ public sealed class RectifyInvoiceUseCase
         Reason = cmd.Reason,
         RectificativeSerie = cmd.RectificativeSerie,
         RectificationType = cmd.RectificationType == RectificationType.Substitution
-            ? Domain.ValueObjects.RectificationType.Substitution
-            : Domain.ValueObjects.RectificationType.Difference,
+            ? RectificationType.Substitution
+            : RectificationType.Difference,
         Lines = cmd.Lines?.Select(l => new InvoiceLineData
         {
             Description = l.Description,
@@ -168,13 +169,12 @@ public sealed class RectifyInvoiceUseCase
 
     private async Task DispatchSafelyAsync(
         RectificativeInvoice rectificative,
-        Invoice? updatedOriginal,
         CancellationToken cancellationToken)
     {
         try
         {
             await _eventDispatcher.InvoiceRectifiedAsync(
-                rectificative, updatedOriginal, cancellationToken);
+                rectificative, cancellationToken);
         }
         catch (Exception ex)
         {

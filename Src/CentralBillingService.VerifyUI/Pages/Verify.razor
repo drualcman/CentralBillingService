@@ -237,10 +237,13 @@
                         </div>
                     </div>
 
-                    <div class="text-center mt-3 pt-3 border-top">
-                        <a class="btn btn-outline-primary w-100"
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <a class="btn btn-outline-primary"
                            href="@GetPreviewUrl()">
                             View invoice
+                        </a>
+                        <a href="@_pdfUrl" class="btn btn-outline-secondary">
+                            Download PDF 
                         </a>
                     </div>
 
@@ -281,6 +284,7 @@
     private string _fRecipientTaxId = "";
     private DateOnly? _fIssueDate;
     private decimal? _fAmount;
+    private string _pdfUrl = "";
 
     protected override async Task OnInitializedAsync() => await VerifyAsync();
 
@@ -299,7 +303,13 @@
                 + (_recipientTaxId is not null ? $"&recipienttaxid={Uri.EscapeDataString(_recipientTaxId)}" : "")
                 + (_issueDate is not null ? $"&issuedate={Uri.EscapeDataString(_issueDate)}" : "")
                 + (_amount is not null ? $"&amount={Uri.EscapeDataString(_amount)}" : "");
-            _result = await Http.GetFromJsonAsync<VerifyInvoiceResponse>(url);
+            var reportTask = Http.GetFromJsonAsync<VerifyInvoiceResponse>(url);
+            url = $"invoices/{Uri.EscapeDataString(_invoiceNumber)}/pdf"
+                + (string.IsNullOrWhiteSpace(BillingSource) ? "" : $"?billingsource={Uri.EscapeDataString(BillingSource)}");
+            var urlTask = Http.GetFromJsonAsync<string>(url);
+            await Task.WhenAll(reportTask, urlTask);
+            _result = await reportTask;
+            _pdfUrl = await urlTask;
         }
         catch (HttpRequestException ex)
         {

@@ -1,6 +1,3 @@
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-
 namespace CentralBillingService.Infrastructure.BlobStorage;
 
 /// <summary>
@@ -10,33 +7,52 @@ namespace CentralBillingService.Infrastructure.BlobStorage;
 public sealed class AzureBlobStorageService : IBlobStorageService
 {
     private readonly string _connectionString;
-    private readonly string _containerName;
+    private readonly string _containerQrName;
+    private readonly string _containerInvoiceName;
 
     public AzureBlobStorageService(IOptions<CbsOptions> options)
     {
         _connectionString = options.Value.QrBlobConnectionString;
-        _containerName = options.Value.QrBlobContainerName;
+        _containerQrName = options.Value.QrBlobContainerName;
+        _containerInvoiceName = options.Value.Invoices;
     }
 
-    public string GetBlobUrl(string blobName)
+    public string GetInvoiceUrl(string blobName) =>
+        GetBlobUrl(blobName, _containerInvoiceName);
+
+    public string GetQrUrl(string blobName) =>
+        GetBlobUrl(blobName, _containerQrName);
+
+    public async Task<string> UploadQrAsync(
+        string blobName,
+        byte[] content,
+        CancellationToken cancellationToken = default) =>
+        await UploadAsync(blobName, _containerQrName, content, cancellationToken);
+
+    public Task UploadInvoiceAsync(
+        string blobName,
+        byte[] content,
+        CancellationToken cancellationToken = default) =>
+        UploadAsync(blobName, _containerInvoiceName, content, cancellationToken);
+
+    private string GetBlobUrl(string blobName, string containerName)
     {
-        var container = new BlobContainerClient(_connectionString, _containerName);
+        var container = new BlobContainerClient(_connectionString, containerName);
         return container.GetBlobClient(blobName).Uri.ToString();
     }
 
-    public async Task<string> UploadAsync(
+    private async Task<string> UploadAsync(
         string blobName,
+        string containerName,
         byte[] content,
-        string contentType,
         CancellationToken cancellationToken = default)
     {
-        var container = new BlobContainerClient(_connectionString, _containerName);
+        var container = new BlobContainerClient(_connectionString, containerName);
         await container.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: cancellationToken);
 
         var blob = container.GetBlobClient(blobName);
         using var stream = new MemoryStream(content);
-        await blob.UploadAsync(stream, new BlobHttpHeaders { ContentType = contentType }, cancellationToken: cancellationToken);
-
+        await blob.UploadAsync(stream, cancellationToken: cancellationToken);
         return blob.Uri.ToString();
     }
 }

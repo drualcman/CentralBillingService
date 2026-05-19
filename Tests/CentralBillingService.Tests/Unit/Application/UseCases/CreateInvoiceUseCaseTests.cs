@@ -19,7 +19,7 @@ public class CreateInvoiceUseCaseTests
         _numberProviderFactory = Substitute.For<IInvoiceNumberProviderFactory>();
 
         var blobStorage = Substitute.For<IBlobStorageService>();
-        blobStorage.GetBlobUrl(Arg.Any<string>())
+        blobStorage.GetQrUrl(Arg.Any<string>())
             .Returns("https://storage.test/qr/test.png");
 
         _numberProviderFactory.GetFor(Arg.Any<BillingSourceConfig>()).Returns(_numberProvider);

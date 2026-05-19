@@ -26,4 +26,7 @@ public class CbsOptions
 
     /// <summary>Azure Storage Queue name where QR generation jobs are sent.</summary>
     public string QrCodeQueueName { get; set; } = "cbs-qr-code-jobs";
+
+    /// <summary>Azure Storage Queue name where invoice generation jobs are sent.</summary>
+    public string Invoices { get; set; } = "invoices";
 }

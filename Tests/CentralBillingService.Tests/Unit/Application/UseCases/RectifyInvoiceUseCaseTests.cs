@@ -19,7 +19,7 @@ public class RectifyInvoiceUseCaseTests
         _numberProviderFactory = Substitute.For<IInvoiceNumberProviderFactory>();
 
         var blobStorage = Substitute.For<IBlobStorageService>();
-        blobStorage.GetBlobUrl(Arg.Any<string>())
+        blobStorage.GetQrUrl(Arg.Any<string>())
             .Returns("https://storage.test/qr/test.png");
 
         _numberProviderFactory.GetFor(Arg.Any<BillingSourceConfig>()).Returns(_numberProvider);
@@ -104,7 +104,6 @@ public class RectifyInvoiceUseCaseTests
         await _eventDispatcher.Received(1)
             .InvoiceRectifiedAsync(
                 Arg.Any<RectificativeInvoice>(),
-                Arg.Any<Invoice>(),
                 Arg.Any<CancellationToken>());
     }
 
@@ -196,7 +195,7 @@ public class RectifyInvoiceUseCaseTests
             .Returns(original);
 
         _eventDispatcher
-            .InvoiceRectifiedAsync(Arg.Any<RectificativeInvoice>(), Arg.Any<Invoice>(), Arg.Any<CancellationToken>())
+            .InvoiceRectifiedAsync(Arg.Any<RectificativeInvoice>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new Exception("Bus no disponible"));
 
         var result = await _useCase.ExecuteAsync(BuildCommand());

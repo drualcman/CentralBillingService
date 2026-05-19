@@ -27,6 +27,9 @@
         <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-white sticky-top">
             <a href="" class="btn btn-sm btn-outline-secondary"> ← Back</a>
             <span class="text-muted small font-monospace">@InvoiceNumber</span>
+            <a href="@_pdfUrl" class="btn btn-outline-secondary w-50">
+                Download PDF
+            </a>
         </div>
 
         <div class="d-flex justify-content-center py-3" style="background: #e9ecef;">
@@ -46,6 +49,7 @@
     private ReportViewModel? _model;
     private bool _loading = true;
     private string? _error;
+    private string _pdfUrl = "";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -58,7 +62,14 @@
             var url = $"invoices/{Uri.EscapeDataString(InvoiceNumber)}/report"
                 + (string.IsNullOrWhiteSpace(BillingSource) ? "" : $"?billingsource={Uri.EscapeDataString(BillingSource)}");
 
-            _model = await Http.GetFromJsonAsync<ReportViewModel>(url);
+            var modelTask = Http.GetFromJsonAsync<ReportViewModel>(url);
+            url = $"invoices/{Uri.EscapeDataString(InvoiceNumber)}/pdf"
+                + (string.IsNullOrWhiteSpace(BillingSource) ? "" : $"?billingsource={Uri.EscapeDataString(BillingSource)}");
+            var urlTask = Http.GetFromJsonAsync<string>(url);
+            await Task.WhenAll(modelTask, urlTask);
+
+            _model = await modelTask;
+            _pdfUrl = await urlTask;
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {

@@ -43,7 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IBlobStorageService, CentralBillingService.Infrastructure.BlobStorage.AzureBlobStorageService>();
 
         // QR code job queue — sends generation jobs to Azure Storage Queue
-        services.AddScoped<IQrCodeJobQueue, AzureQueueQrCodeJobQueue>();
+        services.AddScoped<IJobQueue, AzureQueueJobQueue>();
 
         // Exchange rate
         services.AddHttpClient<ICurrencyConvertion, CurrencyConvertion>(

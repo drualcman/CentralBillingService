@@ -13,15 +13,29 @@ public interface IBlobStorageService
     /// Returns the public URL for <paramref name="blobName"/> without uploading anything.
     /// The URL is deterministic and can be computed before the blob exists.
     /// </summary>
-    string GetBlobUrl(string blobName);
+    string GetInvoiceUrl(string blobName);
+
+    /// <summary>
+    /// Returns the public URL for <paramref name="blobName"/> without uploading anything.
+    /// The URL is deterministic and can be computed before the blob exists.
+    /// </summary>
+    string GetQrUrl(string blobName);
 
     /// <summary>
     /// Uploads <paramref name="content"/> under <paramref name="blobName"/> and
     /// returns the public URL where the blob can be accessed.
     /// </summary>
-    Task<string> UploadAsync(
+    Task<string> UploadQrAsync(
         string blobName,
         byte[] content,
-        string contentType,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Uploads <paramref name="content"/> under <paramref name="blobName"/> and
+    /// returns the public URL where the blob can be accessed.
+    /// </summary>
+    Task UploadInvoiceAsync(
+        string blobName,
+        byte[] content,
         CancellationToken cancellationToken = default);
 }

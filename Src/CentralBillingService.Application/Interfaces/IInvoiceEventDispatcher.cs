@@ -17,6 +17,5 @@ public interface IInvoiceEventDispatcher
 
     Task InvoiceRectifiedAsync(
         RectificativeInvoice rectificative,
-        Invoice? updatedOriginal,
         CancellationToken cancellationToken = default);
 }

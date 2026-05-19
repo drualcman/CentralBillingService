@@ -1,11 +1,11 @@
-namespace CentralBillingService.AzureFunction.API.Helpers;
+namespace CentralBillingService.Domain.Helpers;
 
 /// <summary>
 /// Shared JSON serialization options for all functions.
 /// </summary>
-internal static class JsonOptions
+public static class JsonOptions
 {
-    internal static readonly JsonSerializerOptions Default = new()
+    public static readonly JsonSerializerOptions Default = new()
     {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,

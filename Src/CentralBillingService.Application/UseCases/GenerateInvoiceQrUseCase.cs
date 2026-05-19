@@ -11,15 +11,21 @@ public sealed class GenerateInvoiceQrUseCase
     private readonly IQrCodeGenerator _qrGenerator;
     private readonly IBlobStorageService _blobStorage;
     private readonly IInvoiceVerificationUrlProvider _urlProvider;
+    private readonly IJobQueue _jobQueue;
+    private readonly ILogger<GenerateInvoiceQrUseCase> _logger;
 
     public GenerateInvoiceQrUseCase(
         IQrCodeGenerator qrGenerator,
         IBlobStorageService blobStorage,
-        IInvoiceVerificationUrlProvider urlProvider)
+        IInvoiceVerificationUrlProvider urlProvider,
+        IJobQueue jobQueue,
+        ILogger<GenerateInvoiceQrUseCase> logger)
     {
         _qrGenerator = qrGenerator;
         _blobStorage = blobStorage;
         _urlProvider = urlProvider;
+        _jobQueue = jobQueue;
+        _logger = logger;
     }
 
     public async Task ExecuteAsync(GenerateInvoiceQrCommand command, CancellationToken cancellationToken = default)
@@ -34,7 +40,23 @@ public sealed class GenerateInvoiceQrUseCase
 
         var pngBytes = await _qrGenerator.GenerateAsync(verificationUrl, cancellationToken);
 
-        var blobName = $"{command.BillingSource}/{command.InvoiceNumber}.png";
-        await _blobStorage.UploadAsync(blobName, pngBytes, "image/png", cancellationToken);
+        await _blobStorage.UploadQrAsync(
+            InvoiceHelper.GetQrFileName(command.BillingSource, command.InvoiceNumber), pngBytes, cancellationToken);
+        await CreatePdf(command, cancellationToken);
     }
+
+    private async Task CreatePdf(GenerateInvoiceQrCommand data, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _jobQueue.EnqueuePdfAsync(CreateCommand(data), cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex.Message);
+        }
+    }
+
+    private static GenerateInvoiceReportCommand CreateCommand(GenerateInvoiceQrCommand invoice) =>
+        new(invoice.InvoiceNumber, invoice.BillingSource);
 }
