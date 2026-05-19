@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DigitalDoor.Reporting" Version="1.17.71" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CentralBillingService.Domain\CentralBillingService.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
