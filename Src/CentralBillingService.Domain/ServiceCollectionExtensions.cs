@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<BillingSourceRegistry>();
         services.AddScoped<CreateInvoiceService>();
         services.AddScoped<RectifyInvoiceService>();
+        services.AddScoped(typeof(IDomainEventHub<>), typeof(DomainEventHub<>));
 
         return services;
     }

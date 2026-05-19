@@ -8,4 +8,6 @@ global using CentralBillingService.Domain.Options;
 global using CentralBillingService.Domain.Services;
 global using CentralBillingService.Domain.ValueObjects;
 global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Options;
+global using System.Text.Json;
