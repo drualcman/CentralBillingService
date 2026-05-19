@@ -1,4 +1,7 @@
 global using CentralBillingService.Application.DTOs;
+global using CentralBillingService.Application.Interfaces;
+global using CentralBillingService.Domain.Interfaces;
+global using CentralBillingService.Reports;
 global using CentralBillingService.Application.Exceptions;
 global using CentralBillingService.Application.UseCases;
 global using CentralBillingService.AzureFunction.API.Helpers;
