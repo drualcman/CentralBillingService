@@ -237,6 +237,13 @@
                         </div>
                     </div>
 
+                    <div class="text-center mt-3 pt-3 border-top">
+                        <a class="btn btn-outline-primary w-100"
+                           href="@GetPreviewUrl()">
+                            View invoice
+                        </a>
+                    </div>
+
                 </div>
             </div>
         }
@@ -320,5 +327,12 @@
     void Retry()
     {
         Nav.NavigateTo("", forceLoad: true);
+    }
+
+    string GetPreviewUrl()
+    {
+        var number = Uri.EscapeDataString(_result!.InvoiceNumber);
+        var bs = Uri.EscapeDataString(BillingSource ?? string.Empty);
+        return $"invoices/{number}/preview?billingsource={bs}";
     }
 }

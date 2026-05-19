@@ -1,6 +1,8 @@
+using CentralBillingService.VerifyUI;
+using CentralBillingService.VerifyUI.Services;
+using DigitalDoor.Reporting.Entities.Interfaces;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using CentralBillingService.VerifyUI;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -13,5 +15,7 @@ var apiBaseUrl = builder.Configuration["CbsApiBaseUrl"]
     ?? throw new InvalidOperationException("CbsApiBaseUrl is not configured in appsettings.json.");
 
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
+builder.Services.AddTransient<IReportAsBytes, FakePdfGenerator>();
+builder.Services.AddReportingBlazorServices();
 
 await builder.Build().RunAsync();
