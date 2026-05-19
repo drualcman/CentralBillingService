@@ -7,4 +7,5 @@ public class CbsOptions
     public string BillingSource { get; set; } = string.Empty;
     public string AppKey { get; set; } = string.Empty;
     public string AppSecret { get; set; } = string.Empty;
+    public string LogoUrl { get; set; } = string.Empty;
 }

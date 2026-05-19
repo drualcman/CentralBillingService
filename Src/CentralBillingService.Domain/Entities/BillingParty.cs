@@ -73,9 +73,6 @@ public sealed class BillingParty
         if (string.IsNullOrWhiteSpace(legalName))
             throw new DomainException("El nombre fiscal (LegalName) es obligatorio.");
 
-        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
-            throw new DomainException($"El email '{email}' no tiene un formato válido.");
-
         return new BillingParty(
             legalName.Trim(),
             tradeName?.Trim(),

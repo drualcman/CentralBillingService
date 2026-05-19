@@ -4,18 +4,16 @@ internal static class InvoiceDataBuilder
 {
     private static readonly CultureInfo EsEs = new("es-ES");
 
-    private const string LogoUrl = "https://drualcman.blob.core.windows.net/content/shotup-Logo192.png";
-
-    public static async Task<List<ColumnData>> BuildAsync(Invoice invoice)
+    public static async Task<List<ColumnData>> BuildAsync(Invoice invoice, string logoUrl)
     {
         var data = new List<ColumnData>();
-        await AddHeaderDataAsync(data, invoice);
+        await AddHeaderDataAsync(data, invoice, logoUrl);
         AddBodyData(data, invoice);
         await AddFooterDataAsync(data, invoice);
         return data;
     }
 
-    private static async Task AddHeaderDataAsync(List<ColumnData> data, Invoice invoice)
+    private static async Task AddHeaderDataAsync(List<ColumnData> data, Invoice invoice, string logoUrl)
     {
         var issuer = invoice.Issuer;
         var recipient = invoice.Recipient;
@@ -24,8 +22,11 @@ internal static class InvoiceDataBuilder
             data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.TamperWarning,
                 "FACTURA MODIFICADA — La integridad de este documento ha sido comprometida"));
 
-        byte[] logo = await DownloadUrlHelper.GetBytes(LogoUrl);
-        data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.CompanyLogo, logo));
+        if (!string.IsNullOrEmpty(logoUrl))
+        {
+            byte[] logo = await DownloadUrlHelper.GetBytes(logoUrl);
+            data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.CompanyLogo, logo));
+        }
 
         // Trade name is the prominent name; legal name shown smaller below when they differ
         var tradeName = issuer.TradeName;

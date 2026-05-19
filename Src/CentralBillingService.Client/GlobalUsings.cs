@@ -6,6 +6,7 @@ global using CentralBillingService.Client.Interfaces;
 global using CentralBillingService.Client.Models;
 global using CentralBillingService.Client.Options;
 global using CentralBillingService.Client.ValueObjects;
+global using DigitalDoor.Reporting.Entities.ViewModels;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Options;
 global using System.Net.Http.Json;

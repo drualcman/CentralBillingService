@@ -19,6 +19,7 @@ public class IssuerConfig
     public string? Province { get; set; }
     public string PostalCode { get; set; } = "";
     public string AddressCountryCode { get; set; } = "";
+    public string? LogoUrl { get; set; }
 
     public BillingParty ToBillingParty()
     {

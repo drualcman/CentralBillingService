@@ -1,3 +1,6 @@
+using CentralBillingService.Domain.Entities;
+using CentralBillingService.Domain.Services;
+
 namespace CentralBillingService.AzureFunction.API;
 
 public sealed class GetInvoiceReportFunction
@@ -5,15 +8,22 @@ public sealed class GetInvoiceReportFunction
     private readonly IInvoiceRepository _repository;
     private readonly IInvoiceHasher _hasher;
     private readonly ILogger<GetInvoiceReportFunction> _logger;
+    private readonly BillingSourceRegistry _registry;
+    private readonly GetInvoiceUseCase _invoiceUseCase;
+
 
     public GetInvoiceReportFunction(
         IInvoiceRepository repository,
         IInvoiceHasher hasher,
-        ILogger<GetInvoiceReportFunction> logger)
+        ILogger<GetInvoiceReportFunction> logger,
+        BillingSourceRegistry registry,
+        GetInvoiceUseCase invoiceUseCase)
     {
         _repository = repository;
         _hasher = hasher;
         _logger = logger;
+        _registry = registry;
+        _invoiceUseCase = invoiceUseCase;
     }
 
     /// <summary>
@@ -34,9 +44,31 @@ public sealed class GetInvoiceReportFunction
 
         try
         {
-            var invoice = Guid.TryParse(invoiceNumber, out var id)
-                ? await _repository.FindByIdAsync(billingSource, id, cancellationToken)
-                : await _repository.FindByNumberAsync(billingSource, invoiceNumber, cancellationToken);
+            // 2. Validate that the billing source exists before doing anything else
+            var config = _registry.GetConfig(billingSource);
+
+            var invoiceQuery = await _invoiceUseCase.ExecuteAsync(new GetInvoiceQuery
+            {
+                BillingSource = billingSource,
+                InvoiceNumber = invoiceNumber,
+                Secret = config.Secret
+            });
+
+            Invoice? invoice;
+            if (invoiceQuery.IsRectificative)
+            {
+                var rectificative = await _repository.FindRectificativeByNumberAsync(billingSource, invoiceQuery.InvoiceNumber, cancellationToken);
+                if (rectificative is not null)
+                    invoice = Invoice.Reconstitute(rectificative.Id, rectificative.Number, rectificative.BillingSource, rectificative.Issuer,
+                        rectificative.Recipient, rectificative.IssueDate, null, rectificative.CreatedAt, rectificative.Lines.ToList(),
+                        rectificative.AppliedExchangeRate, rectificative.Hash, rectificative.PreviousHash, rectificative.Status,
+                        rectificative.PaymentReference, null, rectificative.Notes, rectificative.TransactionData, rectificative.PaymentMethod,
+                        rectificative.QrCodeBlobUrl);
+                else
+                    invoice = null;
+            }
+            else
+                invoice = await _repository.FindByIdAsync(billingSource, invoiceQuery.Id, cancellationToken);
 
             if (invoice is null)
             {
@@ -52,7 +84,9 @@ public sealed class GetInvoiceReportFunction
                     "DATA INTEGRITY WARNING: Invoice {InvoiceNumber} has been tampered with. Report will show warning banner.",
                     invoiceNumber);
 
-            var reportModel = await GenerateInvoiceReport.BuildAsync(invoice);
+            var logoUrl = string.IsNullOrWhiteSpace(config.Issuer.LogoUrl) ? "https://drualcman.blob.core.windows.net/content/SergiLogo.png" : config.Issuer.LogoUrl;
+
+            var reportModel = await GenerateInvoiceReport.BuildAsync(invoice, logoUrl);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(reportModel, cancellationToken);

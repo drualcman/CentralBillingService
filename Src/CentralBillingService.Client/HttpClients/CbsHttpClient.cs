@@ -1,6 +1,6 @@
 namespace CentralBillingService.Client.HttpClients;
 
-internal class CbsHttpClient(HttpClient client) : ICbsService
+internal class CbsHttpClient(HttpClient client, IOptions<CbsOptions> options) : ICbsService
 {
     public async Task<InvoiceCreateResult> CreateInvoiceAsync(CreateInvoiceCommand invoiceData)
     {
@@ -49,9 +49,19 @@ internal class CbsHttpClient(HttpClient client) : ICbsService
             ?? throw new InvalidOperationException("Response body was empty or could not be deserialized.");
     }
 
+    public async Task<ReportViewModel> GetInvoiceReportAsync(string invoiceNumber)
+    {
+        var url = $"invoices/{invoiceNumber}/report?billingsource={Uri.EscapeDataString(options.Value.BillingSource)}";
+        var response = await client.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ReportViewModel>()
+            ?? throw new InvalidOperationException("Response body was empty or could not be deserialized.");
+    }
+
     private static string BuildInvoicesUrl(GetInvoicesQuery? filter)
     {
-        if (filter is null) return "invoices";
+        if (filter is null)
+            return "invoices";
 
         var parameters = new List<string>();
 

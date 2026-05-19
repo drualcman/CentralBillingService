@@ -7,4 +7,5 @@ public interface ICbsService
     Task<InvoiceResult> GetInvoiceAsync(string invoiceNumber);
     Task<InvoiceListResult> GetInvoicesAsync(GetInvoicesQuery? filter = null);
     Task<VerifyInvoiceResult> VerifyInvoiceAsync(string invoiceNumber, string documentHash);
+    Task<ReportViewModel> GetInvoiceReportAsync(string invoiceNumber);
 }
