@@ -38,18 +38,6 @@ public sealed class PostalAddress
         string? line2 = null,
         string? province = null)
     {
-        if (string.IsNullOrWhiteSpace(line1))
-            throw new DomainException("La dirección (línea 1) es obligatoria.");
-
-        if (string.IsNullOrWhiteSpace(city))
-            throw new DomainException("La ciudad es obligatoria.");
-
-        if (string.IsNullOrWhiteSpace(postalCode))
-            throw new DomainException("El código postal es obligatorio.");
-
-        if (string.IsNullOrWhiteSpace(countryCode) || countryCode.Trim().Length != 2)
-            throw new DomainException("El código de país debe ser ISO 3166-1 alpha-2.");
-
         return new PostalAddress(
             line1.Trim(),
             line2?.Trim(),

@@ -25,17 +25,18 @@ public sealed class TaxId
 
     public static TaxId Create(string value, string countryCode)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new DomainException("El identificador fiscal no puede estar vacío.");
-
-        if (string.IsNullOrWhiteSpace(countryCode) || countryCode.Trim().Length != 2)
-            throw new DomainException("El código de país debe ser ISO 3166-1 alpha-2 (2 letras).");
-
-        var normalizedValue = value.Trim().ToUpperInvariant();
-        var normalizedCountry = countryCode.Trim().ToUpperInvariant();
+        var normalizedValue = value?.Trim().ToUpperInvariant() ?? "";
+        var normalizedCountry = countryCode?.Trim().ToUpperInvariant() ?? "";
 
         var type = DetermineType(normalizedValue, normalizedCountry);
 
+        if (type == TaxIdType.NIF ||
+            type == TaxIdType.NIE ||
+            type == TaxIdType.CIF)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new DomainException("El identificador fiscal no puede estar vacío.");
+        }
         return new TaxId(normalizedValue, normalizedCountry, type);
     }
 
@@ -57,7 +58,7 @@ public sealed class TaxId
         if (value == "NO_ID")
             return TaxIdType.NotProvided;
 
-        if (country == "ES")
+        if (country.Equals("ES", StringComparison.InvariantCultureIgnoreCase))
         {
             // NIF persona física: letra + 7 dígitos + letra control
             // CIF persona jurídica: letra + 7 dígitos + dígito/letra control
