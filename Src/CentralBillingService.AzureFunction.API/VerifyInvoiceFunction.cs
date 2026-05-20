@@ -73,7 +73,9 @@ public sealed class VerifyInvoiceFunction
             await response.WriteAsJsonAsync(result, cancellationToken);
             return response;
         }
-        catch (InvoiceNotFoundException ex)
+        catch (Exception ex) when (
+            ex is InvoiceNotFoundException ||
+            ex is NotFoundException)
         {
             _logger.LogWarning(ex, "Invoice {InvoiceNumber} not found for verification.", invoiceNumber);
             return await req.CreateProblemResponseAsync(

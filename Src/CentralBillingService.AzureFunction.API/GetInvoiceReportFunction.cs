@@ -1,5 +1,3 @@
-using CentralBillingService.Domain.Helpers;
-
 namespace CentralBillingService.AzureFunction.API;
 
 public sealed class GetInvoiceReportFunction
@@ -43,7 +41,9 @@ public sealed class GetInvoiceReportFunction
             await response.WriteAsJsonAsync(reportModel, cancellationToken);
             return response;
         }
-        catch (NotFoundException ex)
+        catch (Exception ex) when (
+            ex is InvoiceNotFoundException ||
+            ex is NotFoundException)
         {
             _logger.LogWarning(ex, ex.Message);
             return await req.CreateProblemResponseAsync(
@@ -82,6 +82,14 @@ public sealed class GetInvoiceReportFunction
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(url, cancellationToken);
             return response;
+        }
+        catch (Exception ex) when (
+            ex is InvoiceNotFoundException ||
+            ex is NotFoundException)
+        {
+            _logger.LogWarning(ex, ex.Message);
+            return await req.CreateProblemResponseAsync(
+                HttpStatusCode.NotFound, "Invoice not found.", ex.Message);
         }
         catch (DomainException ex)
         {

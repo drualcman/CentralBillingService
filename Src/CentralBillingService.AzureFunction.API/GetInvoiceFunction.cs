@@ -37,7 +37,9 @@ public sealed class GetInvoiceFunction
             await response.WriteAsJsonAsync(result, cancellationToken);
             return response;
         }
-        catch (InvoiceNotFoundException ex)
+        catch (Exception ex) when (
+            ex is InvoiceNotFoundException ||
+            ex is NotFoundException)
         {
             _logger.LogWarning(ex, "Invoice {InvoiceNumber} not found.", invoiceNumber);
             return await req.CreateProblemResponseAsync(

@@ -40,6 +40,14 @@ public sealed class ListInvoicesFunction
             return await req.CreateProblemResponseAsync(
                 HttpStatusCode.BadRequest, "Invalid query parameters.", ex.Message);
         }
+        catch (Exception ex) when (
+            ex is InvoiceNotFoundException ||
+            ex is NotFoundException)
+        {
+            _logger.LogWarning(ex, ex.Message);
+            return await req.CreateProblemResponseAsync(
+                HttpStatusCode.NotFound, "Invoice not found.", ex.Message);
+        }
         catch (InvoiceTamperingDetectedException ex)
         {
             _logger.LogCritical(ex,
