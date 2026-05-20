@@ -1,0 +1,205 @@
+<UserControl x:Class="CentralBillingService.WPF.Views.BillingSummaryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:conv="clr-namespace:CentralBillingService.WPF.Converters"
+             Background="{StaticResource ContentBackground}">
+
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:BoolToVisibilityConverter x:Key="InvBoolToVis" Invert="True" />
+        <conv:NullToVisibilityConverter x:Key="NullToVis" />
+        <conv:NullToVisibilityConverter x:Key="NullToVisInv" InvertWhenNull="True" />
+
+        <Style x:Key="SummaryCardStyle" TargetType="materialDesign:Card">
+            <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2" />
+            <Setter Property="UniformCornerRadius" Value="12" />
+            <Setter Property="Padding" Value="18,14" />
+            <Setter Property="Margin" Value="0,0,12,12" />
+        </Style>
+
+        <Style x:Key="PeriodLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#64748B" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+
+        <Style x:Key="AmountStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#1E293B" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="SubtextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="#94A3B8" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="White"
+                BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+            <Grid Margin="24,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="220" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Resultados de facturación"
+                           FontSize="20" FontWeight="SemiBold"
+                           Foreground="#1E293B" VerticalAlignment="Center" />
+
+                <ComboBox Grid.Column="1"
+                          materialDesign:HintAssist.Hint="Todos los orígenes"
+                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                          ItemsSource="{Binding AllBillingSources}"
+                          SelectedItem="{Binding SelectedBillingSource}"
+                          VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid Margin="24,20">
+                <!-- Loading -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Margin="0,60,0,0"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                 IsIndeterminate="True" Width="48" Height="48" />
+                    <TextBlock Text="Calculando resultados..." Margin="0,12,0,0"
+                               Foreground="#64748B" HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Error -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top"
+                            Margin="0,40,0,0"
+                            Visibility="{Binding ErrorMessage, Converter={StaticResource NullToVis}}">
+                    <materialDesign:PackIcon Kind="AlertCircleOutline" Width="48" Height="48"
+                                             Foreground="#EF4444" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="#EF4444"
+                               Margin="0,8,0,0" TextWrapping="Wrap" MaxWidth="400"
+                               HorizontalAlignment="Center" TextAlignment="Center" />
+                </StackPanel>
+
+                <!-- Summary data -->
+                <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource InvBoolToVis}}">
+                    <StackPanel Visibility="{Binding Summary, Converter={StaticResource NullToVisInv}}">
+
+                        <!-- Annual -->
+                        <TextBlock Text="RESUMEN ANUAL"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="#94A3B8" Margin="0,0,0,12" />
+                        <ItemsControl ItemsSource="{Binding Summary.Annual}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <materialDesign:Card Style="{StaticResource SummaryCardStyle}" Width="210">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Label}" Style="{StaticResource PeriodLabelStyle}" />
+                                            <TextBlock Style="{StaticResource AmountStyle}">
+                                                <Run Text="{Binding TotalEur, StringFormat=N2}" /><Run Text=" €" />
+                                            </TextBlock>
+                                            <TextBlock Style="{StaticResource SubtextStyle}" Margin="0,0,0,2">
+                                                <Run Text="Base: " /><Run Text="{Binding TaxableBaseEur, StringFormat=N2}" /><Run Text=" €" />
+                                            </TextBlock>
+                                            <TextBlock Style="{StaticResource SubtextStyle}" Margin="0,0,0,6">
+                                                <Run Text="IGIC: " /><Run Text="{Binding TotalTaxAmountEur, StringFormat=N2}" /><Run Text=" €" />
+                                            </TextBlock>
+                                            <TextBlock Foreground="#64748B" FontSize="11">
+                                                <Run Text="{Binding InvoiceCount}" /><Run Text=" facturas" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </materialDesign:Card>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Separator Margin="0,8,0,20" Background="#E2E8F0" />
+
+                        <!-- Quarterly -->
+                        <TextBlock Text="POR TRIMESTRE"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="#94A3B8" Margin="0,0,0,12" />
+                        <ItemsControl ItemsSource="{Binding Summary.Quarterly}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <materialDesign:Card Style="{StaticResource SummaryCardStyle}" Width="210">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Label}" Style="{StaticResource PeriodLabelStyle}" />
+                                            <TextBlock Style="{StaticResource AmountStyle}">
+                                                <Run Text="{Binding TotalEur, StringFormat=N2}" /><Run Text=" €" />
+                                            </TextBlock>
+                                            <TextBlock Style="{StaticResource SubtextStyle}" Margin="0,0,0,2">
+                                                <Run Text="Base: " /><Run Text="{Binding TaxableBaseEur, StringFormat=N2}" /><Run Text=" €" />
+                                            </TextBlock>
+                                            <TextBlock Style="{StaticResource SubtextStyle}" Margin="0,0,0,6">
+                                                <Run Text="IGIC: " /><Run Text="{Binding TotalTaxAmountEur, StringFormat=N2}" /><Run Text=" €" />
+                                            </TextBlock>
+                                            <TextBlock Foreground="#64748B" FontSize="11">
+                                                <Run Text="{Binding InvoiceCount}" /><Run Text=" facturas" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </materialDesign:Card>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Separator Margin="0,8,0,20" Background="#E2E8F0" />
+
+                        <!-- Four-monthly -->
+                        <TextBlock Text="POR CUATRIMESTRE"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="#94A3B8" Margin="0,0,0,12" />
+                        <ItemsControl ItemsSource="{Binding Summary.FourMonthly}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <materialDesign:Card Style="{StaticResource SummaryCardStyle}" Width="210">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Label}" Style="{StaticResource PeriodLabelStyle}" />
+                                            <TextBlock Style="{StaticResource AmountStyle}">
+                                                <Run Text="{Binding TotalEur, StringFormat=N2}" /><Run Text=" €" />
+                                            </TextBlock>
+                                            <TextBlock Style="{StaticResource SubtextStyle}" Margin="0,0,0,2">
+                                                <Run Text="Base: " /><Run Text="{Binding TaxableBaseEur, StringFormat=N2}" /><Run Text=" €" />
+                                            </TextBlock>
+                                            <TextBlock Style="{StaticResource SubtextStyle}" Margin="0,0,0,6">
+                                                <Run Text="IGIC: " /><Run Text="{Binding TotalTaxAmountEur, StringFormat=N2}" /><Run Text=" €" />
+                                            </TextBlock>
+                                            <TextBlock Foreground="#64748B" FontSize="11">
+                                                <Run Text="{Binding InvoiceCount}" /><Run Text=" facturas" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </materialDesign:Card>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

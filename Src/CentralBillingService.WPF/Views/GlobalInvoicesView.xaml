@@ -1,0 +1,323 @@
+<UserControl x:Class="CentralBillingService.WPF.Views.GlobalInvoicesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:conv="clr-namespace:CentralBillingService.WPF.Converters"
+             xmlns:vm="clr-namespace:CentralBillingService.WPF.ViewModels"
+             Background="{StaticResource ContentBackground}">
+
+    <UserControl.Resources>
+        <conv:StatusToBrushConverter   x:Key="StatusBrush" />
+        <conv:StatusToLabelConverter   x:Key="StatusLabel" />
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:BoolToVisibilityConverter x:Key="InvBoolToVis" Invert="True" />
+        <conv:NullToVisibilityConverter x:Key="NullToVis" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="White"
+                BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+            <Grid Margin="24,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Listado global de facturas"
+                               FontSize="20" FontWeight="SemiBold"
+                               Foreground="#1E293B" />
+                    <TextBlock Foreground="#64748B" FontSize="12" Margin="0,2,0,0">
+                        <Run Text="{Binding TotalCount, StringFormat='{}{0} facturas en total'}" />
+                    </TextBlock>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Style="{StaticResource MaterialDesignIconButton}"
+                        Command="{Binding RefreshCommand}"
+                        ToolTip="Actualizar lista">
+                    <materialDesign:PackIcon Kind="Refresh" />
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Filters -->
+        <materialDesign:Card Grid.Row="1" Margin="16,12,16,0"
+                             materialDesign:ElevationAssist.Elevation="Dp1"
+                             UniformCornerRadius="10" Padding="16,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160" />
+                    <ColumnDefinition Width="150" />
+                    <ColumnDefinition Width="130" />
+                    <ColumnDefinition Width="130" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <ComboBox Grid.Column="0" Margin="0,0,8,0"
+                          materialDesign:HintAssist.Hint="Origen"
+                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                          ItemsSource="{Binding AllBillingSources}"
+                          SelectedItem="{Binding FilterBillingSource}" />
+
+                <ComboBox Grid.Column="1" Margin="0,0,8,0"
+                          materialDesign:HintAssist.Hint="Estado"
+                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                          ItemsSource="{x:Static vm:GlobalInvoicesViewModel.StatusOptions}"
+                          SelectedItem="{Binding FilterStatus}" />
+
+                <DatePicker Grid.Column="2" Margin="0,0,8,0"
+                            materialDesign:HintAssist.Hint="Desde"
+                            Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                            SelectedDate="{Binding FilterIssuedFrom}" />
+
+                <DatePicker Grid.Column="3" Margin="0,0,8,0"
+                            materialDesign:HintAssist.Hint="Hasta"
+                            Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                            SelectedDate="{Binding FilterIssuedTo}" />
+
+                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource MaterialDesignIconButton}"
+                            Command="{Binding ApplyFiltersCommand}"
+                            ToolTip="Aplicar filtros">
+                        <materialDesign:PackIcon Kind="Magnify" />
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignIconButton}"
+                            Command="{Binding ClearFiltersCommand}"
+                            ToolTip="Limpiar filtros"
+                            Foreground="#94A3B8">
+                        <materialDesign:PackIcon Kind="FilterRemoveOutline" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </materialDesign:Card>
+
+        <!-- DataGrid -->
+        <Grid Grid.Row="2" Margin="16,12,16,0">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True" Width="48" Height="48" />
+                <TextBlock Text="Cargando facturas..." Margin="0,12,0,0"
+                           Foreground="#64748B" HorizontalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource NullToVis}}">
+                <materialDesign:PackIcon Kind="AlertCircleOutline" Width="48" Height="48"
+                                         Foreground="#EF4444" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#EF4444"
+                           Margin="0,8,0,0" TextWrapping="Wrap" MaxWidth="400"
+                           HorizontalAlignment="Center" TextAlignment="Center" />
+            </StackPanel>
+
+            <materialDesign:Card Visibility="{Binding IsLoading, Converter={StaticResource InvBoolToVis}}"
+                                 materialDesign:ElevationAssist.Elevation="Dp1"
+                                 UniformCornerRadius="10" Padding="0">
+                <DataGrid ItemsSource="{Binding AllInvoices, Mode=OneWay}"
+                          SelectedItem="{Binding SelectedInvoice}"
+                          Style="{StaticResource MaterialDesignDataGrid}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="#F1F5F9"
+                          RowHeight="52"
+                          materialDesign:DataGridAssist.ColumnHeaderPadding="12,8">
+
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow" BasedOn="{StaticResource MaterialDesignDataGridRow}">
+                            <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsRectificative}" Value="True">
+                                    <Setter Property="Background" Value="#F5F3FF" />
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsRectificative}" Value="True" />
+                                        <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}" Value="True" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="#EDE9FE" />
+                                </MultiDataTrigger>
+                                <DataTrigger Binding="{Binding HasTamper}" Value="True">
+                                    <Setter Property="Background" Value="#FEF2F2" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+
+                    <DataGrid.Columns>
+                        <!-- Type badge -->
+                        <DataGridTemplateColumn Header="Tipo" Width="56" CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="10" Padding="6,2"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#E0F2FE" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsRectificative}" Value="True">
+                                                        <Setter Property="Background" Value="#EDE9FE" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="FAC" />
+                                                    <Setter Property="Foreground" Value="#0369A1" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsRectificative}" Value="True">
+                                                            <Setter Property="Text" Value="REC" />
+                                                            <Setter Property="Foreground" Value="#7C3AED" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="Número"
+                                            Binding="{Binding InvoiceNumber, Mode=OneWay}"
+                                            Width="150"
+                                            ElementStyle="{StaticResource MaterialDesignDataGridTextColumnStyle}" />
+
+                        <DataGridTextColumn Header="Fecha"
+                                            Binding="{Binding IssueDate, Mode=OneWay, StringFormat=dd/MM/yyyy}"
+                                            Width="100" />
+
+                        <!-- Billing source chip -->
+                        <DataGridTemplateColumn Header="Origen" Width="140" CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="8" Padding="8,3"
+                                            Background="#F1F5F9"
+                                            HorizontalAlignment="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding BillingSource}" FontSize="11"
+                                                   Foreground="#475569" />
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="Destinatario"
+                                            Binding="{Binding RecipientName, Mode=OneWay}"
+                                            Width="*" />
+
+                        <DataGridTextColumn Header="NIF"
+                                            Binding="{Binding RecipientTaxId, Mode=OneWay}"
+                                            Width="110" />
+
+                        <!-- Amount -->
+                        <DataGridTemplateColumn Header="Importe" Width="150" CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel HorizontalAlignment="Right" Margin="0,0,12,0"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding TotalEur.Formatted, Mode=OneWay}"
+                                                   FontWeight="SemiBold" HorizontalAlignment="Right" />
+                                        <TextBlock Text="{Binding TotalInOriginCurrency.Formatted, Mode=OneWay}"
+                                                   FontSize="11" Foreground="#64748B" HorizontalAlignment="Right"
+                                                   Visibility="{Binding HasCurrencyConversion, Converter={StaticResource BoolToVis}}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Status chip -->
+                        <DataGridTemplateColumn Header="Estado" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="12" Padding="10,4"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background"
+                                                        Value="{Binding Status, Converter={StaticResource StatusBrush}}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasTamper}" Value="True">
+                                                        <Setter Property="Background" Value="#DC2626" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="White">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text"
+                                                            Value="{Binding Status, Converter={StaticResource StatusLabel}}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasTamper}" Value="True">
+                                                            <Setter Property="Text" Value="MODIFICADA" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Preview button -->
+                        <DataGridTemplateColumn Header="" Width="52" CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource MaterialDesignIconButton}"
+                                            Command="{Binding DataContext.PreviewInvoiceCommand,
+                                                RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Ver factura">
+                                        <materialDesign:PackIcon Kind="FileEyeOutline" Width="18" Height="18" />
+                                    </Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </materialDesign:Card>
+        </Grid>
+
+        <!-- Pagination -->
+        <Border Grid.Row="3" Background="White"
+                BorderBrush="#E2E8F0" BorderThickness="0,1,0,0"
+                Margin="16,8,16,16" Padding="16,10">
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Button Style="{StaticResource MaterialDesignIconButton}"
+                            Command="{Binding PreviousPageCommand}"
+                            IsEnabled="{Binding CanGoPrev}">
+                        <materialDesign:PackIcon Kind="ChevronLeft" />
+                    </Button>
+                    <TextBlock VerticalAlignment="Center" Margin="12,0">
+                        <Run Text="Página " />
+                        <Run Text="{Binding CurrentPage}" FontWeight="SemiBold" />
+                        <Run Text=" de " />
+                        <Run Text="{Binding TotalPages}" FontWeight="SemiBold" />
+                    </TextBlock>
+                    <Button Style="{StaticResource MaterialDesignIconButton}"
+                            Command="{Binding NextPageCommand}"
+                            IsEnabled="{Binding CanGoNext}">
+                        <materialDesign:PackIcon Kind="ChevronRight" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -16,4 +16,5 @@ global using System.Collections.ObjectModel;
 global using System.IO;
 global using System.Text.Json;
 global using System.Windows;
+global using System.Windows.Controls;
 global using System.Windows.Input;

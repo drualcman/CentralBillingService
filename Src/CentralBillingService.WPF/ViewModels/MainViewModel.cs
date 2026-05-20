@@ -1,3 +1,5 @@
+using CentralBillingService.Domain.Services;
+
 namespace CentralBillingService.WPF.ViewModels;
 
 public partial class MainViewModel : ObservableObject
@@ -6,6 +8,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IConfiguration _config;
     private readonly LocalMasterDataStore _masterDataStore;
     private readonly AppSettingsService _appSettingsService;
+    private readonly BillingSourceRegistry _registry;
 
     [ObservableProperty]
     ObservableCollection<BillingSourceSummary> billingSources = [];
@@ -20,12 +23,14 @@ public partial class MainViewModel : ObservableObject
         CurrentView is null ? Visibility.Visible : Visibility.Collapsed;
 
     public MainViewModel(IServiceScopeFactory scopeFactory, IConfiguration config,
-        LocalMasterDataStore masterDataStore, AppSettingsService appSettingsService)
+        LocalMasterDataStore masterDataStore, AppSettingsService appSettingsService,
+        BillingSourceRegistry registry)
     {
         _scopeFactory = scopeFactory;
         _config = config;
         _masterDataStore = masterDataStore;
         _appSettingsService = appSettingsService;
+        _registry = registry;
 
         LoadBillingSources();
     }
@@ -91,6 +96,26 @@ public partial class MainViewModel : ObservableObject
     {
         CurrentView = viewModel;
         OnPropertyChanged(nameof(EmptyStateVisible));
+    }
+
+    [RelayCommand]
+    void OpenGlobalInvoices()
+    {
+        SelectedBillingSource = null;
+        var vm = new GlobalInvoicesViewModel(_scopeFactory, _registry, NavigateTo);
+        CurrentView = vm;
+        OnPropertyChanged(nameof(EmptyStateVisible));
+        _ = vm.LoadAsync();
+    }
+
+    [RelayCommand]
+    void OpenBillingSummary()
+    {
+        SelectedBillingSource = null;
+        var vm = new BillingSummaryViewModel(_scopeFactory, _registry);
+        CurrentView = vm;
+        OnPropertyChanged(nameof(EmptyStateVisible));
+        _ = vm.LoadAsync();
     }
 
     [RelayCommand]
