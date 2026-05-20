@@ -103,12 +103,6 @@
                                           Text="{Binding Serie}"
                                           ItemsSource="{Binding AvailableSeries}"
                                           DisplayMemberPath="Code" />
-                                <ComboBox Margin="6,0,0,12"
-                                          materialDesign:HintAssist.Hint="Moneda origen *"
-                                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                          IsEditable="True"
-                                          Text="{Binding OriginCurrencyCode}"
-                                          ItemsSource="{x:Static vm:CreateInvoiceViewModel.CurrencyCodes}" />
                                 <DatePicker Margin="0,0,6,12"
                                             materialDesign:HintAssist.Hint="Fecha emisión *"
                                             Style="{StaticResource MaterialDesignOutlinedDatePicker}"
@@ -219,10 +213,18 @@
             <DockPanel Grid.Column="1">
                 <!-- Lines section header bar -->
                 <Border DockPanel.Dock="Top" Background="White"
-                        BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="20,14">
+                        BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="20,10">
                     <Grid>
-                        <TextBlock Text="LÍNEAS DE FACTURA" Style="{StaticResource SectionHeader}"
-                                   VerticalAlignment="Center" Margin="0" />
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="LÍNEAS DE FACTURA" Style="{StaticResource SectionHeader}"
+                                       VerticalAlignment="Center" Margin="0,0,16,0" />
+                            <ComboBox Width="130"
+                                      materialDesign:HintAssist.Hint="Moneda *"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                      IsEditable="True"
+                                      Text="{Binding OriginCurrencyCode}"
+                                      ItemsSource="{x:Static vm:CreateInvoiceViewModel.CurrencyCodes}" />
+                        </StackPanel>
                         <Button HorizontalAlignment="Right"
                                 Style="{StaticResource MaterialDesignFlatButton}"
                                 Command="{Binding AddLineCommand}">

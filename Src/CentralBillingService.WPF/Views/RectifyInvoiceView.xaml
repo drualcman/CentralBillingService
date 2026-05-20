@@ -264,13 +264,13 @@
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="LÍNEAS DE DIFERENCIA"
                                                    Style="{StaticResource SectionHeader}"
-                                                   Margin="0" VerticalAlignment="Center" />
-                                        <Border Background="#E0F2FE" CornerRadius="6" Padding="8,2"
-                                                Margin="10,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding OriginCurrencyCode}"
-                                                       FontSize="11" FontWeight="SemiBold"
-                                                       Foreground="#0369A1" />
-                                        </Border>
+                                                   Margin="0,0,16,0" VerticalAlignment="Center" />
+                                        <ComboBox Width="130"
+                                                  materialDesign:HintAssist.Hint="Moneda origen"
+                                                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                  IsEditable="True" IsReadOnly="True"
+                                                  Text="{Binding OriginCurrencyCode, Mode=OneWay}"
+                                                  ItemsSource="{x:Static vm:RectifyInvoiceViewModel.CurrencyCodes}" />
                                     </StackPanel>
                                     <Button HorizontalAlignment="Right"
                                             Style="{StaticResource MaterialDesignFlatButton}"

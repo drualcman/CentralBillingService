@@ -138,11 +138,7 @@
                                                  Width="22" Height="22" VerticalAlignment="Center"
                                                  Margin="0,0,12,0" />
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock FontWeight="SemiBold" Foreground="#166534" FontSize="13">
-                                <Run Text="Importe en divisa cliente: " />
-                                <Run Text="{Binding Invoice.TotalInOriginCurrency.Formatted}" />
-                            </TextBlock>
-                            <TextBlock Foreground="#15803D" FontSize="12" Margin="0,2,0,0">
+                            <TextBlock Foreground="#15803D" FontSize="12">
                                 <Run Text="Cambio aplicado: 1 " />
                                 <Run Text="{Binding Invoice.AppliedExchangeRate.FromCurrency}" />
                                 <Run Text=" = " />
@@ -160,7 +156,7 @@
                 </Border>
 
                 <!-- Totals row -->
-                <UniformGrid Columns="4" Margin="0,0,0,8">
+                <UniformGrid Columns="4" Margin="0,0,0,20">
                     <materialDesign:Card Margin="0,0,8,0" Padding="16"
                                          UniformCornerRadius="10"
                                          materialDesign:ElevationAssist.Elevation="Dp1">
@@ -168,6 +164,10 @@
                             <TextBlock Text="TOTAL EUR" Style="{StaticResource FieldLabel}" />
                             <TextBlock Text="{Binding Invoice.TotalEur.Formatted}"
                                        FontSize="22" FontWeight="Bold" Foreground="#1E293B" />
+                            <TextBlock Text="{Binding Invoice.TotalInOriginCurrency.Formatted}"
+                                       FontSize="13" Foreground="#64748B"
+                                       Visibility="{Binding Invoice.AppliedExchangeRate.IsIdentity,
+                                                    Converter={StaticResource InvBoolToVis}}" />
                         </StackPanel>
                     </materialDesign:Card>
                     <materialDesign:Card Margin="4,0" Padding="16"
@@ -198,18 +198,6 @@
                         </StackPanel>
                     </materialDesign:Card>
                 </UniformGrid>
-
-                <!-- Total en divisa cliente (solo cuando hay conversión) -->
-                <Border Background="#F8FAFC" CornerRadius="8" Padding="16,10" Margin="0,0,0,20"
-                        Visibility="{Binding Invoice.AppliedExchangeRate.IsIdentity,
-                                     Converter={StaticResource InvBoolToVis}}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="TOTAL DIVISA CLIENTE" FontSize="10" Foreground="#94A3B8"
-                                   VerticalAlignment="Center" Margin="0,0,16,0" />
-                        <TextBlock Text="{Binding Invoice.TotalInOriginCurrency.Formatted}"
-                                   FontSize="20" FontWeight="Bold" Foreground="#1E293B" />
-                    </StackPanel>
-                </Border>
 
                 <!-- Parties -->
                 <Grid Margin="0,0,0,16">

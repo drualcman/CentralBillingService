@@ -1,3 +1,5 @@
+using CentralBillingService.Domain.ValueObjects;
+
 namespace CentralBillingService.WPF.ViewModels;
 
 public partial class RectifyInvoiceViewModel : ObservableObject
@@ -28,6 +30,8 @@ public partial class RectifyInvoiceViewModel : ObservableObject
     [ObservableProperty] bool isLoadingOriginal;
 
     public static string[] RectificationTypes { get; } = ["Substitution", "Difference"];
+    public static string[] CurrencyCodes { get; } =
+        Currency.All.Values.Select(c => c.Code).OrderBy(c => c).ToArray();
     public bool IsDifference => SelectedRectificationType == "Difference";
 
     partial void OnSelectedRectificationTypeChanged(string value) =>
