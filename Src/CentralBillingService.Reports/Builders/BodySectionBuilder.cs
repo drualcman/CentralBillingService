@@ -7,7 +7,7 @@ internal static class BodySectionBuilder
 {
     private const double MainH = 8;    // altura de la fila principal en filas con sub-valor
     private const double SubH = 5;    // altura de la sub-fila de moneda original
-    private const decimal SubY = 9m;  // desplazamiento Y de la sub-fila dentro de la celda
+    private const decimal SubY = 7m;  // desplazamiento Y de la sub-fila dentro de la celda
 
     public static void Build(Section body, bool hasOriginCurrency = false)
     {
