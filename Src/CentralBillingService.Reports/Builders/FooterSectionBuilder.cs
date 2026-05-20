@@ -157,25 +157,27 @@ internal static class FooterSectionBuilder
 
     private static void BuildPaymentInfo(Section footer)
     {
+        double leftW = (double)(RightLabelX - InvoiceReportLayout.Margin - 5m); // 105mm
         footer.AddColumn(new ColumnSetup
         {
-            Format = new Format(50, 5) { Position = new Kernel(28, SideX) },
+            Format = new Format(40, 5) { Position = new Kernel(5, InvoiceReportLayout.Margin) },
             DataColumn = new Item(InvoiceReportLayout.Columns.PaymentMethodLabel)
         });
         footer.AddColumn(new ColumnSetup
         {
-            Format = new Format(85, 5) { Position = new Kernel(34, SideX) },
+            Format = new Format(leftW, 6) { Position = new Kernel(10, InvoiceReportLayout.Margin) },
             DataColumn = new Item(InvoiceReportLayout.Columns.PaymentMethodValue)
         });
     }
 
     private static void BuildExchangeRateRow(Section footer)
     {
+        double leftW = (double)(RightLabelX - InvoiceReportLayout.Margin - 5m); // 105mm
         footer.AddColumn(new ColumnSetup
         {
-            Format = new Format(85, 5)
+            Format = new Format(leftW, 5)
             {
-                Position = new Kernel(39, SideX),
+                Position = new Kernel(16, InvoiceReportLayout.Margin),
                 FontDetails = new Font(new Shade(8, InvoiceReportLayout.GrayText))
             },
             DataColumn = new Item(InvoiceReportLayout.Columns.ExchangeRateRow)
