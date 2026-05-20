@@ -1,0 +1,258 @@
+@page "/invoices"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Listado de facturas · Portal de Facturación</PageTitle>
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0 fw-bold" style="color: var(--cbs-primary)">Listado de facturas</h2>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Origen de facturación</label>
+                <select class="form-select form-select-sm" @bind="SelectedBillingSource" @bind:after="LoadInvoices">
+                    <option value="">Todos</option>
+                    @foreach (var src in BillingSources)
+                    {
+                        <option value="@src">@src</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Estado</label>
+                <select class="form-select form-select-sm" @bind="SelectedStatus" @bind:after="LoadInvoices">
+                    <option value="">Todos</option>
+                    <option value="Issued">Emitida</option>
+                    <option value="Rectified">Rectificada</option>
+                    <option value="Cancelled">Cancelada</option>
+                    <option value="Draft">Borrador</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Desde</label>
+                <input type="date" class="form-control form-control-sm" @bind="IssuedFrom" @bind:after="LoadInvoices" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Hasta</label>
+                <input type="date" class="form-control form-control-sm" @bind="IssuedTo" @bind:after="LoadInvoices" />
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary w-100" @onclick="ClearFilters">
+                    Limpiar filtros
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-3 text-muted">Cargando facturas...</p>
+    </div>
+}
+else if (ErrorMessage is not null)
+{
+    <div class="alert alert-danger rounded-3">
+        <strong>Error:</strong> @ErrorMessage
+    </div>
+}
+else if (Result is not null)
+{
+    var allItems = Result.Items.Concat(Result.RectificativeItems)
+        .OrderByDescending(x => x.IssueDate)
+        .ToList();
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center py-3">
+            <span>
+                @Result.TotalCount facturas
+                @if (!string.IsNullOrEmpty(SelectedBillingSource))
+                {
+                    <span class="badge ms-2 text-bg-secondary">@SelectedBillingSource</span>
+                }
+            </span>
+            <span class="text-muted small">Página @Result.Page de @Result.TotalPages</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Nº Factura</th>
+                        <th>Fecha</th>
+                        <th>Receptor</th>
+                        <th>NIF</th>
+                        <th>Origen</th>
+                        <th>Estado</th>
+                        <th class="text-end">Total (EUR)</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in allItems)
+                    {
+                        <tr class="@(item.HasTamper ? "table-danger" : "")">
+                            <td class="fw-semibold">
+                                @item.InvoiceNumber
+                                @if (item.IsRectificative)
+                                {
+                                    <span class="badge text-bg-warning ms-1" style="font-size:0.65rem">RECT</span>
+                                }
+                            </td>
+                            <td>@item.IssueDate.ToString("dd/MM/yyyy")</td>
+                            <td>@item.RecipientName</td>
+                            <td class="text-muted small">@item.RecipientTaxId</td>
+                            <td><span class="badge text-bg-light border text-dark" style="font-size:0.7rem">@item.BillingSource</span></td>
+                            <td>@RenderStatus(item.Status)</td>
+                            <td class="text-end fw-semibold">@item.TotalEur.Amount.ToString("N2") €</td>
+                            <td class="text-end">
+                                <a href="/invoices/@Uri.EscapeDataString(item.InvoiceNumber)/preview?billingsource=@Uri.EscapeDataString(item.BillingSource)"
+                                   class="btn btn-outline-primary btn-sm py-0 px-2"
+                                   title="Ver factura">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                                        <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Result.TotalPages > 1)
+        {
+            <div class="card-footer d-flex justify-content-center py-3">
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(CurrentPage <= 1 ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(CurrentPage - 1)">‹</button>
+                        </li>
+                        @for (int p = Math.Max(1, CurrentPage - 2); p <= Math.Min(Result.TotalPages, CurrentPage + 2); p++)
+                        {
+                            var pageNum = p;
+                            <li class="page-item @(pageNum == CurrentPage ? "active" : "")">
+                                <button class="page-link" @onclick="() => GoToPage(pageNum)">@pageNum</button>
+                            </li>
+                        }
+                        <li class="page-item @(!Result.HasNextPage ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(CurrentPage + 1)">›</button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private PublicInvoiceListResponse? Result;
+    private List<string> BillingSources = [];
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+
+    private string SelectedBillingSource = "";
+    private string SelectedStatus = "";
+    private DateTime? IssuedFrom;
+    private DateTime? IssuedTo;
+    private int CurrentPage = 1;
+    private const int PageSize = 25;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(LoadBillingSources(), LoadInvoices());
+    }
+
+    private async Task LoadBillingSources()
+    {
+        try
+        {
+            var sources = await Http.GetFromJsonAsync<List<string>>("public/billing-sources");
+            BillingSources = sources ?? [];
+        }
+        catch
+        {
+            BillingSources = [];
+        }
+    }
+
+    private async Task LoadInvoices()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+        CurrentPage = 1;
+        await FetchPage(1);
+    }
+
+    private async Task GoToPage(int page)
+    {
+        await FetchPage(page);
+    }
+
+    private async Task FetchPage(int page)
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var url = BuildUrl(page);
+            Result = await Http.GetFromJsonAsync<PublicInvoiceListResponse>(url);
+            CurrentPage = page;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"No se pudo cargar el listado de facturas: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private string BuildUrl(int page)
+    {
+        var parts = new List<string> { $"page={page}", $"pageSize={PageSize}" };
+
+        if (!string.IsNullOrEmpty(SelectedBillingSource))
+            parts.Add($"billingSource={Uri.EscapeDataString(SelectedBillingSource)}");
+
+        if (!string.IsNullOrEmpty(SelectedStatus))
+            parts.Add($"status={Uri.EscapeDataString(SelectedStatus)}");
+
+        if (IssuedFrom.HasValue)
+            parts.Add($"issuedFrom={IssuedFrom.Value:yyyy-MM-dd}");
+
+        if (IssuedTo.HasValue)
+            parts.Add($"issuedTo={IssuedTo.Value:yyyy-MM-dd}");
+
+        return $"public/invoices?{string.Join("&", parts)}";
+    }
+
+    private async Task ClearFilters()
+    {
+        SelectedBillingSource = "";
+        SelectedStatus = "";
+        IssuedFrom = null;
+        IssuedTo = null;
+        await LoadInvoices();
+    }
+
+    private static MarkupString RenderStatus(string status) => status switch
+    {
+        "Issued" => new MarkupString("<span class='badge text-bg-success'>Emitida</span>"),
+        "Rectified" => new MarkupString("<span class='badge text-bg-warning text-dark'>Rectificada</span>"),
+        "Cancelled" => new MarkupString("<span class='badge text-bg-danger'>Cancelada</span>"),
+        "Draft" => new MarkupString("<span class='badge text-bg-secondary'>Borrador</span>"),
+        _ => new MarkupString($"<span class='badge text-bg-light text-dark'>{status}</span>")
+    };
+}

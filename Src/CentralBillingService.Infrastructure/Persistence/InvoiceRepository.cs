@@ -43,6 +43,11 @@ public sealed class InvoiceRepository : IInvoiceRepository
         CancellationToken cancellationToken = default) =>
         _read.FindRectificativeByNumberAsync(billingSource, invoiceNumber, cancellationToken);
 
+    public Task<IReadOnlyList<InvoiceSummaryDataPoint>> GetSummaryDataAsync(
+        string? billingSource,
+        CancellationToken cancellationToken = default) =>
+        _read.GetSummaryDataAsync(billingSource, cancellationToken);
+
     // ── Writes (delegated to IInvoiceWriteContext) ─────────────────────────
 
     public Task SaveAsync(Invoice invoice, CancellationToken cancellationToken = default) =>

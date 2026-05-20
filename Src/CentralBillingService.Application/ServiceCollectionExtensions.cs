@@ -29,6 +29,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<GenerateInvoiceQrUseCase>();
         services.AddScoped<GenerateInvoiceReportUseCase>();
         services.AddScoped<GenerateInvoiceUseCase>();
+        services.AddScoped<PublicListInvoicesUseCase>();
+        services.AddScoped<GetInvoicesSummaryUseCase>();
 
         return services;
     }

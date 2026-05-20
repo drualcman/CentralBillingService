@@ -77,7 +77,8 @@ internal sealed class SqlInvoiceReadContext(IOptions<DatabaseOptions> dbOptions)
     {
         var query = Invoices.AsNoTracking().AsQueryable();
 
-        query = query.Where(x => x.BillingSource == filter.BillingSource);
+        if (!string.IsNullOrWhiteSpace(filter.BillingSource))
+            query = query.Where(x => x.BillingSource == filter.BillingSource);
 
         if (!string.IsNullOrWhiteSpace(filter.Serie))
             query = query.Where(x => x.Serie == filter.Serie);
@@ -129,6 +130,22 @@ internal sealed class SqlInvoiceReadContext(IOptions<DatabaseOptions> dbOptions)
             Page = filter.Page,
             PageSize = filter.PageSize,
         };
+    }
+
+    public async Task<IReadOnlyList<InvoiceSummaryDataPoint>> GetSummaryDataAsync(
+        string? billingSource,
+        CancellationToken cancellationToken = default)
+    {
+        return await Invoices.AsNoTracking()
+            .Where(x => billingSource == null || x.BillingSource == billingSource)
+            .Select(x => new InvoiceSummaryDataPoint(
+                x.BillingSource,
+                x.Year,
+                x.IssueDate.Month,
+                x.TotalEur,
+                x.TaxableBaseEur,
+                x.TotalTaxAmountEur))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<RectificativeInvoice?> FindRectificativeByNumberAsync(

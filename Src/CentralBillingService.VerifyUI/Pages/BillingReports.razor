@@ -1,0 +1,168 @@
+@page "/reports"
+@inject HttpClient Http
+
+<PageTitle>Resultados de facturación · Portal de Facturación</PageTitle>
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0 fw-bold" style="color: var(--cbs-primary)">Resultados de facturación</h2>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Origen de facturación</label>
+                <select class="form-select form-select-sm" @bind="SelectedBillingSource" @bind:after="LoadSummary">
+                    <option value="">Todos los orígenes</option>
+                    @foreach (var src in BillingSources)
+                    {
+                        <option value="@src">@src</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-3 text-muted">Calculando resultados...</p>
+    </div>
+}
+else if (ErrorMessage is not null)
+{
+    <div class="alert alert-danger rounded-3">
+        <strong>Error:</strong> @ErrorMessage
+    </div>
+}
+else if (Summary is not null)
+{
+    <!-- Annual -->
+    <h5 class="fw-bold mb-3" style="color: var(--cbs-primary)">
+        Resumen anual
+    </h5>
+    <div class="row g-3 mb-5">
+        @foreach (var item in Summary.Annual)
+        {
+            <div class="col-sm-6 col-lg-3">
+                <div class="summary-card">
+                    <div class="period-label">@item.Label</div>
+                    <div class="amount">@item.TotalEur.ToString("N2") €</div>
+                    <div class="mt-2 small text-muted">
+                        Base: @item.TaxableBaseEur.ToString("N2") € ·
+                        IVA: @item.TotalTaxAmountEur.ToString("N2") €
+                    </div>
+                    <div class="invoice-count mt-1">@item.InvoiceCount facturas</div>
+                </div>
+            </div>
+        }
+        @if (!Summary.Annual.Any())
+        {
+            <div class="col-12 text-muted">Sin datos para el período seleccionado.</div>
+        }
+    </div>
+
+    <!-- Quarterly -->
+    <h5 class="fw-bold mb-3" style="color: var(--cbs-primary)">
+        Por trimestre
+    </h5>
+    <div class="row g-3 mb-5">
+        @foreach (var item in Summary.Quarterly)
+        {
+            <div class="col-sm-6 col-lg-3">
+                <div class="summary-card">
+                    <div class="period-label">@item.Label</div>
+                    <div class="amount">@item.TotalEur.ToString("N2") €</div>
+                    <div class="mt-2 small text-muted">
+                        Base: @item.TaxableBaseEur.ToString("N2") € ·
+                        IVA: @item.TotalTaxAmountEur.ToString("N2") €
+                    </div>
+                    <div class="invoice-count mt-1">@item.InvoiceCount facturas</div>
+                </div>
+            </div>
+        }
+        @if (!Summary.Quarterly.Any())
+        {
+            <div class="col-12 text-muted">Sin datos para el período seleccionado.</div>
+        }
+    </div>
+
+    <!-- Four-monthly -->
+    <h5 class="fw-bold mb-3" style="color: var(--cbs-primary)">
+        Por cuatrimestre
+    </h5>
+    <div class="row g-3 mb-5">
+        @foreach (var item in Summary.FourMonthly)
+        {
+            <div class="col-sm-6 col-lg-4">
+                <div class="summary-card">
+                    <div class="period-label">@item.Label</div>
+                    <div class="amount">@item.TotalEur.ToString("N2") €</div>
+                    <div class="mt-2 small text-muted">
+                        Base: @item.TaxableBaseEur.ToString("N2") € ·
+                        IVA: @item.TotalTaxAmountEur.ToString("N2") €
+                    </div>
+                    <div class="invoice-count mt-1">@item.InvoiceCount facturas</div>
+                </div>
+            </div>
+        }
+        @if (!Summary.FourMonthly.Any())
+        {
+            <div class="col-12 text-muted">Sin datos para el período seleccionado.</div>
+        }
+    </div>
+}
+
+@code {
+    private InvoicesSummaryResponse? Summary;
+    private List<string> BillingSources = [];
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+    private string SelectedBillingSource = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(LoadBillingSources(), LoadSummary());
+    }
+
+    private async Task LoadBillingSources()
+    {
+        try
+        {
+            var sources = await Http.GetFromJsonAsync<List<string>>("public/billing-sources");
+            BillingSources = sources ?? [];
+        }
+        catch
+        {
+            BillingSources = [];
+        }
+    }
+
+    private async Task LoadSummary()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var url = string.IsNullOrEmpty(SelectedBillingSource)
+                ? "public/invoices/summary"
+                : $"public/invoices/summary?billingSource={Uri.EscapeDataString(SelectedBillingSource)}";
+
+            Summary = await Http.GetFromJsonAsync<InvoicesSummaryResponse>(url);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"No se pudo cargar el resumen de facturación: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

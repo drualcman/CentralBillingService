@@ -58,4 +58,6 @@ public sealed class BillingSourceRegistry
     public bool IsRegistered(string billingSource) =>
         !string.IsNullOrWhiteSpace(billingSource) &&
         _configs.ContainsKey(billingSource.ToLowerInvariant());
+
+    public IReadOnlyCollection<BillingSourceConfig> GetAll() => _configs.Values;
 }

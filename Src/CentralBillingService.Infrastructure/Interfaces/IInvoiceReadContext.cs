@@ -32,4 +32,12 @@ public interface IInvoiceReadContext
         string billingSource,
         string invoiceNumber,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns lightweight projections for period-based summary aggregation.
+    /// Pass null billingSource to aggregate across all sources.
+    /// </summary>
+    Task<IReadOnlyList<InvoiceSummaryDataPoint>> GetSummaryDataAsync(
+        string? billingSource,
+        CancellationToken cancellationToken = default);
 }
