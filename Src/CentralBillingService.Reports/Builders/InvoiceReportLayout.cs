@@ -6,10 +6,12 @@ internal static class InvoiceReportLayout
     public const decimal Margin = 10m;
     public const decimal ContentWidth = 190m;
 
-    // Alturas de secciones
-    public const decimal HeaderHeight = 110m;
-    public const decimal FooterHeight = 65m;
+    // Alturas de secciones — Header+Body+Footer = 297 (A4 sin márgenes de sección)
+    public const decimal HeaderHeight = 95m;   // reducido de 110 para eliminar hueco bajo cabecera de tabla
+    public const decimal FooterHeight = 80m;   // ampliado de 65 para margen QR y sub-valores de moneda original
+    public const decimal BodyHeight = 122m;    // 297 - 95 - 80
     public const decimal BodyRowHeight = 12m;
+    public const decimal BodyRowHeightWithOrigin = 18m;
 
     // Posiciones X de columnas de la tabla (desde el borde izquierdo de la página)
     public const decimal ColDescX = 10m;
@@ -78,19 +80,25 @@ internal static class InvoiceReportLayout
         public const string DescriptionValue = "DescriptionValue";
         public const string QtyValue = "QtyValue";
         public const string UnitPriceValue = "UnitPriceValue";
+        public const string UnitPriceOriginValue = "UnitPriceOriginValue";
         public const string TaxRateValue = "TaxRateValue";
         public const string TaxableBaseValue = "TaxableBaseValue";
+        public const string TaxableBaseOriginValue = "TaxableBaseOriginValue";
         public const string TotalValue = "TotalValue";
+        public const string TotalOriginValue = "TotalOriginValue";
 
         // Footer — totales
         public const string TotalSeparator = "TotalSeparator";
         public const string SubtotalLabel = "SubtotalLabel";
         public const string SubtotalValue = "SubtotalValue";
+        public const string SubtotalOriginValue = "SubtotalOriginValue";
         public const string TaxLabel = "TaxLabel";
         public const string TaxValue = "TaxValue";
+        public const string TaxOriginValue = "TaxOriginValue";
         public const string TotalSeparatorBottom = "TotalSeparatorBottom";
         public const string TotalLabel = "TotalLabel";
         public const string TotalFooterValue = "TotalFooterValue";
+        public const string TotalOriginFooterValue = "TotalOriginFooterValue";
 
         // Footer — info pago y cambio
         public const string PaymentMethodLabel = "PaymentMethodLabel";

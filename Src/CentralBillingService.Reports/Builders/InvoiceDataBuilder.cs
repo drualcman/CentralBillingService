@@ -55,7 +55,7 @@ internal static class InvoiceDataBuilder
             CreateData(SectionType.Header, InvoiceReportLayout.Columns.DescriptionHeader, "Descripción"),
             CreateData(SectionType.Header, InvoiceReportLayout.Columns.QtyHeader, "Cant."),
             CreateData(SectionType.Header, InvoiceReportLayout.Columns.UnitPriceHeader, "P.U. (€)"),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.TaxRateHeader, "IVA %"),
+            CreateData(SectionType.Header, InvoiceReportLayout.Columns.TaxRateHeader, "IGIC %"),
             CreateData(SectionType.Header, InvoiceReportLayout.Columns.TaxableBaseHeader, "Base €"),
             CreateData(SectionType.Header, InvoiceReportLayout.Columns.TotalHeader, "Total €"),
         });
@@ -82,14 +82,26 @@ internal static class InvoiceDataBuilder
             data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TaxRateValue, $"{line.TaxRate.Percentage}%"));
             data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TaxableBaseValue, FormatAmount(line.TaxableBaseEur.Amount)));
             data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TotalValue, FormatAmount(line.TotalEur.Amount)));
+
+            if (!line.HasCurrencyConversion) continue;
+
+            var curr = line.UnitPriceOrigin.Currency.Code;
+            decimal taxOriginLine = line.TotalOrigin.Amount * line.TaxRate.Percentage / 100m;
+            decimal totalOriginLine = line.TotalOrigin.Amount + taxOriginLine;
+
+            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.UnitPriceOriginValue,
+                FormatOrigin(line.UnitPriceOrigin.Amount, curr)));
+            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TaxableBaseOriginValue,
+                FormatOrigin(line.TotalOrigin.Amount, curr)));
+            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TotalOriginValue,
+                FormatOrigin(totalOriginLine, curr)));
         }
     }
 
     private static async Task AddFooterDataAsync(List<ColumnData> data, Invoice invoice)
     {
         string exchangeRateInfo = invoice.IsInOriginCurrency
-            ? $"Tipo de cambio: 1 {invoice.AppliedExchangeRate.From} = {invoice.AppliedExchangeRate.Rate:F4} EUR" +
-              $"  |  Total {invoice.AppliedExchangeRate.From}: {invoice.TotalInOriginCurrency.Amount.ToString("N2", EsEs)}"
+            ? $"Tipo de cambio: 1 {invoice.AppliedExchangeRate.From} = {invoice.AppliedExchangeRate.Rate:F4} EUR"
             : string.Empty;
 
         string paymentInfo = string.IsNullOrEmpty(invoice.PaymentMethod)
@@ -101,7 +113,7 @@ internal static class InvoiceDataBuilder
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TotalSeparator, " "),
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.SubtotalLabel, "Base imponible:"),
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.SubtotalValue, FormatAmount(invoice.TaxableBaseEur.Amount)),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TaxLabel, "IVA total:"),
+            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TaxLabel, "IGIC total:"),
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TaxValue, FormatAmount(invoice.TotalTaxAmountEur.Amount)),
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TotalSeparatorBottom, " "),
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TotalLabel, "TOTAL"),
@@ -118,6 +130,21 @@ internal static class InvoiceDataBuilder
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.HashValue, invoice.Hash),
         });
 
+        if (invoice.IsInOriginCurrency)
+        {
+            var curr = invoice.AppliedExchangeRate.From.Code;
+            decimal subtotalOrig = invoice.TotalInOriginCurrency.Amount;
+            decimal taxOrig = invoice.Lines.Sum(l => l.TotalOrigin.Amount * l.TaxRate.Percentage / 100m);
+            decimal totalOrig = subtotalOrig + taxOrig;
+
+            data.Add(CreateData(SectionType.Footer, InvoiceReportLayout.Columns.SubtotalOriginValue,
+                FormatOrigin(subtotalOrig, curr)));
+            data.Add(CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TaxOriginValue,
+                FormatOrigin(taxOrig, curr)));
+            data.Add(CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TotalOriginFooterValue,
+                FormatOrigin(totalOrig, curr)));
+        }
+
         if (!string.IsNullOrWhiteSpace(invoice.QrCodeBlobUrl))
         {
             byte[] qrBytes = await DownloadUrlHelper.GetBytes(invoice.QrCodeBlobUrl);
@@ -127,6 +154,9 @@ internal static class InvoiceDataBuilder
     }
 
     private static string FormatAmount(decimal amount) => amount.ToString("N2", EsEs);
+
+    private static string FormatOrigin(decimal amount, string currencyCode)
+        => $"{amount.ToString("N2", EsEs)} {currencyCode}";
 
     private static ColumnData CreateData(SectionType section, string col, object value)
         => new() { Section = section, Column = new Item(col), Value = value };
