@@ -147,6 +147,7 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
             Quantity = l.Quantity,
             UnitPrice = l.UnitPrice,
             TaxRatePercentage = l.TaxRatePercentage,
+            CurrencyCode = l.CurrencyCode,
         })],
         PaymentMethod = cmd.PaymentMethod,
         PaymentReference = cmd.PaymentReference,

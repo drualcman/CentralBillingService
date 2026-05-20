@@ -150,10 +150,13 @@ public sealed class RectificativeInvoice
         TotalTaxAmountEur = lines.Aggregate(Money.Zero(Currency.EUR), (acc, l) => acc.Add(l.TaxAmountEur));
         TotalEur = TaxableBaseEur.Add(TotalTaxAmountEur);
 
+        // Sum origin totals only when all lines share the same origin currency.
+        // For mixed-currency rectifications the aggregate would throw; fall back to TaxableBaseEur.
         var originCurrency = appliedExchangeRate.From;
-        TotalInOriginCurrency = lines.Aggregate(
-            Money.Zero(originCurrency),
-            (acc, l) => acc.Add(l.TotalOrigin));
+        var allSameCurrency = lines.All(l => l.UnitPriceOrigin.Currency == originCurrency);
+        TotalInOriginCurrency = allSameCurrency
+            ? lines.Aggregate(Money.Zero(originCurrency), (acc, l) => acc.Add(l.TotalOrigin))
+            : TaxableBaseEur;
 
         PaymentReference = paymentReference;
         TransactionData = transactionData;

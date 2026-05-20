@@ -29,10 +29,10 @@ public sealed class CreateInvoiceCommand
     public required IReadOnlyList<InvoiceLineDto> Lines { get; init; }
 
     /// <summary>
-    /// Currency code in which the client sees the amounts (e.g. "USD", "PHP", "EUR").
-    /// If EUR, no conversion is performed.
+    /// Default currency for lines that do not specify their own CurrencyCode.
+    /// Null or omitted = EUR. Each line can override via InvoiceLineDto.CurrencyCode.
     /// </summary>
-    public required string OriginCurrencyCode { get; init; }
+    public string? OriginCurrencyCode { get; init; }
 
     /// <summary>Issue date. Defaults to today (UTC) if not provided.</summary>
     public DateOnly? IssueDate { get; init; }

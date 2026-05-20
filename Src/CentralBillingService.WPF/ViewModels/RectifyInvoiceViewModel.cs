@@ -1,3 +1,4 @@
+using CentralBillingService.Domain.Interfaces;
 using CentralBillingService.Domain.ValueObjects;
 
 namespace CentralBillingService.WPF.ViewModels;
@@ -30,24 +31,22 @@ public partial class RectifyInvoiceViewModel : ObservableObject
     [ObservableProperty] bool isLoadingOriginal;
 
     public static string[] RectificationTypes { get; } = ["Substitution", "Difference"];
-    public static string[] CurrencyCodes { get; } =
-        Currency.All.Values.Select(c => c.Code).OrderBy(c => c).ToArray();
     public bool IsDifference => SelectedRectificationType == "Difference";
 
     partial void OnSelectedRectificationTypeChanged(string value) =>
         OnPropertyChanged(nameof(IsDifference));
 
-    // Origin currency derived from the loaded original invoice
-    public string OriginCurrencyCode => OriginalInvoice?.AppliedExchangeRate.FromCurrency ?? "EUR";
+    // Default currency for new difference lines — derived from original invoice's primary currency
+    public string DefaultCurrencyCode => OriginalInvoice?.AppliedExchangeRate.FromCurrency ?? "EUR";
 
-    // Live totals for difference lines (amounts are in the origin currency)
+    // Live totals for difference lines (raw sums — actual EUR amounts computed at rectification time)
     public decimal TotalsSubtotal => DifferenceLines.Sum(l => l.Quantity * l.UnitPrice);
     public decimal TotalsTax => DifferenceLines.Sum(l => l.Quantity * l.UnitPrice * l.TaxRate / 100m);
     public decimal TotalsTotal => TotalsSubtotal + TotalsTax;
 
-    public string TotalsSubtotalFormatted => $"{TotalsSubtotal:N2} {OriginCurrencyCode}";
-    public string TotalsTaxFormatted      => $"{TotalsTax:N2} {OriginCurrencyCode}";
-    public string TotalsTotalFormatted    => $"{TotalsTotal:N2} {OriginCurrencyCode}";
+    public string TotalsSubtotalFormatted => $"{TotalsSubtotal:N2}";
+    public string TotalsTaxFormatted      => $"{TotalsTax:N2}";
+    public string TotalsTotalFormatted    => $"{TotalsTotal:N2}";
 
     public RectifyInvoiceViewModel(
         IServiceScopeFactory scopeFactory,
@@ -81,8 +80,38 @@ public partial class RectifyInvoiceViewModel : ObservableObject
         RefreshTotals();
     }
 
-    private void OnDiffLineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
+    private void OnDiffLineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
         RefreshTotals();
+        if (sender is InvoiceLineItem line && e.PropertyName == nameof(InvoiceLineItem.CurrencyCode))
+            _ = FetchRateHintAsync(line);
+    }
+
+    private async Task FetchRateHintAsync(InvoiceLineItem line)
+    {
+        if (line.CurrencyCode == "EUR")
+        {
+            line.ExchangeRateHint = null;
+            return;
+        }
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var provider = scope.ServiceProvider.GetRequiredService<IExchangeRateProvider>();
+            var currency = Currency.From(line.CurrencyCode);
+            if (!provider.Supports(currency, Currency.EUR))
+            {
+                line.ExchangeRateHint = "Divisa no soportada por el proveedor de cambio";
+                return;
+            }
+            var rate = await provider.GetRateAsync(currency, Currency.EUR);
+            line.ExchangeRateHint = $"1 {line.CurrencyCode} ≈ {rate.Rate:G5} EUR";
+        }
+        catch
+        {
+            line.ExchangeRateHint = "Cambio no disponible (se calculará al emitir)";
+        }
+    }
 
     partial void OnOriginalInvoiceChanged(InvoiceResult? value) => RefreshTotals();
 
@@ -94,7 +123,7 @@ public partial class RectifyInvoiceViewModel : ObservableObject
         OnPropertyChanged(nameof(TotalsSubtotalFormatted));
         OnPropertyChanged(nameof(TotalsTaxFormatted));
         OnPropertyChanged(nameof(TotalsTotalFormatted));
-        OnPropertyChanged(nameof(OriginCurrencyCode));
+        OnPropertyChanged(nameof(DefaultCurrencyCode));
     }
 
     public async Task LoadAsync()
@@ -122,7 +151,11 @@ public partial class RectifyInvoiceViewModel : ObservableObject
     }
 
     [RelayCommand]
-    void AddLine() => DifferenceLines.Add(new InvoiceLineItem());
+    void AddLine()
+    {
+        var line = new InvoiceLineItem { CurrencyCode = DefaultCurrencyCode };
+        DifferenceLines.Add(line);
+    }
 
     [RelayCommand]
     void RemoveLine(InvoiceLineItem line) => DifferenceLines.Remove(line);
@@ -132,10 +165,11 @@ public partial class RectifyInvoiceViewModel : ObservableObject
     {
         DifferenceLines.Add(new InvoiceLineItem
         {
-            Description = line.Description,
-            Quantity = -line.Quantity,
-            UnitPrice = line.UnitPriceOrigin.Amount,
-            TaxRate = line.TaxRatePercentage,
+            Description  = line.Description,
+            Quantity     = -line.Quantity,
+            UnitPrice    = line.UnitPriceOrigin.Amount,
+            TaxRate      = line.TaxRatePercentage,
+            CurrencyCode = line.UnitPriceOrigin.CurrencyCode,
         });
     }
 
@@ -175,6 +209,7 @@ public partial class RectifyInvoiceViewModel : ObservableObject
                         Quantity = l.Quantity,
                         UnitPrice = l.UnitPrice,
                         TaxRatePercentage = l.TaxRate,
+                        CurrencyCode = l.CurrencyCode,
                     }).ToList()
                     : null,
             });

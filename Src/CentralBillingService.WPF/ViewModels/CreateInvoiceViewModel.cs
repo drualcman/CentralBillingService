@@ -1,3 +1,4 @@
+using CentralBillingService.Domain.Interfaces;
 using CentralBillingService.Domain.ValueObjects;
 using CentralBillingService.WPF.Services;
 
@@ -20,7 +21,6 @@ public partial class CreateInvoiceViewModel : ObservableObject
 
     // Invoice header
     [ObservableProperty] string serie = "F";
-    [ObservableProperty] string originCurrencyCode = "EUR";
     [ObservableProperty] DateTime issueDate = DateTime.Today;
     [ObservableProperty] string? notes;
     [ObservableProperty] string paymentMethod = "TRANSFER";
@@ -52,19 +52,16 @@ public partial class CreateInvoiceViewModel : ObservableObject
     public static string[] PaymentMethods { get; } =
         ["TRANSFER", "CARD", "CASH", "PAYPAL", "CRYPTO", "OTHER"];
 
-    public static string[] CurrencyCodes { get; } =
-        Currency.All.Values.Select(c => c.Code).OrderBy(c => c).ToArray();
-
     [ObservableProperty] string? saveToMasterMessage;
 
-    // Live totals
+    // Live totals (raw sums of unit prices × quantities; actual EUR amounts computed by backend)
     public decimal TotalsSubtotal => Lines.Sum(l => l.Quantity * l.UnitPrice);
     public decimal TotalsTax      => Lines.Sum(l => l.Quantity * l.UnitPrice * l.TaxRate / 100m);
     public decimal TotalsTotal    => TotalsSubtotal + TotalsTax;
 
-    public string TotalsSubtotalFormatted => $"{TotalsSubtotal:N2} {OriginCurrencyCode}";
-    public string TotalsTaxFormatted      => $"{TotalsTax:N2} {OriginCurrencyCode}";
-    public string TotalsTotalFormatted    => $"{TotalsTotal:N2} {OriginCurrencyCode}";
+    public string TotalsSubtotalFormatted => $"{TotalsSubtotal:N2}";
+    public string TotalsTaxFormatted      => $"{TotalsTax:N2}";
+    public string TotalsTotalFormatted    => $"{TotalsTotal:N2}";
 
     public CreateInvoiceViewModel(
         IServiceScopeFactory scopeFactory,
@@ -97,10 +94,38 @@ public partial class CreateInvoiceViewModel : ObservableObject
         RefreshTotals();
     }
 
-    private void OnLineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
+    private void OnLineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
         RefreshTotals();
+        if (sender is InvoiceLineItem line && e.PropertyName == nameof(InvoiceLineItem.CurrencyCode))
+            _ = FetchRateHintAsync(line);
+    }
 
-    partial void OnOriginCurrencyCodeChanged(string value) => RefreshTotals();
+    private async Task FetchRateHintAsync(InvoiceLineItem line)
+    {
+        if (line.CurrencyCode == "EUR")
+        {
+            line.ExchangeRateHint = null;
+            return;
+        }
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var provider = scope.ServiceProvider.GetRequiredService<IExchangeRateProvider>();
+            var currency = Currency.From(line.CurrencyCode);
+            if (!provider.Supports(currency, Currency.EUR))
+            {
+                line.ExchangeRateHint = "Divisa no soportada por el proveedor de cambio";
+                return;
+            }
+            var rate = await provider.GetRateAsync(currency, Currency.EUR);
+            line.ExchangeRateHint = $"1 {line.CurrencyCode} ≈ {rate.Rate:G5} EUR";
+        }
+        catch
+        {
+            line.ExchangeRateHint = "Cambio no disponible (se calculará al emitir)";
+        }
+    }
 
     private void RefreshTotals()
     {
@@ -152,7 +177,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
                 BillingSource = BillingSource.Name,
                 Secret = BillingSource.Secret,
                 Serie = Serie.Trim().ToUpperInvariant(),
-                OriginCurrencyCode = OriginCurrencyCode,
+                OriginCurrencyCode = null, // per-line currencies are used instead
                 IssueDate = DateOnly.FromDateTime(IssueDate),
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
                 PaymentMethod = PaymentMethod,
@@ -179,6 +204,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
                     Quantity = l.Quantity,
                     UnitPrice = l.UnitPrice,
                     TaxRatePercentage = l.TaxRate,
+                    CurrencyCode = l.CurrencyCode,
                 }).ToList(),
             });
 

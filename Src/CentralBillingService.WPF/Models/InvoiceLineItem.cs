@@ -1,3 +1,5 @@
+using CentralBillingService.Domain.ValueObjects;
+
 namespace CentralBillingService.WPF.Models;
 
 public sealed class InvoiceLineItem : ObservableObject
@@ -6,6 +8,8 @@ public sealed class InvoiceLineItem : ObservableObject
     private int _quantity = 1;
     private decimal _unitPrice;
     private int _taxRate = 21;
+    private string _currencyCode = "EUR";
+    private string? _exchangeRateHint;
     private ProductRecord? _selectedProduct;
 
     public string Description
@@ -32,6 +36,19 @@ public sealed class InvoiceLineItem : ObservableObject
         set => SetProperty(ref _taxRate, value);
     }
 
+    public string CurrencyCode
+    {
+        get => _currencyCode;
+        set => SetProperty(ref _currencyCode, value);
+    }
+
+    /// <summary>Informational hint shown in the UI when a non-EUR currency is selected.</summary>
+    public string? ExchangeRateHint
+    {
+        get => _exchangeRateHint;
+        set => SetProperty(ref _exchangeRateHint, value);
+    }
+
     public ProductRecord? SelectedProduct
     {
         get => _selectedProduct;
@@ -47,4 +64,7 @@ public sealed class InvoiceLineItem : ObservableObject
     }
 
     public static int[] TaxRates { get; } = [0, 4, 10, 21];
+
+    public static string[] CurrencyCodes { get; } =
+        Currency.All.Values.Select(c => c.Code).OrderBy(c => c).ToArray();
 }

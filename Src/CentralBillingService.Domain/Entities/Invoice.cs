@@ -145,11 +145,14 @@ public sealed class Invoice
         TotalTaxAmountEur = lines.Aggregate(Money.Zero(Currency.EUR), (acc, l) => acc.Add(l.TaxAmountEur));
         TotalEur = TaxableBaseEur.Add(TotalTaxAmountEur);
 
-        // Total en divisa origen: suma de totales origen de cada línea
+        // Sum origin totals only when all lines share the same origin currency.
+        // For mixed-currency invoices the aggregate would throw (incompatible currencies),
+        // so fall back to the pre-tax EUR total — it won't be displayed in that case anyway.
         var originCurrency = appliedExchangeRate.From;
-        TotalInOriginCurrency = lines.Aggregate(
-            Money.Zero(originCurrency),
-            (acc, l) => acc.Add(l.TotalOrigin));
+        var allSameCurrency = lines.All(l => l.UnitPriceOrigin.Currency == originCurrency);
+        TotalInOriginCurrency = allSameCurrency
+            ? lines.Aggregate(Money.Zero(originCurrency), (acc, l) => acc.Add(l.TotalOrigin))
+            : TaxableBaseEur;
 
         PaymentReference = paymentReference;
         TransactionData = transactionData;

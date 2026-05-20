@@ -213,18 +213,10 @@
             <DockPanel Grid.Column="1">
                 <!-- Lines section header bar -->
                 <Border DockPanel.Dock="Top" Background="White"
-                        BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="20,10">
+                        BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="20,14">
                     <Grid>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="LÍNEAS DE FACTURA" Style="{StaticResource SectionHeader}"
-                                       VerticalAlignment="Center" Margin="0,0,16,0" />
-                            <ComboBox Width="130"
-                                      materialDesign:HintAssist.Hint="Moneda *"
-                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                      IsEditable="True"
-                                      Text="{Binding OriginCurrencyCode}"
-                                      ItemsSource="{x:Static vm:CreateInvoiceViewModel.CurrencyCodes}" />
-                        </StackPanel>
+                        <TextBlock Text="LÍNEAS DE FACTURA" Style="{StaticResource SectionHeader}"
+                                   VerticalAlignment="Center" Margin="0" />
                         <Button HorizontalAlignment="Right"
                                 Style="{StaticResource MaterialDesignFlatButton}"
                                 Command="{Binding AddLineCommand}">
@@ -243,57 +235,72 @@
                             <DataTemplate DataType="{x:Type models:InvoiceLineItem}">
                                 <Border BorderBrush="#E2E8F0" BorderThickness="0,0,0,1"
                                         Padding="0,0,0,12" Margin="0,0,0,12">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="80" />
-                                            <ColumnDefinition Width="130" />
-                                            <ColumnDefinition Width="100" />
-                                            <ColumnDefinition Width="36" />
-                                            <ColumnDefinition Width="36" />
-                                        </Grid.ColumnDefinitions>
-                                        <ComboBox Grid.Column="0" Margin="0,0,8,0"
-                                                  materialDesign:HintAssist.Hint="Descripción / Producto *"
-                                                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                                  IsEditable="True"
-                                                  Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
-                                                  SelectedItem="{Binding SelectedProduct}"
-                                                  ItemsSource="{Binding DataContext.AvailableProducts,
-                                                      RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                  DisplayMemberPath="Description" />
-                                        <TextBox Grid.Column="1" Margin="0,0,8,0"
-                                                 materialDesign:HintAssist.Hint="Cant."
-                                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                                 Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" />
-                                        <TextBox Grid.Column="2" Margin="0,0,8,0"
-                                                 materialDesign:HintAssist.Hint="Precio unit."
-                                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                                 Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged}" />
-                                        <ComboBox Grid.Column="3" Margin="0,0,8,0"
-                                                  materialDesign:HintAssist.Hint="IVA %"
-                                                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                                  ItemsSource="{x:Static models:InvoiceLineItem.TaxRates}"
-                                                  SelectedItem="{Binding TaxRate}" />
-                                        <Button Grid.Column="4"
-                                                Style="{StaticResource MaterialDesignIconButton}"
-                                                Foreground="#EF4444"
-                                                Command="{Binding DataContext.RemoveLineCommand,
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="110" />
+                                                <ColumnDefinition Width="70" />
+                                                <ColumnDefinition Width="120" />
+                                                <ColumnDefinition Width="90" />
+                                                <ColumnDefinition Width="36" />
+                                                <ColumnDefinition Width="36" />
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox Grid.Column="0" Margin="0,0,8,0"
+                                                      materialDesign:HintAssist.Hint="Descripción / Producto *"
+                                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                      IsEditable="True"
+                                                      Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                                                      SelectedItem="{Binding SelectedProduct}"
+                                                      ItemsSource="{Binding DataContext.AvailableProducts,
                                                           RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                VerticalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="TrashCanOutline" />
-                                        </Button>
-                                        <Button Grid.Column="5"
-                                                Style="{StaticResource MaterialDesignIconButton}"
-                                                Foreground="#10B981"
-                                                Command="{Binding DataContext.SaveProductToMasterCommand,
-                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                VerticalAlignment="Center"
-                                                ToolTip="Guardar artículo en el maestro">
-                                            <materialDesign:PackIcon Kind="ContentSaveOutline" />
-                                        </Button>
-                                    </Grid>
+                                                      DisplayMemberPath="Description" />
+                                            <ComboBox Grid.Column="1" Margin="0,0,8,0"
+                                                      materialDesign:HintAssist.Hint="Moneda"
+                                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                      IsEditable="True"
+                                                      Text="{Binding CurrencyCode, UpdateSourceTrigger=PropertyChanged}"
+                                                      ItemsSource="{x:Static models:InvoiceLineItem.CurrencyCodes}" />
+                                            <TextBox Grid.Column="2" Margin="0,0,8,0"
+                                                     materialDesign:HintAssist.Hint="Cant."
+                                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                     Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBox Grid.Column="3" Margin="0,0,8,0"
+                                                     materialDesign:HintAssist.Hint="Precio unit."
+                                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                     Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged}" />
+                                            <ComboBox Grid.Column="4" Margin="0,0,8,0"
+                                                      materialDesign:HintAssist.Hint="IVA %"
+                                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                      ItemsSource="{x:Static models:InvoiceLineItem.TaxRates}"
+                                                      SelectedItem="{Binding TaxRate}" />
+                                            <Button Grid.Column="5"
+                                                    Style="{StaticResource MaterialDesignIconButton}"
+                                                    Foreground="#EF4444"
+                                                    Command="{Binding DataContext.RemoveLineCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="TrashCanOutline" />
+                                            </Button>
+                                            <Button Grid.Column="6"
+                                                    Style="{StaticResource MaterialDesignIconButton}"
+                                                    Foreground="#10B981"
+                                                    Command="{Binding DataContext.SaveProductToMasterCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    VerticalAlignment="Center"
+                                                    ToolTip="Guardar artículo en el maestro">
+                                                <materialDesign:PackIcon Kind="ContentSaveOutline" />
+                                            </Button>
+                                        </Grid>
+                                        <!-- Exchange rate hint (shown when non-EUR currency selected) -->
+                                        <TextBlock Text="{Binding ExchangeRateHint}"
+                                                   Visibility="{Binding ExchangeRateHint,
+                                                       Converter={StaticResource HasValue}}"
+                                                   FontSize="10" Foreground="#6366F1"
+                                                   Margin="0,4,0,0" />
+                                    </StackPanel>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -311,20 +318,20 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Live totals -->
+                <!-- Live totals (sums of raw unit prices — actual EUR amounts computed at invoice creation) -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <StackPanel Margin="0,0,28,0">
-                        <TextBlock Text="BASE IMPONIBLE" FontSize="10" Foreground="#94A3B8" />
+                        <TextBlock Text="BASE (est.)" FontSize="10" Foreground="#94A3B8" />
                         <TextBlock Text="{Binding TotalsSubtotalFormatted}"
                                    FontSize="14" FontWeight="SemiBold" Foreground="#64748B" />
                     </StackPanel>
                     <StackPanel Margin="0,0,28,0">
-                        <TextBlock Text="IVA" FontSize="10" Foreground="#94A3B8" />
+                        <TextBlock Text="IVA (est.)" FontSize="10" Foreground="#94A3B8" />
                         <TextBlock Text="{Binding TotalsTaxFormatted}"
                                    FontSize="14" FontWeight="SemiBold" Foreground="#64748B" />
                     </StackPanel>
                     <StackPanel>
-                        <TextBlock Text="TOTAL" FontSize="10" Foreground="#94A3B8" />
+                        <TextBlock Text="TOTAL (est.)" FontSize="10" Foreground="#94A3B8" />
                         <TextBlock Text="{Binding TotalsTotalFormatted}"
                                    FontSize="18" FontWeight="Bold" Foreground="#1E293B" />
                     </StackPanel>

@@ -5,8 +5,8 @@ namespace CentralBillingService.Domain.Services;
 ///
 /// Responsibilities:
 ///   1. Resolve the issuer and validate the billing source
-///   2. Obtain the exchange rate if the origin currency is not EUR
-///   3. Build invoice lines with amounts in both currencies
+///   2. Obtain the exchange rate for each unique non-EUR currency used across lines
+///   3. Build invoice lines with amounts in both currencies (per-line currency support)
 ///   4. Create and issue the invoice using the pre-reserved number
 ///   5. Compute the VeriFactu hash chain
 ///
@@ -53,23 +53,18 @@ public sealed class CreateInvoiceService
         // 1. Resolve issuer from registry
         var sourceConfig = _registry.GetConfig(request.BillingSource, request.Secret);
 
-        // 2. Resolve origin currency
-        var originCurrency = Currency.From(request.OriginCurrencyCode);
+        // 2. Build lines with per-line currency conversion
+        var defaultCurrency = request.OriginCurrencyCode ?? "EUR";
+        var (lines, primaryRate) = await BuildLinesAsync(request.Lines, defaultCurrency, cancellationToken);
 
-        // 3. Obtain exchange rate (or identity if already EUR)
-        var exchangeRate = await ResolveExchangeRateAsync(originCurrency, cancellationToken);
-
-        // 4. Build recipient
+        // 3. Build recipient
         var recipient = BuildRecipient(request.Recipient);
 
-        // 5. Build invoice number from the pre-reserved sequence number
+        // 4. Build invoice number from the pre-reserved sequence number
         var issueDate = request.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var invoiceNumber = InvoiceNumber.Create(request.Serie, issueDate.Year, reservedNumber);
 
-        // 6. Build lines with currency conversion if needed
-        var lines = BuildLines(request.Lines, originCurrency, exchangeRate);
-
-        // 7. Create and immediately issue the invoice
+        // 5. Create and immediately issue the invoice
         var invoice = Invoice.Create(
             number: invoiceNumber,
             billingSource: request.BillingSource,
@@ -77,7 +72,7 @@ public sealed class CreateInvoiceService
             recipient: recipient,
             issueDate: issueDate,
             lines: lines,
-            appliedExchangeRate: exchangeRate,
+            appliedExchangeRate: primaryRate,
             hasher: _hasher,
             previousHash: previousHash,
             valueDate: request.ValueDate,
@@ -93,19 +88,65 @@ public sealed class CreateInvoiceService
 
     // ── Private ────────────────────────────────────────────────────────────
 
-    private async Task<ExchangeRate> ResolveExchangeRateAsync(
-        Currency originCurrency,
+    /// <summary>
+    /// Builds invoice lines with per-line currency conversion.
+    /// Returns the lines and the "primary" exchange rate to store on the invoice
+    /// (the single non-EUR rate when all lines share one currency, otherwise identity).
+    /// </summary>
+    private async Task<(List<InvoiceLine> Lines, ExchangeRate PrimaryRate)> BuildLinesAsync(
+        IReadOnlyList<InvoiceLineData> lineData,
+        string defaultCurrencyCode,
         CancellationToken cancellationToken)
     {
-        if (originCurrency == Currency.EUR)
-            return ExchangeRate.Identity(DateTimeOffset.UtcNow);
+        // Resolve currency per line (fall back to invoice default)
+        var lineCurrencies = lineData
+            .Select(l => Currency.From(l.CurrencyCode ?? defaultCurrencyCode))
+            .ToList();
 
-        if (!_exchangeRateProvider.Supports(originCurrency, Currency.EUR))
-            throw new DomainException(
-                $"Currency '{originCurrency.Code}' is not supported by the exchange rate provider.");
+        // Fetch exchange rates for each unique non-EUR currency (one API call per currency)
+        var uniqueNonEur = lineCurrencies.Where(c => c != Currency.EUR).Distinct().ToList();
+        var rateCache = new Dictionary<Currency, ExchangeRate>(uniqueNonEur.Count);
+        foreach (var cur in uniqueNonEur)
+        {
+            if (!_exchangeRateProvider.Supports(cur, Currency.EUR))
+                throw new DomainException(
+                    $"Currency '{cur.Code}' is not supported by the exchange rate provider.");
+            rateCache[cur] = await _exchangeRateProvider.GetRateAsync(cur, Currency.EUR, cancellationToken);
+        }
 
-        return await _exchangeRateProvider.GetRateAsync(
-            originCurrency, Currency.EUR, cancellationToken);
+        // Build lines
+        var lines = new List<InvoiceLine>(lineData.Count);
+        for (int i = 0; i < lineData.Count; i++)
+        {
+            var data = lineData[i];
+            var lineCurrency = lineCurrencies[i];
+            var taxRate = TaxRate.Of(data.TaxRatePercentage);
+
+            InvoiceLine line;
+            if (lineCurrency == Currency.EUR)
+            {
+                line = InvoiceLine.CreateInEur(
+                    i + 1, data.Description, data.Quantity,
+                    Money.Of(data.UnitPrice, Currency.EUR), taxRate);
+            }
+            else
+            {
+                var rate = rateCache[lineCurrency];
+                var unitPriceOrigin = Money.Of(data.UnitPrice, lineCurrency);
+                var unitPriceEur = rate.Apply(unitPriceOrigin);
+                line = InvoiceLine.CreateWithConversion(
+                    i + 1, data.Description, data.Quantity,
+                    unitPriceOrigin, unitPriceEur, taxRate);
+            }
+            lines.Add(line);
+        }
+
+        // Primary rate: the single non-EUR rate when uniform; identity for EUR-only or mixed
+        var primaryRate = uniqueNonEur.Count == 1
+            ? rateCache[uniqueNonEur[0]]
+            : ExchangeRate.Identity(DateTimeOffset.UtcNow);
+
+        return (lines, primaryRate);
     }
 
     private static BillingParty BuildRecipient(RecipientData data)
@@ -129,41 +170,5 @@ public sealed class CreateInvoiceService
             phone: data.Phone,
             website: data.Website,
             externalId: data.ExternalId);
-    }
-
-    private static List<InvoiceLine> BuildLines(
-        IReadOnlyList<InvoiceLineData> lineData,
-        Currency originCurrency,
-        ExchangeRate exchangeRate)
-    {
-        var lines = new List<InvoiceLine>(lineData.Count);
-
-        for (int i = 0; i < lineData.Count; i++)
-        {
-            var data = lineData[i];
-            var taxRate = TaxRate.Of(data.TaxRatePercentage);
-            var lineNum = i + 1;
-
-            InvoiceLine line;
-
-            if (originCurrency == Currency.EUR)
-            {
-                line = InvoiceLine.CreateInEur(
-                    lineNum, data.Description, data.Quantity,
-                    Money.Of(data.UnitPrice, Currency.EUR), taxRate);
-            }
-            else
-            {
-                var unitPriceOrigin = Money.Of(data.UnitPrice, originCurrency);
-                var unitPriceEur = exchangeRate.Apply(unitPriceOrigin);
-                line = InvoiceLine.CreateWithConversion(
-                    lineNum, data.Description, data.Quantity,
-                    unitPriceOrigin, unitPriceEur, taxRate);
-            }
-
-            lines.Add(line);
-        }
-
-        return lines;
     }
 }

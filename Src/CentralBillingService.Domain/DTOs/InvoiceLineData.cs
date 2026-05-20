@@ -13,4 +13,10 @@ public sealed class InvoiceLineData
 
     /// <summary>Porcentaje de IVA aplicable: 0, 4, 10 o 21</summary>
     public required int TaxRatePercentage { get; init; }
+
+    /// <summary>
+    /// ISO 4217 currency code for this line's unit price (e.g. "PHP", "USD").
+    /// Null means inherit the invoice-level default (usually EUR).
+    /// </summary>
+    public string? CurrencyCode { get; init; }
 }

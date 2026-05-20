@@ -160,6 +160,7 @@ public sealed class RectifyInvoiceUseCase
             Quantity = l.Quantity,
             UnitPrice = l.UnitPrice,
             TaxRatePercentage = l.TaxRatePercentage,
+            CurrencyCode = l.CurrencyCode,
         }).ToList(),
         Notes = cmd.Notes,
         PaymentMethod = cmd.PaymentMethod,

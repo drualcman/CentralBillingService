@@ -37,10 +37,10 @@ public sealed class CreateInvoiceRequest
     public required IReadOnlyList<InvoiceLineData> Lines { get; init; }
 
     /// <summary>
-    /// Divisa en que el cliente ve los importes.
-    /// Si es EUR, no se realiza conversión de divisas.
+    /// Default currency for lines that do not specify their own CurrencyCode.
+    /// Null or omitted means EUR. Each line can override this via InvoiceLineData.CurrencyCode.
     /// </summary>
-    public required string OriginCurrencyCode { get; init; }
+    public string? OriginCurrencyCode { get; init; }
 
     /// <summary>
     /// Fecha de expedición. Si no se indica, se usa la fecha UTC de hoy.
