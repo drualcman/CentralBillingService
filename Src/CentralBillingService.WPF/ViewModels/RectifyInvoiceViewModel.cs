@@ -33,10 +33,17 @@ public partial class RectifyInvoiceViewModel : ObservableObject
     partial void OnSelectedRectificationTypeChanged(string value) =>
         OnPropertyChanged(nameof(IsDifference));
 
-    // Live totals for difference lines
+    // Origin currency derived from the loaded original invoice
+    public string OriginCurrencyCode => OriginalInvoice?.AppliedExchangeRate.FromCurrency ?? "EUR";
+
+    // Live totals for difference lines (amounts are in the origin currency)
     public decimal TotalsSubtotal => DifferenceLines.Sum(l => l.Quantity * l.UnitPrice);
     public decimal TotalsTax => DifferenceLines.Sum(l => l.Quantity * l.UnitPrice * l.TaxRate / 100m);
     public decimal TotalsTotal => TotalsSubtotal + TotalsTax;
+
+    public string TotalsSubtotalFormatted => $"{TotalsSubtotal:N2} {OriginCurrencyCode}";
+    public string TotalsTaxFormatted      => $"{TotalsTax:N2} {OriginCurrencyCode}";
+    public string TotalsTotalFormatted    => $"{TotalsTotal:N2} {OriginCurrencyCode}";
 
     public RectifyInvoiceViewModel(
         IServiceScopeFactory scopeFactory,
@@ -73,11 +80,17 @@ public partial class RectifyInvoiceViewModel : ObservableObject
     private void OnDiffLineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
         RefreshTotals();
 
+    partial void OnOriginalInvoiceChanged(InvoiceResult? value) => RefreshTotals();
+
     private void RefreshTotals()
     {
         OnPropertyChanged(nameof(TotalsSubtotal));
         OnPropertyChanged(nameof(TotalsTax));
         OnPropertyChanged(nameof(TotalsTotal));
+        OnPropertyChanged(nameof(TotalsSubtotalFormatted));
+        OnPropertyChanged(nameof(TotalsTaxFormatted));
+        OnPropertyChanged(nameof(TotalsTotalFormatted));
+        OnPropertyChanged(nameof(OriginCurrencyCode));
     }
 
     public async Task LoadAsync()

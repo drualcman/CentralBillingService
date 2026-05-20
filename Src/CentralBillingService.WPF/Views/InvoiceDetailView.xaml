@@ -124,8 +124,43 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Currency conversion banner (solo facturas con divisa no-EUR) -->
+                <Border Background="#F0FDF4" BorderBrush="#86EFAC" BorderThickness="1"
+                        CornerRadius="8" Margin="0,0,0,16" Padding="16,12"
+                        Visibility="{Binding Invoice.AppliedExchangeRate.IsIdentity,
+                                     Converter={StaticResource InvBoolToVis}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <materialDesign:PackIcon Kind="CurrencyUsd" Foreground="#16A34A"
+                                                 Width="22" Height="22" VerticalAlignment="Center"
+                                                 Margin="0,0,12,0" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" Foreground="#166534" FontSize="13">
+                                <Run Text="Importe en divisa cliente: " />
+                                <Run Text="{Binding Invoice.TotalInOriginCurrency.Formatted}" />
+                            </TextBlock>
+                            <TextBlock Foreground="#15803D" FontSize="12" Margin="0,2,0,0">
+                                <Run Text="Cambio aplicado: 1 " />
+                                <Run Text="{Binding Invoice.AppliedExchangeRate.FromCurrency}" />
+                                <Run Text=" = " />
+                                <Run Text="{Binding Invoice.AppliedExchangeRate.Rate,
+                                             StringFormat='{}{0:N6}'}" />
+                                <Run Text=" " />
+                                <Run Text="{Binding Invoice.AppliedExchangeRate.ToCurrency}" />
+                                <Run Text="  ·  Capturado: " />
+                                <Run Text="{Binding Invoice.AppliedExchangeRate.FetchedAt,
+                                             StringFormat=dd/MM/yyyy HH:mm}" />
+                                <Run Text=" UTC" />
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
                 <!-- Totals row -->
-                <UniformGrid Columns="4" Margin="0,0,0,20">
+                <UniformGrid Columns="4" Margin="0,0,0,8">
                     <materialDesign:Card Margin="0,0,8,0" Padding="16"
                                          UniformCornerRadius="10"
                                          materialDesign:ElevationAssist.Elevation="Dp1">
@@ -163,6 +198,18 @@
                         </StackPanel>
                     </materialDesign:Card>
                 </UniformGrid>
+
+                <!-- Total en divisa cliente (solo cuando hay conversión) -->
+                <Border Background="#F8FAFC" CornerRadius="8" Padding="16,10" Margin="0,0,0,20"
+                        Visibility="{Binding Invoice.AppliedExchangeRate.IsIdentity,
+                                     Converter={StaticResource InvBoolToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="TOTAL DIVISA CLIENTE" FontSize="10" Foreground="#94A3B8"
+                                   VerticalAlignment="Center" Margin="0,0,16,0" />
+                        <TextBlock Text="{Binding Invoice.TotalInOriginCurrency.Formatted}"
+                                   FontSize="20" FontWeight="Bold" Foreground="#1E293B" />
+                    </StackPanel>
+                </Border>
 
                 <!-- Parties -->
                 <Grid Margin="0,0,0,16">
@@ -232,7 +279,7 @@
                                   IsReadOnly="True"
                                   GridLinesVisibility="Horizontal"
                                   HorizontalGridLinesBrush="#F1F5F9"
-                                  RowHeight="44">
+                                  RowHeight="52">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="#"
                                                     Binding="{Binding LineNumber}"
@@ -243,15 +290,36 @@
                                 <DataGridTextColumn Header="Cant."
                                                     Binding="{Binding Quantity}"
                                                     Width="60" />
-                                <DataGridTextColumn Header="Precio unit."
-                                                    Binding="{Binding UnitPriceEur.Formatted}"
-                                                    Width="120" />
+                                <DataGridTemplateColumn Header="Precio unit." Width="140">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding UnitPriceEur.Formatted}" />
+                                                <TextBlock Text="{Binding UnitPriceOrigin.Formatted}"
+                                                           FontSize="11" Foreground="#64748B"
+                                                           Visibility="{Binding HasCurrencyConversion,
+                                                               Converter={StaticResource BoolToVis}}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="IVA %"
                                                     Binding="{Binding TaxRatePercentage, StringFormat='{}{0}%'}"
                                                     Width="70" />
-                                <DataGridTextColumn Header="Total EUR"
-                                                    Binding="{Binding TotalEur.Formatted}"
-                                                    Width="120" />
+                                <DataGridTemplateColumn Header="Total" Width="140">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding TotalEur.Formatted}"
+                                                           FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding TotalOrigin.Formatted}"
+                                                           FontSize="11" Foreground="#64748B"
+                                                           Visibility="{Binding HasCurrencyConversion,
+                                                               Converter={StaticResource BoolToVis}}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>

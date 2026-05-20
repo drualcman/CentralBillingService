@@ -106,7 +106,8 @@
                                 <ComboBox Margin="6,0,0,12"
                                           materialDesign:HintAssist.Hint="Moneda origen *"
                                           Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                          SelectedItem="{Binding OriginCurrencyCode}"
+                                          IsEditable="True"
+                                          Text="{Binding OriginCurrencyCode}"
                                           ItemsSource="{x:Static vm:CreateInvoiceViewModel.CurrencyCodes}" />
                                 <DatePicker Margin="0,0,6,12"
                                             materialDesign:HintAssist.Hint="Fecha emisión *"
@@ -202,6 +203,11 @@
                                          materialDesign:HintAssist.Hint="País (ES, GB, US...)*"
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          Text="{Binding RecipientCountry}" />
+                                <TextBox Margin="6,0,0,12"
+                                         materialDesign:HintAssist.Hint="ID externo (opcional)"
+                                         ToolTip="Identificador del cliente en tu sistema (CRM, ERP…)"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding RecipientExternalId}" />
                             </UniformGrid>
                         </StackPanel>
                     </materialDesign:Card>
@@ -307,17 +313,17 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <StackPanel Margin="0,0,28,0">
                         <TextBlock Text="BASE IMPONIBLE" FontSize="10" Foreground="#94A3B8" />
-                        <TextBlock Text="{Binding TotalsSubtotal, StringFormat='{}{0:N2} €'}"
+                        <TextBlock Text="{Binding TotalsSubtotalFormatted}"
                                    FontSize="14" FontWeight="SemiBold" Foreground="#64748B" />
                     </StackPanel>
                     <StackPanel Margin="0,0,28,0">
                         <TextBlock Text="IVA" FontSize="10" Foreground="#94A3B8" />
-                        <TextBlock Text="{Binding TotalsTax, StringFormat='{}{0:N2} €'}"
+                        <TextBlock Text="{Binding TotalsTaxFormatted}"
                                    FontSize="14" FontWeight="SemiBold" Foreground="#64748B" />
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="TOTAL" FontSize="10" Foreground="#94A3B8" />
-                        <TextBlock Text="{Binding TotalsTotal, StringFormat='{}{0:N2} €'}"
+                        <TextBlock Text="{Binding TotalsTotalFormatted}"
                                    FontSize="18" FontWeight="Bold" Foreground="#1E293B" />
                     </StackPanel>
                 </StackPanel>

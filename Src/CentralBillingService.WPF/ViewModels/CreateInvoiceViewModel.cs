@@ -1,3 +1,4 @@
+using CentralBillingService.Domain.ValueObjects;
 using CentralBillingService.WPF.Services;
 
 namespace CentralBillingService.WPF.ViewModels;
@@ -38,6 +39,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
     [ObservableProperty] string? recipientProvince;
     [ObservableProperty] string recipientPostalCode = string.Empty;
     [ObservableProperty] string recipientCountry = "ES";
+    [ObservableProperty] string? recipientExternalId;
 
     // Lines
     [ObservableProperty] ObservableCollection<InvoiceLineItem> lines = [new InvoiceLineItem()];
@@ -51,7 +53,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
         ["TRANSFER", "CARD", "CASH", "PAYPAL", "CRYPTO", "OTHER"];
 
     public static string[] CurrencyCodes { get; } =
-        ["EUR", "USD", "GBP", "CHF", "JPY", "PHP", "MXN", "BRL"];
+        Currency.All.Values.Select(c => c.Code).OrderBy(c => c).ToArray();
 
     [ObservableProperty] string? saveToMasterMessage;
 
@@ -59,6 +61,10 @@ public partial class CreateInvoiceViewModel : ObservableObject
     public decimal TotalsSubtotal => Lines.Sum(l => l.Quantity * l.UnitPrice);
     public decimal TotalsTax      => Lines.Sum(l => l.Quantity * l.UnitPrice * l.TaxRate / 100m);
     public decimal TotalsTotal    => TotalsSubtotal + TotalsTax;
+
+    public string TotalsSubtotalFormatted => $"{TotalsSubtotal:N2} {OriginCurrencyCode}";
+    public string TotalsTaxFormatted      => $"{TotalsTax:N2} {OriginCurrencyCode}";
+    public string TotalsTotalFormatted    => $"{TotalsTotal:N2} {OriginCurrencyCode}";
 
     public CreateInvoiceViewModel(
         IServiceScopeFactory scopeFactory,
@@ -94,11 +100,16 @@ public partial class CreateInvoiceViewModel : ObservableObject
     private void OnLineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
         RefreshTotals();
 
+    partial void OnOriginCurrencyCodeChanged(string value) => RefreshTotals();
+
     private void RefreshTotals()
     {
         OnPropertyChanged(nameof(TotalsSubtotal));
         OnPropertyChanged(nameof(TotalsTax));
         OnPropertyChanged(nameof(TotalsTotal));
+        OnPropertyChanged(nameof(TotalsSubtotalFormatted));
+        OnPropertyChanged(nameof(TotalsTaxFormatted));
+        OnPropertyChanged(nameof(TotalsTotalFormatted));
     }
 
     partial void OnSelectedClientChanged(ClientRecord? value)
@@ -115,6 +126,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
         RecipientProvince     = value.Province;
         RecipientPostalCode   = value.PostalCode ?? "";
         RecipientCountry      = value.Country ?? "ES";
+        RecipientExternalId   = value.ExternalId;
     }
 
     [RelayCommand]
@@ -159,6 +171,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
                     Province = string.IsNullOrWhiteSpace(RecipientProvince) ? null : RecipientProvince.Trim(),
                     PostalCode = RecipientPostalCode.Trim(),
                     AddressCountryCode = RecipientCountry.Trim().ToUpperInvariant(),
+                    ExternalId = string.IsNullOrWhiteSpace(RecipientExternalId) ? null : RecipientExternalId.Trim(),
                 },
                 Lines = Lines.Select(l => new InvoiceLineDto
                 {
@@ -204,6 +217,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
             existing.City        = string.IsNullOrWhiteSpace(RecipientCity) ? null : RecipientCity.Trim();
             existing.PostalCode  = string.IsNullOrWhiteSpace(RecipientPostalCode) ? null : RecipientPostalCode.Trim();
             existing.Country     = string.IsNullOrWhiteSpace(RecipientCountry) ? null : RecipientCountry.Trim().ToUpperInvariant();
+            existing.ExternalId  = string.IsNullOrWhiteSpace(RecipientExternalId) ? null : RecipientExternalId.Trim();
             SaveToMasterMessage = $"Cliente '{existing.DisplayName}' actualizado en el maestro.";
         }
         else
@@ -220,6 +234,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
                 City         = string.IsNullOrWhiteSpace(RecipientCity) ? null : RecipientCity.Trim(),
                 PostalCode   = string.IsNullOrWhiteSpace(RecipientPostalCode) ? null : RecipientPostalCode.Trim(),
                 Country      = string.IsNullOrWhiteSpace(RecipientCountry) ? null : RecipientCountry.Trim().ToUpperInvariant(),
+                ExternalId   = string.IsNullOrWhiteSpace(RecipientExternalId) ? null : RecipientExternalId.Trim(),
             };
             clients.Add(newClient);
             AvailableClients.Add(newClient);

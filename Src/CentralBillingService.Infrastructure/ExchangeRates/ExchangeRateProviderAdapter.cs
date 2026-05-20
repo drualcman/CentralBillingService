@@ -15,12 +15,10 @@ namespace CentralBillingService.Infrastructure.ExchangeRates;
 /// </summary>
 public sealed class ExchangeRateProviderAdapter : IExchangeRateProvider
 {
-    // Supported conversion pairs — always TO EUR in our system
-    private static readonly HashSet<string> _supportedFrom = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "USD", "PHP", "AUD", "GBP", "MXN"
-        // Add more as needed — must match Currency.From() supported codes
-    };
+    // All non-EUR ISO 4217 currencies defined in Currency.All are supported
+    private static readonly HashSet<string> _supportedFrom = new(
+        Currency.All.Values.Where(c => c.Code != "EUR").Select(c => c.Code),
+        StringComparer.OrdinalIgnoreCase);
 
     private readonly ICurrencyConvertion _currencyConvertion;
 

@@ -291,17 +291,21 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTextColumn Header="Total EUR"
-                                            Binding="{Binding TotalEur.Formatted, Mode=OneWay}"
-                                            Width="130">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="FontWeight" Value="SemiBold" />
-                                    <Setter Property="HorizontalAlignment" Value="Right" />
-                                    <Setter Property="Padding" Value="0,0,16,0" />
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
+                        <DataGridTemplateColumn Header="Importe" Width="160" CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel HorizontalAlignment="Right" Margin="0,0,12,0"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding TotalEur.Formatted, Mode=OneWay}"
+                                                   FontWeight="SemiBold" HorizontalAlignment="Right" />
+                                        <TextBlock Text="{Binding TotalInOriginCurrency.Formatted, Mode=OneWay}"
+                                                   FontSize="11" Foreground="#64748B" HorizontalAlignment="Right"
+                                                   Visibility="{Binding HasCurrencyConversion,
+                                                       Converter={StaticResource BoolToVis}}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
 
                         <!-- Status chip (shows MODIFICADA in red when tampered) -->
                         <DataGridTemplateColumn Header="Estado" Width="130">

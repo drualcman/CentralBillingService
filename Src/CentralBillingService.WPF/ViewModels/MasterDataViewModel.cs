@@ -34,6 +34,7 @@ public partial class MasterDataViewModel : ObservableObject
     [ObservableProperty] string editClientPostalCode  = "";
     [ObservableProperty] string editClientProvince    = "";
     [ObservableProperty] string editClientCountry     = "ES";
+    [ObservableProperty] string? editClientExternalId;
 
     // ── Series edit fields ────────────────────────────────────────────────────
     [ObservableProperty] Guid   editSeriesId;
@@ -73,6 +74,7 @@ public partial class MasterDataViewModel : ObservableObject
         EditClientEmail = EditClientPhone = EditClientAddress = "";
         EditClientCity = EditClientPostalCode = EditClientProvince = "";
         EditClientCountry = "ES";
+        EditClientExternalId = null;
         IsEditingClient = true;
     }
 
@@ -93,6 +95,7 @@ public partial class MasterDataViewModel : ObservableObject
         EditClientPostalCode  = c.PostalCode  ?? "";
         EditClientProvince    = c.Province    ?? "";
         EditClientCountry     = c.Country     ?? "ES";
+        EditClientExternalId  = c.ExternalId;
         IsEditingClient = true;
     }
 
@@ -133,6 +136,7 @@ public partial class MasterDataViewModel : ObservableObject
         existing.PostalCode   = string.IsNullOrWhiteSpace(EditClientPostalCode) ? null : EditClientPostalCode.Trim();
         existing.Province     = string.IsNullOrWhiteSpace(EditClientProvince)   ? null : EditClientProvince.Trim();
         existing.Country      = string.IsNullOrWhiteSpace(EditClientCountry)    ? null : EditClientCountry.Trim().ToUpperInvariant();
+        existing.ExternalId   = string.IsNullOrWhiteSpace(EditClientExternalId) ? null : EditClientExternalId.Trim();
 
         _store.SaveClients(Clients.ToList());
         RefreshList(Clients, existing);

@@ -116,6 +116,7 @@
                                     <DataGridTextColumn Header="País NIF"         Binding="{Binding TaxIdCountry}" Width="70" />
                                     <DataGridTextColumn Header="Email"            Binding="{Binding Email}"       Width="200" />
                                     <DataGridTextColumn Header="Ciudad"           Binding="{Binding City}"        Width="130" />
+                                    <DataGridTextColumn Header="ID externo"       Binding="{Binding ExternalId}"  Width="140" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
@@ -160,7 +161,7 @@
                                 </StackPanel>
                             </UniformGrid>
 
-                            <UniformGrid Columns="4" Margin="0,4,0,12">
+                            <UniformGrid Columns="4" Margin="0,4,0,4">
                                 <StackPanel Margin="0,0,8,0">
                                     <TextBlock Style="{StaticResource FieldLabel}" Text="Email *" />
                                     <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
@@ -182,6 +183,19 @@
                                              Text="{Binding EditClientPostalCode, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                             </UniformGrid>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="3*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="ID externo" />
+                                    <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                             ToolTip="Identificador del cliente en tu sistema (CRM, ERP…)"
+                                             Text="{Binding EditClientExternalId, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
 
                             <!-- Form actions -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

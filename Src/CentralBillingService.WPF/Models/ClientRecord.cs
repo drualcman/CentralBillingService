@@ -14,6 +14,7 @@ public class ClientRecord
     public string? PostalCode { get; set; }
     public string? Province { get; set; }
     public string? Country { get; set; } = "ES";
+    public string? ExternalId { get; set; }
 
     public string DisplayName => string.IsNullOrWhiteSpace(TradeName) ? LegalName : TradeName;
 }
