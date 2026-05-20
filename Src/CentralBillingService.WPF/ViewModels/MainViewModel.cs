@@ -1,5 +1,3 @@
-using CentralBillingService.WPF.Services;
-
 namespace CentralBillingService.WPF.ViewModels;
 
 public partial class MainViewModel : ObservableObject
@@ -38,7 +36,8 @@ public partial class MainViewModel : ObservableObject
         foreach (var s in sources)
         {
             var name = s["BillingSource"] ?? "";
-            if (string.IsNullOrEmpty(name)) continue;
+            if (string.IsNullOrEmpty(name))
+                continue;
             BillingSources.Add(new BillingSourceSummary
             {
                 Name = name,
@@ -67,7 +66,8 @@ public partial class MainViewModel : ObservableObject
         foreach (var s in _config.GetSection("CbsOptions:BillingSources").GetChildren())
         {
             var name = s["BillingSource"] ?? "";
-            if (string.IsNullOrEmpty(name) || fileKeys.Contains(name)) continue;
+            if (string.IsNullOrEmpty(name) || fileKeys.Contains(name))
+                continue;
             BillingSources.Add(new BillingSourceSummary
             {
                 Name = name,
@@ -79,7 +79,8 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnSelectedBillingSourceChanged(BillingSourceSummary? value)
     {
-        if (value is null) return;
+        if (value is null)
+            return;
         var vm = new InvoicesViewModel(_scopeFactory, value, _masterDataStore, NavigateTo);
         CurrentView = vm;
         OnPropertyChanged(nameof(EmptyStateVisible));

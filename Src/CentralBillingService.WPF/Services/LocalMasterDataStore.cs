@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace CentralBillingService.WPF.Services;
 
 public class LocalMasterDataStore
@@ -10,23 +8,24 @@ public class LocalMasterDataStore
     public LocalMasterDataStore()
     {
         _dir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "CentralBillingService");
+            AppContext.BaseDirectory,
+            "DATA");
         Directory.CreateDirectory(_dir);
     }
 
-    public List<ClientRecord>  LoadClients()  => Load<ClientRecord>("clients.json");
-    public List<SeriesRecord>  LoadSeries()   => Load<SeriesRecord>("series.json");
+    public List<ClientRecord> LoadClients() => Load<ClientRecord>("clients.json");
+    public List<SeriesRecord> LoadSeries() => Load<SeriesRecord>("series.json");
     public List<ProductRecord> LoadProducts() => Load<ProductRecord>("products.json");
 
-    public void SaveClients(List<ClientRecord>   items) => Save("clients.json",  items);
-    public void SaveSeries(List<SeriesRecord>    items) => Save("series.json",   items);
+    public void SaveClients(List<ClientRecord> items) => Save("clients.json", items);
+    public void SaveSeries(List<SeriesRecord> items) => Save("series.json", items);
     public void SaveProducts(List<ProductRecord> items) => Save("products.json", items);
 
     private List<T> Load<T>(string file)
     {
         var path = Path.Combine(_dir, file);
-        if (!File.Exists(path)) return [];
+        if (!File.Exists(path))
+            return [];
         return JsonSerializer.Deserialize<List<T>>(File.ReadAllText(path), _json) ?? [];
     }
 
