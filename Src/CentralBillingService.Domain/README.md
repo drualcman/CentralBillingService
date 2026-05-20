@@ -215,12 +215,15 @@ var line2 = InvoiceLine.CreateWithConversion(1, "Software", 1,
 Services that coordinate domain logic requiring multiple aggregates or external queries.
 
 ### `CreateInvoiceService`
-Orchestrates invoice creation: fetches exchange rate, computes hash chain, constructs the `Invoice` aggregate.
+Orchestrates invoice creation: fetches exchange rates per line, computes hash chain, constructs the `Invoice` aggregate.
+
+- **Per-line currencies** — each `InvoiceLineData` can specify its own `CurrencyCode`; rates are fetched once per unique non-EUR currency.
+- **International tax rule** — if a line's currency is non-EUR, or the recipient's `AddressCountryCode` is not `"ES"`, the line's tax rate is forced to zero. Spanish VAT applies only to domestic EUR transactions.
 
 > Do not call this directly — use `ICreateInvoiceUseCase` from the Application layer.
 
 ### `RectifyInvoiceService`
-Orchestrates rectificative invoice creation, linking it to its original.
+Orchestrates rectificative invoice creation, linking it to its original. Applies the same per-line currency and international tax rule for Difference-type rectifications.
 
 ---
 

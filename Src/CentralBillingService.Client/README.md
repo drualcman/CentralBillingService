@@ -83,23 +83,23 @@ All methods are `async` and accept an implicit or explicit `CancellationToken`.
 ```csharp
 var result = await cbs.CreateInvoiceAsync(new CreateInvoiceCommand
 {
-    BillingSource   = "my-saas",
-    Secret          = "billing-secret",
-    Serie           = "F",
-    IssueDate       = DateOnly.FromDateTime(DateTime.Today),
-    PaymentMethod   = "Transfer",
+    BillingSource    = "my-saas",
+    Secret           = "billing-secret",
+    Serie            = "F",
+    IssueDate        = DateOnly.FromDateTime(DateTime.Today),
+    PaymentMethod    = "Transfer",
     PaymentReference = "PAY-2026-001",
     Recipient = new RecipientDto
     {
         LegalName        = "Acme Corp S.L.",
-        TaxId            = "B12345678",
+        TaxIdValue       = "B12345678",
         TaxIdCountryCode = "ES",
         Email            = "billing@acme.com",
-        Street           = "Calle Mayor 1",
+        AddressLine1     = "Calle Mayor 1",
         City             = "Madrid",
         Province         = "Madrid",
         PostalCode       = "28001",
-        CountryCode      = "ES",
+        AddressCountryCode = "ES",
         ExternalId       = "{user_id}"
     },
     Lines = new List<InvoiceLineDto>
@@ -109,7 +109,7 @@ var result = await cbs.CreateInvoiceAsync(new CreateInvoiceCommand
             Description       = "Software development — May 2026",
             Quantity          = 1,
             UnitPrice         = 3000.00m,
-            TaxRatePercentage = 21m
+            TaxRatePercentage = 21
         }
     }
 });
@@ -118,21 +118,45 @@ Console.WriteLine(result.InvoiceNumber); // "F2026-0001"
 Console.WriteLine(result.TotalEur);      // { Amount: 3630.00, CurrencyCode: "EUR" }
 ```
 
-For invoices in a foreign currency, set `OriginCurrencyCode`:
+#### Per-line currency (multi-currency invoices)
+
+Each line can specify its own currency via `CurrencyCode`. CBS fetches the exchange rate automatically and stores both the origin and EUR amounts per line.
 
 ```csharp
-new CreateInvoiceCommand
+Lines = new List<InvoiceLineDto>
 {
-    OriginCurrencyCode = "USD",
-    Lines = new List<InvoiceLineDto>
+    new()
     {
-        new() { Description = "License fee", Quantity = 1, UnitPrice = 1000m, TaxRatePercentage = 0m }
+        Description       = "License fee (USD)",
+        Quantity          = 1,
+        UnitPrice         = 1000m,
+        TaxRatePercentage = 0,
+        CurrencyCode      = "USD"   // converted to EUR at current rate
     },
-    // ...
+    new()
+    {
+        Description       = "Support (EUR)",
+        Quantity          = 1,
+        UnitPrice         = 200m,
+        TaxRatePercentage = 21,
+        CurrencyCode      = "EUR"
+    }
 }
 ```
 
-CBS will fetch the current EUR exchange rate automatically and store both the origin and EUR amounts.
+`OriginCurrencyCode` on the command is the fallback for lines without an explicit `CurrencyCode`. Omit it (or leave null) when using per-line currencies.
+
+#### Tax rules
+
+Spanish VAT is applied automatically based on two criteria:
+
+| Condition | Tax applied |
+|---|---|
+| Line currency is EUR **and** recipient country is `ES` | Yes — rate from `TaxRatePercentage` |
+| Line currency is non-EUR (international) | No — rate forced to 0% |
+| Recipient country is not `ES` | No — rate forced to 0% |
+
+You can still pass any `TaxRatePercentage` in the command for domestic EUR invoices; it will be used as-is.
 
 ---
 
@@ -174,6 +198,8 @@ All filter fields are optional. Without a query, returns the most recent page.
 
 Issues a corrective document (credit note) for an existing invoice.
 
+**Substitution** — the rectificative fully cancels the original; lines are derived automatically:
+
 ```csharp
 RectifyInvoiceResult result = await cbs.RectifyInvoiceAsync(
     invoiceNumber: "F2026-0001",
@@ -184,21 +210,43 @@ RectifyInvoiceResult result = await cbs.RectifyInvoiceAsync(
         RectificativeSerie  = "R",
         RectificationType   = RectificationType.Substitution,
         Reason              = "Incorrect recipient tax ID",
-        PaymentMethod       = "Transfer",
-        PaymentReference    = "REF-R-001",
-        Lines = new List<InvoiceLineDto>
-        {
-            new() { Description = "Software development — May 2026", Quantity = 1, UnitPrice = 3000m, TaxRatePercentage = 21m }
-        }
+        PaymentReference    = "REF-R-001"
     });
 
 Console.WriteLine(result.InvoiceNumber);         // "R2026-0001"
 Console.WriteLine(result.OriginalInvoiceNumber); // "F2026-0001"
 ```
 
+**Difference** — the rectificative records only the correction delta; supply the adjusted lines:
+
+```csharp
+RectifyInvoiceResult result = await cbs.RectifyInvoiceAsync(
+    invoiceNumber: "F2026-0001",
+    new RectifyInvoiceCommand
+    {
+        BillingSource      = "my-saas",
+        Secret             = "billing-secret",
+        RectificativeSerie = "R",
+        RectificationType  = RectificationType.Difference,
+        Reason             = "Discount not applied",
+        PaymentReference   = "REF-R-002",
+        Lines = new List<InvoiceLineDto>
+        {
+            new()
+            {
+                Description       = "Discount adjustment",
+                Quantity          = -1,
+                UnitPrice         = 300m,
+                TaxRatePercentage = 21,
+                CurrencyCode      = "EUR"
+            }
+        }
+    });
+```
+
 `RectificationType` values:
-- `Substitution` — the rectificative fully replaces the original
-- `Difference` — the rectificative records only the correction delta
+- `Substitution` — fully cancels the original (lines auto-derived, negated)
+- `Difference` — records only the delta (lines must be provided)
 
 ---
 
@@ -228,6 +276,34 @@ Console.WriteLine(result.IntegrityVerified);   // true — the chain is intact
 | `GetInvoicesQuery` | `GetInvoicesAsync` |
 | `RecipientDto` | Nested in commands |
 | `InvoiceLineDto` | Nested in commands |
+
+### `RecipientDto` fields
+
+| Property | Required | Description |
+|---|---|---|
+| `LegalName` | ✓ | Full legal/fiscal name |
+| `TradeName` | — | Commercial brand name (optional) |
+| `TaxIdValue` | ✓ | Tax ID / NIF / VAT number |
+| `TaxIdCountryCode` | ✓ | ISO 3166-1 alpha-2 country of the tax ID (e.g. `"ES"`, `"DE"`) |
+| `Email` | ✓ | Billing contact email |
+| `Phone` | — | Contact phone (optional) |
+| `AddressLine1` | ✓ | Street address |
+| `AddressLine2` | — | Apartment, suite, etc. (optional) |
+| `City` | ✓ | City |
+| `Province` | — | Province / state (optional) |
+| `PostalCode` | ✓ | Postal code |
+| `AddressCountryCode` | ✓ | ISO 3166-1 alpha-2 country of the address (e.g. `"ES"`) |
+| `ExternalId` | — | Your internal customer ID (optional) |
+
+### `InvoiceLineDto` fields
+
+| Property | Required | Description |
+|---|---|---|
+| `Description` | ✓ | Line item description |
+| `Quantity` | ✓ | Quantity (can be negative for credit lines) |
+| `UnitPrice` | ✓ | Unit price in the line's currency |
+| `TaxRatePercentage` | ✓ | VAT percentage (`0`, `4`, `10`, `21`). Ignored for international lines. |
+| `CurrencyCode` | — | ISO 4217 currency code; null = inherit `OriginCurrencyCode` or `"EUR"` |
 
 ### Results
 

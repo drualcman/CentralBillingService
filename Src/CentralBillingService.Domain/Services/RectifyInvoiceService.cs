@@ -67,7 +67,7 @@ public sealed class RectifyInvoiceService
             // Difference: each line may specify its own currency
             var defaultCurrency = originalInvoice.AppliedExchangeRate.From.Code;
             (lines, primaryRate) = await BuildDifferenceLinesAsync(
-                request.Lines!, defaultCurrency, cancellationToken);
+                request.Lines!, defaultCurrency, originalInvoice.Recipient.Address.CountryCode, cancellationToken);
         }
 
         var rectificative = RectificativeInvoice.Create(
@@ -122,7 +122,7 @@ public sealed class RectifyInvoiceService
         {
             var defaultCurrency = originalRectificative.AppliedExchangeRate.From.Code;
             (lines, primaryRate) = await BuildDifferenceLinesAsync(
-                request.Lines!, defaultCurrency, cancellationToken);
+                request.Lines!, defaultCurrency, originalRectificative.Recipient.Address.CountryCode, cancellationToken);
         }
 
         var rectificative = RectificativeInvoice.CreateFromRectificative(
@@ -166,6 +166,7 @@ public sealed class RectifyInvoiceService
     private async Task<(List<InvoiceLine> Lines, ExchangeRate PrimaryRate)> BuildDifferenceLinesAsync(
         IReadOnlyList<InvoiceLineData> lineData,
         string defaultCurrencyCode,
+        string recipientCountryCode,
         CancellationToken cancellationToken)
     {
         var lineCurrencies = lineData
@@ -186,7 +187,9 @@ public sealed class RectifyInvoiceService
         {
             var data = lineData[i];
             var lineCurrency = lineCurrencies[i];
-            var taxRate = TaxRate.Of(data.TaxRatePercentage);
+            var taxRate = lineCurrency != Currency.EUR || recipientCountryCode.Trim().ToUpperInvariant() != "ES"
+                ? TaxRate.Zero
+                : TaxRate.Of(data.TaxRatePercentage);
 
             InvoiceLine line;
             if (lineCurrency == Currency.EUR)

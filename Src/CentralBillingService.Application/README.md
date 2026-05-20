@@ -229,13 +229,18 @@ public class RecipientDto
 {
     public string LegalName { get; set; }
     public string? TradeName { get; set; }
-    public string TaxId { get; set; }
+    public string TaxIdValue { get; set; }
     public string TaxIdCountryCode { get; set; }
     public string Email { get; set; }
     public string? Phone { get; set; }
     public string? Website { get; set; }
+    public string AddressLine1 { get; set; }
+    public string? AddressLine2 { get; set; }
+    public string City { get; set; }
+    public string? Province { get; set; }
+    public string PostalCode { get; set; }
+    public string AddressCountryCode { get; set; }
     public string? ExternalId { get; set; }
-    // Address fields: Street, City, Province, PostalCode, CountryCode
 }
 ```
 
@@ -247,7 +252,8 @@ public class InvoiceLineDto
     public string Description { get; set; }
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
-    public decimal TaxRatePercentage { get; set; }
+    public int TaxRatePercentage { get; set; }  // 0, 4, 10, 21. Ignored for international lines.
+    public string? CurrencyCode { get; set; }   // ISO 4217; null = inherit OriginCurrencyCode or "EUR"
 }
 ```
 

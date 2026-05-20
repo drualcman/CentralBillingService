@@ -55,7 +55,7 @@ public sealed class CreateInvoiceService
 
         // 2. Build lines with per-line currency conversion
         var defaultCurrency = request.OriginCurrencyCode ?? "EUR";
-        var (lines, primaryRate) = await BuildLinesAsync(request.Lines, defaultCurrency, cancellationToken);
+        var (lines, primaryRate) = await BuildLinesAsync(request.Lines, defaultCurrency, request.Recipient.AddressCountryCode, cancellationToken);
 
         // 3. Build recipient
         var recipient = BuildRecipient(request.Recipient);
@@ -96,6 +96,7 @@ public sealed class CreateInvoiceService
     private async Task<(List<InvoiceLine> Lines, ExchangeRate PrimaryRate)> BuildLinesAsync(
         IReadOnlyList<InvoiceLineData> lineData,
         string defaultCurrencyCode,
+        string recipientCountryCode,
         CancellationToken cancellationToken)
     {
         // Resolve currency per line (fall back to invoice default)
@@ -120,7 +121,10 @@ public sealed class CreateInvoiceService
         {
             var data = lineData[i];
             var lineCurrency = lineCurrencies[i];
-            var taxRate = TaxRate.Of(data.TaxRatePercentage);
+            // International transactions (non-EUR currency or non-ES recipient) carry no Spanish VAT
+            var taxRate = lineCurrency != Currency.EUR || recipientCountryCode.Trim().ToUpperInvariant() != "ES"
+                ? TaxRate.Zero
+                : TaxRate.Of(data.TaxRatePercentage);
 
             InvoiceLine line;
             if (lineCurrency == Currency.EUR)

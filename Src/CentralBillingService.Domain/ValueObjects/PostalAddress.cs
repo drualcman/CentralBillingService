@@ -38,13 +38,18 @@ public sealed class PostalAddress
         string? line2 = null,
         string? province = null)
     {
+        var trimmedLine1 = line1?.Trim() ?? "";
+        var trimmedCity = city?.Trim() ?? "";
+        var trimmedPostalCode = postalCode?.Trim() ?? "";
+        var trimmedCountry = countryCode?.Trim().ToUpperInvariant() ?? "";
+
         return new PostalAddress(
-            line1.Trim(),
+            trimmedLine1,
             line2?.Trim(),
-            city.Trim(),
+            trimmedCity,
             province?.Trim(),
-            postalCode.Trim(),
-            countryCode.Trim().ToUpperInvariant());
+            trimmedPostalCode,
+            trimmedCountry);
     }
 
     /// <summary>Formato de una sola línea para mostrar en documentos</summary>

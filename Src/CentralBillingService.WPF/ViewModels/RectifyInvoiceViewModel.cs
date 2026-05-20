@@ -84,7 +84,11 @@ public partial class RectifyInvoiceViewModel : ObservableObject
     {
         RefreshTotals();
         if (sender is InvoiceLineItem line && e.PropertyName == nameof(InvoiceLineItem.CurrencyCode))
+        {
             _ = FetchRateHintAsync(line);
+            if (line.CurrencyCode != "EUR")
+                line.TaxRate = 0;
+        }
     }
 
     private async Task FetchRateHintAsync(InvoiceLineItem line)
