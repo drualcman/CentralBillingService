@@ -157,27 +157,39 @@ internal static class FooterSectionBuilder
 
     private static void BuildPaymentInfo(Section footer)
     {
-        double leftW = (double)(RightLabelX - InvoiceReportLayout.Margin - 5m); // 105mm
+        const decimal labelW = 42m;
+        decimal valueX = InvoiceReportLayout.Margin + labelW;
+        double valueW = (double)(RightLabelX - InvoiceReportLayout.Margin - labelW - 5m);
+        double refW = (double)(RightLabelX - InvoiceReportLayout.Margin - 5m);
+
         footer.AddColumn(new ColumnSetup
         {
-            Format = new Format(40, 5) { Position = new Kernel(5, InvoiceReportLayout.Margin) },
+            Format = new Format((double)labelW, 5) { Position = new Kernel(5, InvoiceReportLayout.Margin) },
             DataColumn = new Item(InvoiceReportLayout.Columns.PaymentMethodLabel)
         });
         footer.AddColumn(new ColumnSetup
         {
-            Format = new Format(leftW, 6) { Position = new Kernel(10, InvoiceReportLayout.Margin) },
+            Format = new Format(valueW, 5) { Position = new Kernel(5, valueX) },
             DataColumn = new Item(InvoiceReportLayout.Columns.PaymentMethodValue)
+        });
+        footer.AddColumn(new ColumnSetup
+        {
+            Format = new Format(refW, 5)
+            {
+                Position = new Kernel(10, InvoiceReportLayout.Margin),
+                FontDetails = new Font(new Shade(8, InvoiceReportLayout.GrayText))
+            },
+            DataColumn = new Item(InvoiceReportLayout.Columns.PaymentReference)
         });
     }
 
     private static void BuildExchangeRateRow(Section footer)
     {
-        double leftW = (double)(RightLabelX - InvoiceReportLayout.Margin - 5m); // 105mm
         footer.AddColumn(new ColumnSetup
         {
-            Format = new Format(leftW, 5)
+            Format = new Format(85, 5)
             {
-                Position = new Kernel(16, InvoiceReportLayout.Margin),
+                Position = new Kernel(43, SideX),
                 FontDetails = new Font(new Shade(8, InvoiceReportLayout.GrayText))
             },
             DataColumn = new Item(InvoiceReportLayout.Columns.ExchangeRateRow)
@@ -188,9 +200,9 @@ internal static class FooterSectionBuilder
     {
         footer.AddColumn(new ColumnSetup
         {
-            Format = new Format(85, 5)
+            Format = new Format(85, 14)
             {
-                Position = new Kernel(44, SideX),
+                Position = new Kernel(28, SideX),
                 FontDetails = new Font(new Shade(9, InvoiceReportLayout.GrayText))
             },
             DataColumn = new Item(InvoiceReportLayout.Columns.NotesValue)

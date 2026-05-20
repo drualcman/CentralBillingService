@@ -104,9 +104,10 @@ internal static class InvoiceDataBuilder
             ? $"Tipo de cambio: 1 {invoice.AppliedExchangeRate.From} = {invoice.AppliedExchangeRate.Rate:F4} EUR"
             : string.Empty;
 
-        string paymentInfo = string.IsNullOrEmpty(invoice.PaymentMethod)
-            ? invoice.PaymentReference
-            : $"{invoice.PaymentMethod}  ·  Ref.: {invoice.PaymentReference}";
+        string paymentMethod = invoice.PaymentMethod ?? string.Empty;
+        string paymentReference = string.IsNullOrEmpty(invoice.PaymentReference)
+            ? string.Empty
+            : $"Ref.: {invoice.PaymentReference}";
 
         data.AddRange(new[]
         {
@@ -119,7 +120,8 @@ internal static class InvoiceDataBuilder
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TotalLabel, "TOTAL"),
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TotalFooterValue, FormatAmount(invoice.TotalEur.Amount)),
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.PaymentMethodLabel, "Forma de pago:"),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.PaymentMethodValue, paymentInfo),
+            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.PaymentMethodValue, paymentMethod),
+            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.PaymentReference, paymentReference),
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.ExchangeRateRow, exchangeRateInfo),
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.NotesValue, invoice.Notes ?? string.Empty),
             CreateData(SectionType.Footer, InvoiceReportLayout.Columns.VerificationSeparator, " "),

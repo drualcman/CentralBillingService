@@ -103,6 +103,7 @@ internal static class InvoiceReportLayout
         // Footer — info pago y cambio
         public const string PaymentMethodLabel = "PaymentMethodLabel";
         public const string PaymentMethodValue = "PaymentMethodValue";
+        public const string PaymentReference = "PaymentReference";
         public const string ExchangeRateRow = "ExchangeRateRow";
 
         // Footer — notas
