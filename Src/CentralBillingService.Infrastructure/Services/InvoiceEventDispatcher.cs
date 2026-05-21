@@ -19,7 +19,7 @@ internal class InvoiceEventDispatcher(IDomainEventHandler<GenerateInvoiceArgs> e
                     invoice.Hash,
                     invoice.IssueDate,
                     invoice.TotalEur.Amount,
-                    invoice.Issuer.TaxId.Value);
+                    invoice.Recipient.TaxId.Value);
 
     private static GenerateInvoiceArgs CreateQrCommand(RectificativeInvoice invoice) => new GenerateInvoiceArgs(
                     invoice.Number.Value,
@@ -27,5 +27,5 @@ internal class InvoiceEventDispatcher(IDomainEventHandler<GenerateInvoiceArgs> e
                     invoice.Hash,
                     invoice.IssueDate,
                     invoice.TotalEur.Amount,
-                    invoice.Issuer.TaxId.Value);
+                    invoice.Recipient.TaxId.Value);
 }
