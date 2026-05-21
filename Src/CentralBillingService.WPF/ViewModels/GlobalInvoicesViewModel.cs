@@ -128,7 +128,7 @@ public partial class GlobalInvoicesViewModel : ObservableObject
     void PreviewInvoice(InvoiceSummaryResult? invoice)
     {
         if (invoice is null) return;
-        var vm = new InvoicePreviewViewModel(_scopeFactory, _registry,
+        var vm = new InvoicePreviewViewModel(_scopeFactory,
             invoice.InvoiceNumber, invoice.BillingSource,
             goBack: () => _navigate(this));
         _navigate(vm);

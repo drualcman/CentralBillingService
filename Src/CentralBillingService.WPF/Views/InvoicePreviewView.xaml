@@ -3,42 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:conv="clr-namespace:CentralBillingService.WPF.Converters"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
              Background="{StaticResource ContentBackground}">
 
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
-        <conv:BoolToVisibilityConverter x:Key="InvBoolToVis" Invert="True" />
         <conv:NullToVisibilityConverter x:Key="NullToVis" />
-        <conv:NullToVisibilityConverter x:Key="NullToVisInv" InvertWhenNull="True" />
-
-        <Style x:Key="InvoiceLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="9" />
-            <Setter Property="Foreground" Value="#888888" />
-            <Setter Property="Margin" Value="0,0,0,1" />
-        </Style>
-        <Style x:Key="InvoiceValue" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="Foreground" Value="#1E293B" />
-            <Setter Property="TextWrapping" Value="Wrap" />
-        </Style>
-        <Style x:Key="InvoiceValueBold" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#1E293B" />
-        </Style>
-        <!-- Table header: dark text on light background, matching report builder -->
-        <Style x:Key="TableHeader" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="9" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Foreground" Value="#2C3E50" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
-        <Style x:Key="TableCell" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="10.5" />
-            <Setter Property="Foreground" Value="#334155" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Padding" Value="4,6" />
-        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -82,374 +52,35 @@
             </Grid>
         </Border>
 
-        <!-- Content area -->
+        <!-- Content: WebView2 behind state overlays -->
         <Grid Grid.Row="1">
-            <!-- Loading -->
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                        Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
-                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
-                             IsIndeterminate="True" Width="48" Height="48" />
-                <TextBlock Text="Cargando factura..." Margin="0,12,0,0"
-                           Foreground="#64748B" HorizontalAlignment="Center" />
-            </StackPanel>
 
-            <!-- Error -->
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                        Visibility="{Binding ErrorMessage, Converter={StaticResource NullToVis}}">
-                <materialDesign:PackIcon Kind="AlertCircleOutline" Width="48" Height="48"
-                                         Foreground="#EF4444" HorizontalAlignment="Center" />
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="#EF4444"
-                           Margin="0,8,0,0" TextWrapping="Wrap" MaxWidth="400"
-                           HorizontalAlignment="Center" TextAlignment="Center" />
-            </StackPanel>
+            <!-- PDF viewer — always in visual tree so WebView2 can initialize -->
+            <wv2:WebView2 x:Name="PdfViewer" />
 
-            <!-- Invoice page -->
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          Visibility="{Binding IsLoading, Converter={StaticResource InvBoolToVis}}">
-                <Border HorizontalAlignment="Center" Margin="32"
-                        Width="794" MinHeight="1123"
-                        Background="White"
-                        BorderBrush="#CBD5E1" BorderThickness="1">
-                    <Border.Effect>
-                        <DropShadowEffect Color="#CBD5E1" BlurRadius="16" ShadowDepth="4" Opacity="0.4" />
-                    </Border.Effect>
+            <!-- Loading overlay — covers WebView2 while generating PDF -->
+            <Grid Background="{StaticResource ContentBackground}"
+                  Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                 IsIndeterminate="True" Width="48" Height="48" />
+                    <TextBlock Text="Generando factura..." Margin="0,12,0,0"
+                               Foreground="#64748B" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Grid>
 
-                    <StackPanel Margin="48,40" DataContext="{Binding Invoice}">
+            <!-- Error overlay -->
+            <Grid Background="{StaticResource ContentBackground}"
+                  Visibility="{Binding ErrorMessage, Converter={StaticResource NullToVis}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="AlertCircleOutline" Width="48" Height="48"
+                                             Foreground="#EF4444" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="#EF4444"
+                               Margin="0,8,0,0" TextWrapping="Wrap" MaxWidth="400"
+                               HorizontalAlignment="Center" TextAlignment="Center" />
+                </StackPanel>
+            </Grid>
 
-                        <!-- Tamper warning banner -->
-                        <Border Background="#C0392B" CornerRadius="6" Padding="12,8"
-                                Margin="0,0,0,16"
-                                Visibility="{Binding HasTamper, Converter={StaticResource BoolToVis}}">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="AlertOctagonOutline"
-                                                         Foreground="White" Width="20" Height="20"
-                                                         VerticalAlignment="Center" Margin="0,0,10,0" />
-                                <TextBlock Text="FACTURA MODIFICADA — La integridad de este documento ha sido comprometida"
-                                           Foreground="White" FontWeight="SemiBold" FontSize="12"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Border>
-
-                        <!-- HEADER ROW 1: Logo (left) + Issuer info (right-aligned) -->
-                        <Grid Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="80" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <Image Grid.Column="0"
-                                   Source="{Binding DataContext.LogoImage,
-                                       RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
-                                   Height="52" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                   Visibility="{Binding DataContext.LogoImage,
-                                       RelativeSource={RelativeSource AncestorType=ScrollViewer},
-                                       Converter={StaticResource NullToVis}}" />
-
-                            <!-- Issuer info right-aligned, matching report builder layout -->
-                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                <TextBlock Text="{Binding Issuer.DisplayName}"
-                                           FontSize="16" FontWeight="Bold" Foreground="#1E293B"
-                                           HorizontalAlignment="Right" Margin="0,0,0,2" />
-                                <TextBlock Text="{Binding Issuer.LegalName}"
-                                           FontSize="11" Foreground="#888888"
-                                           HorizontalAlignment="Right" Margin="0,0,0,2"
-                                           Visibility="{Binding Issuer.TradeName, Converter={StaticResource NullToVis}}" />
-                                <TextBlock Text="{Binding DataContext.IssuerAddress,
-                                               RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
-                                           FontSize="11" Foreground="#888888"
-                                           HorizontalAlignment="Right" Margin="0,0,0,2" />
-                                <TextBlock FontSize="11" Foreground="#888888" HorizontalAlignment="Right">
-                                    <Run Text="NIF: " /><Run Text="{Binding Issuer.TaxIdValue}" />
-                                </TextBlock>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- HEADER ROW 2: "FACTURA" (left) + Number/Date (right) -->
-                        <Grid Margin="0,0,0,16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="200" />
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Column="0" Text="FACTURA"
-                                       FontSize="18" FontWeight="Bold"
-                                       Foreground="#1E293B" VerticalAlignment="Bottom"
-                                       Margin="0,0,0,2" />
-
-                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                <Grid Margin="0,0,0,4">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Nº Factura:"
-                                               Style="{StaticResource InvoiceLabel}"
-                                               VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <TextBlock Grid.Column="1" Text="{Binding InvoiceNumber}"
-                                               Style="{StaticResource InvoiceValueBold}"
-                                               HorizontalAlignment="Right" />
-                                </Grid>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Fecha:"
-                                               Style="{StaticResource InvoiceLabel}"
-                                               VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding IssueDate, StringFormat=dd/MM/yyyy}"
-                                               Style="{StaticResource InvoiceValue}"
-                                               HorizontalAlignment="Right" />
-                                </Grid>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- Recipient box -->
-                        <Border Background="#F4F6F7" CornerRadius="8"
-                                Padding="14,12" Margin="0,0,0,20">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Grid.Column="0" Text="Cliente:"
-                                           Style="{StaticResource InvoiceLabel}"
-                                           VerticalAlignment="Top" Margin="0,0,12,0" />
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="{Binding Recipient.DisplayName}"
-                                               FontSize="13" FontWeight="SemiBold"
-                                               Foreground="#1E293B" Margin="0,0,0,2" />
-                                    <TextBlock Text="{Binding DataContext.RecipientAddress,
-                                                   RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
-                                               FontSize="11" Foreground="#64748B" Margin="0,0,0,2" />
-                                    <TextBlock FontSize="11" Foreground="#64748B">
-                                        <Run Text="NIF/CIF: " /><Run Text="{Binding Recipient.TaxIdValue}" />
-                                    </TextBlock>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <!-- Lines table header — light background, dark #2C3E50 text (matching report builder) -->
-                        <Border Background="#F8F9FA" CornerRadius="6,6,0,0"
-                                BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
-                            <Grid Margin="8,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="50" />
-                                    <ColumnDefinition Width="80" />
-                                    <ColumnDefinition Width="60" />
-                                    <ColumnDefinition Width="80" />
-                                    <ColumnDefinition Width="80" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="Descripción" Style="{StaticResource TableHeader}" />
-                                <TextBlock Grid.Column="1" Text="Cant." Style="{StaticResource TableHeader}" TextAlignment="Center" />
-                                <TextBlock Grid.Column="2" Text="P.U. (€)" Style="{StaticResource TableHeader}" TextAlignment="Right" />
-                                <TextBlock Grid.Column="3" Text="IGIC %" Style="{StaticResource TableHeader}" TextAlignment="Center" />
-                                <TextBlock Grid.Column="4" Text="Base €" Style="{StaticResource TableHeader}" TextAlignment="Right" />
-                                <TextBlock Grid.Column="5" Text="Total €" Style="{StaticResource TableHeader}" TextAlignment="Right" />
-                            </Grid>
-                        </Border>
-
-                        <!-- Lines table rows -->
-                        <ItemsControl ItemsSource="{Binding Lines}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="White" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self},
-                                                        Path=(ItemsControl.AlternationIndex)}"
-                                                                 Value="1">
-                                                        <Setter Property="Background" Value="#FAFBFC" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                        <Grid Margin="8,4">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="50" />
-                                                <ColumnDefinition Width="80" />
-                                                <ColumnDefinition Width="60" />
-                                                <ColumnDefinition Width="80" />
-                                                <ColumnDefinition Width="80" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="{Binding Description}"
-                                                       Style="{StaticResource TableCell}"
-                                                       TextWrapping="Wrap" />
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{Binding Quantity}"
-                                                       Style="{StaticResource TableCell}"
-                                                       TextAlignment="Center" />
-                                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding UnitPriceEur.Formatted}"
-                                                           Style="{StaticResource TableCell}"
-                                                           TextAlignment="Right" Padding="4,2" />
-                                                <TextBlock Text="{Binding UnitPriceOrigin.Formatted}"
-                                                           FontSize="9" Foreground="#94A3B8"
-                                                           TextAlignment="Right" Padding="4,0"
-                                                           Visibility="{Binding HasCurrencyConversion, Converter={StaticResource BoolToVis}}" />
-                                            </StackPanel>
-                                            <TextBlock Grid.Column="3"
-                                                       Style="{StaticResource TableCell}"
-                                                       TextAlignment="Center">
-                                                <Run Text="{Binding TaxRatePercentage}" /><Run Text="%" />
-                                            </TextBlock>
-                                            <StackPanel Grid.Column="4" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding TaxableBaseEur.Formatted}"
-                                                           Style="{StaticResource TableCell}"
-                                                           TextAlignment="Right" Padding="4,2" />
-                                                <TextBlock Text="{Binding TotalOrigin.Formatted}"
-                                                           FontSize="9" Foreground="#94A3B8"
-                                                           TextAlignment="Right" Padding="4,0"
-                                                           Visibility="{Binding HasCurrencyConversion, Converter={StaticResource BoolToVis}}" />
-                                            </StackPanel>
-                                            <TextBlock Grid.Column="5" Text="{Binding TotalEur.Formatted}"
-                                                       Style="{StaticResource TableCell}"
-                                                       TextAlignment="Right" FontWeight="SemiBold" />
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
-                        <!-- FOOTER: Totals + Payment info -->
-                        <Border BorderBrush="#CCCCCC" BorderThickness="0,1,0,0" Margin="0,4,0,0">
-                            <Grid Margin="0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="260" />
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Left: Payment info + Notes -->
-                                <StackPanel Grid.Column="0" VerticalAlignment="Top" Margin="0,0,20,0">
-                                    <StackPanel Visibility="{Binding PaymentMethod, Converter={StaticResource NullToVis}}">
-                                        <TextBlock Text="Forma de pago" Style="{StaticResource InvoiceLabel}" />
-                                        <TextBlock Text="{Binding PaymentMethod}"
-                                                   Style="{StaticResource InvoiceValue}" Margin="0,0,0,4" />
-                                    </StackPanel>
-                                    <StackPanel Visibility="{Binding PaymentReference, Converter={StaticResource NullToVis}}">
-                                        <TextBlock Text="Referencia" Style="{StaticResource InvoiceLabel}" />
-                                        <TextBlock Text="{Binding PaymentReference}"
-                                                   Style="{StaticResource InvoiceValue}" Margin="0,0,0,4" />
-                                    </StackPanel>
-                                    <StackPanel Visibility="{Binding Notes, Converter={StaticResource NullToVis}}">
-                                        <TextBlock Text="Notas" Style="{StaticResource InvoiceLabel}" />
-                                        <TextBlock Text="{Binding Notes}"
-                                                   Style="{StaticResource InvoiceValue}"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
-                                </StackPanel>
-
-                                <!-- Right: Base / IGIC / TOTAL -->
-                                <StackPanel Grid.Column="1">
-                                    <Grid Margin="0,0,0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Base imponible:"
-                                                   Style="{StaticResource InvoiceLabel}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding TaxableBaseEur.Formatted}"
-                                                   Style="{StaticResource InvoiceValue}" />
-                                    </Grid>
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="IGIC total:"
-                                                   Style="{StaticResource InvoiceLabel}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding TotalTaxAmountEur.Formatted}"
-                                                   Style="{StaticResource InvoiceValue}" />
-                                    </Grid>
-                                    <Separator Background="#CCCCCC" Margin="0,0,0,8" />
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="TOTAL"
-                                                   FontSize="14" FontWeight="Bold" Foreground="#1E293B" />
-                                        <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                            <TextBlock Text="{Binding TotalEur.Formatted}"
-                                                       FontSize="14" FontWeight="Bold" Foreground="#1E293B"
-                                                       HorizontalAlignment="Right" />
-                                            <TextBlock Text="{Binding TotalInOriginCurrency.Formatted}"
-                                                       FontSize="11" Foreground="#64748B"
-                                                       HorizontalAlignment="Right"
-                                                       Visibility="{Binding AppliedExchangeRate.IsIdentity,
-                                                           Converter={StaticResource InvBoolToVis}}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <!-- FOOTER: QR (left) + exchange rate info (right) -->
-                        <Grid Margin="0,12,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <Border Grid.Column="0" Margin="0,0,16,0"
-                                    Visibility="{Binding DataContext.QrImage,
-                                        RelativeSource={RelativeSource AncestorType=ScrollViewer},
-                                        Converter={StaticResource NullToVis}}">
-                                <Image Source="{Binding DataContext.QrImage,
-                                           RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
-                                       Width="80" Height="80" />
-                            </Border>
-
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding DataContext.ExchangeRateText,
-                                               RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
-                                           FontSize="10" Foreground="#888888"
-                                           Visibility="{Binding AppliedExchangeRate.IsIdentity,
-                                               Converter={StaticResource InvBoolToVis}}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- FOOTER: Verification section -->
-                        <Border BorderBrush="#CCCCCC" BorderThickness="0,1,0,0"
-                                Padding="0,12,0,0" Background="#F8F9FA">
-                            <StackPanel>
-                                <TextBlock Text="VERIFICACIÓN VERIFACTU"
-                                           FontSize="9" FontWeight="SemiBold"
-                                           Foreground="#94A3B8" Margin="0,0,0,6" />
-                                <Grid Margin="0,0,0,4">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="120" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Código de origen:"
-                                               Style="{StaticResource InvoiceLabel}" />
-                                    <TextBlock Grid.Column="1" Text="{Binding BillingSource}"
-                                               Style="{StaticResource InvoiceValue}" />
-                                </Grid>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="120" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Hash SHA-256:"
-                                               Style="{StaticResource InvoiceLabel}" />
-                                    <TextBlock Grid.Column="1" Text="{Binding Hash}"
-                                               Style="{StaticResource InvoiceValue}"
-                                               FontFamily="Consolas" FontSize="9"
-                                               TextWrapping="Wrap" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                    </StackPanel>
-                </Border>
-            </ScrollViewer>
         </Grid>
     </Grid>
 </UserControl>
