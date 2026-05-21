@@ -92,7 +92,7 @@
 
                 <!-- Summary data -->
                 <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource InvBoolToVis}}">
-                    <StackPanel Visibility="{Binding Summary, Converter={StaticResource NullToVisInv}}">
+                    <StackPanel Visibility="{Binding Summary, Converter={StaticResource NullToVis}}">
 
                         <!-- Annual -->
                         <TextBlock Text="RESUMEN ANUAL"

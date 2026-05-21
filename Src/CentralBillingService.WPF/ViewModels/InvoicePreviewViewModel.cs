@@ -18,6 +18,9 @@ public partial class InvoicePreviewViewModel : ObservableObject
     [ObservableProperty] BitmapImage? logoImage;
     [ObservableProperty] BitmapImage? qrImage;
 
+    public string ExchangeRateText => Invoice is null || Invoice.AppliedExchangeRate.IsIdentity ? "" :
+        $"Tipo de cambio: 1 {Invoice.AppliedExchangeRate.FromCurrency} = {Invoice.AppliedExchangeRate.Rate:F4} EUR";
+
     public string IssuerAddress => Invoice is null ? "" :
         string.Join(", ", new[]
         {
@@ -72,6 +75,7 @@ public partial class InvoicePreviewViewModel : ObservableObject
 
             OnPropertyChanged(nameof(IssuerAddress));
             OnPropertyChanged(nameof(RecipientAddress));
+            OnPropertyChanged(nameof(ExchangeRateText));
 
             if (!string.IsNullOrEmpty(config.Issuer.LogoUrl))
                 LogoImage = await LoadImageAsync(config.Issuer.LogoUrl);

@@ -11,7 +11,6 @@
         <conv:NullToVisibilityConverter x:Key="NullToVis" />
         <conv:NullToVisibilityConverter x:Key="NullToVisInv" InvertWhenNull="True" />
 
-        <!-- Invoice page styles -->
         <Style x:Key="InvoiceLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="9" />
             <Setter Property="Foreground" Value="#888888" />
@@ -27,10 +26,11 @@
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="#1E293B" />
         </Style>
+        <!-- Table header: dark text on light background, matching report builder -->
         <Style x:Key="TableHeader" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="10" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="9" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#2C3E50" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
         <Style x:Key="TableCell" TargetType="TextBlock">
@@ -130,73 +130,79 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Header: logo + invoice metadata -->
-                        <Grid Margin="0,0,0,20">
+                        <!-- HEADER ROW 1: Logo (left) + Issuer info (right-aligned) -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Image Grid.Column="0"
+                                   Source="{Binding DataContext.LogoImage,
+                                       RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
+                                   Height="52" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                   Visibility="{Binding DataContext.LogoImage,
+                                       RelativeSource={RelativeSource AncestorType=ScrollViewer},
+                                       Converter={StaticResource NullToVis}}" />
+
+                            <!-- Issuer info right-aligned, matching report builder layout -->
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding Issuer.DisplayName}"
+                                           FontSize="16" FontWeight="Bold" Foreground="#1E293B"
+                                           HorizontalAlignment="Right" Margin="0,0,0,2" />
+                                <TextBlock Text="{Binding Issuer.LegalName}"
+                                           FontSize="11" Foreground="#888888"
+                                           HorizontalAlignment="Right" Margin="0,0,0,2"
+                                           Visibility="{Binding Issuer.TradeName, Converter={StaticResource NullToVis}}" />
+                                <TextBlock Text="{Binding DataContext.IssuerAddress,
+                                               RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
+                                           FontSize="11" Foreground="#888888"
+                                           HorizontalAlignment="Right" Margin="0,0,0,2" />
+                                <TextBlock FontSize="11" Foreground="#888888" HorizontalAlignment="Right">
+                                    <Run Text="NIF: " /><Run Text="{Binding Issuer.TaxIdValue}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- HEADER ROW 2: "FACTURA" (left) + Number/Date (right) -->
+                        <Grid Margin="0,0,0,16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="200" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Issuer info -->
-                            <StackPanel Grid.Column="0">
-                                <Image Source="{Binding DataContext.LogoImage,
-                                           RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
-                                       Height="52" HorizontalAlignment="Left"
-                                       Margin="0,0,0,10"
-                                       Visibility="{Binding DataContext.LogoImage,
-                                           RelativeSource={RelativeSource AncestorType=ScrollViewer},
-                                           Converter={StaticResource NullToVis}}" />
+                            <TextBlock Grid.Column="0" Text="FACTURA"
+                                       FontSize="18" FontWeight="Bold"
+                                       Foreground="#1E293B" VerticalAlignment="Bottom"
+                                       Margin="0,0,0,2" />
 
-                                <TextBlock Text="{Binding Issuer.DisplayName}"
-                                           FontSize="16" FontWeight="Bold" Foreground="#1E293B"
-                                           Margin="0,0,0,2" />
-                                <TextBlock Text="{Binding Issuer.LegalName}"
-                                           FontSize="11" Foreground="#64748B" Margin="0,0,0,2"
-                                           Visibility="{Binding Issuer.TradeName, Converter={StaticResource NullToVis}}" />
-                                <TextBlock Text="{Binding DataContext.IssuerAddress,
-                                               RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
-                                           FontSize="11" Foreground="#64748B" Margin="0,0,0,2" />
-                                <TextBlock FontSize="11" Foreground="#64748B">
-                                    <Run Text="NIF: " /><Run Text="{Binding Issuer.TaxIdValue}" />
-                                </TextBlock>
-                            </StackPanel>
-
-                            <!-- Invoice number / date box -->
-                            <Border Grid.Column="1" Background="#F8FAFC"
-                                    CornerRadius="8" Padding="14,12"
-                                    VerticalAlignment="Top">
-                                <StackPanel>
-                                    <TextBlock Text="FACTURA"
-                                               FontSize="18" FontWeight="Bold"
-                                               Foreground="#1E293B" Margin="0,0,0,10"
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Nº Factura:"
+                                               Style="{StaticResource InvoiceLabel}"
+                                               VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Grid.Column="1" Text="{Binding InvoiceNumber}"
+                                               Style="{StaticResource InvoiceValueBold}"
                                                HorizontalAlignment="Right" />
-                                    <Grid Margin="0,0,0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Nº Factura:"
-                                                   Style="{StaticResource InvoiceLabel}"
-                                                   VerticalAlignment="Center" Margin="0,0,8,0" />
-                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceNumber}"
-                                                   Style="{StaticResource InvoiceValueBold}"
-                                                   HorizontalAlignment="Right" />
-                                    </Grid>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Fecha:"
-                                                   Style="{StaticResource InvoiceLabel}"
-                                                   VerticalAlignment="Center" Margin="0,0,8,0" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding IssueDate, StringFormat=dd/MM/yyyy}"
-                                                   Style="{StaticResource InvoiceValue}"
-                                                   HorizontalAlignment="Right" />
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Fecha:"
+                                               Style="{StaticResource InvoiceLabel}"
+                                               VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding IssueDate, StringFormat=dd/MM/yyyy}"
+                                               Style="{StaticResource InvoiceValue}"
+                                               HorizontalAlignment="Right" />
+                                </Grid>
+                            </StackPanel>
                         </Grid>
 
                         <!-- Recipient box -->
@@ -225,8 +231,9 @@
                             </Grid>
                         </Border>
 
-                        <!-- Lines table header -->
-                        <Border Background="#2C3E50" CornerRadius="6,6,0,0" Padding="0,0,0,0">
+                        <!-- Lines table header — light background, dark #2C3E50 text (matching report builder) -->
+                        <Border Background="#F8F9FA" CornerRadius="6,6,0,0"
+                                BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
                             <Grid Margin="8,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -310,15 +317,15 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!-- Totals section -->
-                        <Border BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Margin="0,0,0,0">
-                            <Grid Margin="8,12">
+                        <!-- FOOTER: Totals + Payment info -->
+                        <Border BorderBrush="#CCCCCC" BorderThickness="0,1,0,0" Margin="0,4,0,0">
+                            <Grid Margin="0,10">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="260" />
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Payment info (left) -->
+                                <!-- Left: Payment info + Notes -->
                                 <StackPanel Grid.Column="0" VerticalAlignment="Top" Margin="0,0,20,0">
                                     <StackPanel Visibility="{Binding PaymentMethod, Converter={StaticResource NullToVis}}">
                                         <TextBlock Text="Forma de pago" Style="{StaticResource InvoiceLabel}" />
@@ -338,102 +345,106 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!-- Totals table (right) -->
-                                <Border Grid.Column="1" Background="#F8FAFC"
-                                        CornerRadius="8" Padding="14,10">
-                                    <StackPanel>
-                                        <Grid Margin="0,0,0,4">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Base imponible:"
-                                                       Style="{StaticResource InvoiceLabel}" />
-                                            <TextBlock Grid.Column="1" Text="{Binding TaxableBaseEur.Formatted}"
-                                                       Style="{StaticResource InvoiceValue}" />
-                                        </Grid>
-                                        <Grid Margin="0,0,0,8">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="IGIC total:"
-                                                       Style="{StaticResource InvoiceLabel}" />
-                                            <TextBlock Grid.Column="1" Text="{Binding TotalTaxAmountEur.Formatted}"
-                                                       Style="{StaticResource InvoiceValue}" />
-                                        </Grid>
-                                        <Separator Background="#CBD5E1" Margin="0,0,0,8" />
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="TOTAL"
-                                                       FontSize="14" FontWeight="Bold" Foreground="#1E293B" />
-                                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                                <TextBlock Text="{Binding TotalEur.Formatted}"
-                                                           FontSize="14" FontWeight="Bold" Foreground="#1E293B"
-                                                           HorizontalAlignment="Right" />
-                                                <TextBlock Text="{Binding TotalInOriginCurrency.Formatted}"
-                                                           FontSize="11" Foreground="#64748B"
-                                                           HorizontalAlignment="Right"
-                                                           Visibility="{Binding AppliedExchangeRate.IsIdentity,
-                                                               Converter={StaticResource InvBoolToVis}}" />
-                                            </StackPanel>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
+                                <!-- Right: Base / IGIC / TOTAL -->
+                                <StackPanel Grid.Column="1">
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Base imponible:"
+                                                   Style="{StaticResource InvoiceLabel}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding TaxableBaseEur.Formatted}"
+                                                   Style="{StaticResource InvoiceValue}" />
+                                    </Grid>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="IGIC total:"
+                                                   Style="{StaticResource InvoiceLabel}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding TotalTaxAmountEur.Formatted}"
+                                                   Style="{StaticResource InvoiceValue}" />
+                                    </Grid>
+                                    <Separator Background="#CCCCCC" Margin="0,0,0,8" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="TOTAL"
+                                                   FontSize="14" FontWeight="Bold" Foreground="#1E293B" />
+                                        <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                            <TextBlock Text="{Binding TotalEur.Formatted}"
+                                                       FontSize="14" FontWeight="Bold" Foreground="#1E293B"
+                                                       HorizontalAlignment="Right" />
+                                            <TextBlock Text="{Binding TotalInOriginCurrency.Formatted}"
+                                                       FontSize="11" Foreground="#64748B"
+                                                       HorizontalAlignment="Right"
+                                                       Visibility="{Binding AppliedExchangeRate.IsIdentity,
+                                                           Converter={StaticResource InvBoolToVis}}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
                             </Grid>
                         </Border>
 
-                        <!-- Verification footer -->
-                        <Border BorderBrush="#E2E8F0" BorderThickness="0,1,0,0"
-                                Margin="0,16,0,0" Padding="0,16,0,0">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                        <!-- FOOTER: QR (left) + exchange rate info (right) -->
+                        <Grid Margin="0,12,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
-                                <!-- Hash + billing source -->
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock Text="VERIFICACIÓN VERIFACTU"
-                                               FontSize="9" FontWeight="SemiBold"
-                                               Foreground="#94A3B8" Margin="0,0,0,6" />
-                                    <Grid Margin="0,0,0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Origen:"
-                                                   Style="{StaticResource InvoiceLabel}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding BillingSource}"
-                                                   Style="{StaticResource InvoiceValue}" />
-                                    </Grid>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Hash SHA-256:"
-                                                   Style="{StaticResource InvoiceLabel}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding Hash}"
-                                                   Style="{StaticResource InvoiceValue}"
-                                                   FontFamily="Consolas" FontSize="9"
-                                                   TextWrapping="Wrap" />
-                                    </Grid>
-                                </StackPanel>
+                            <Border Grid.Column="0" Margin="0,0,16,0"
+                                    Visibility="{Binding DataContext.QrImage,
+                                        RelativeSource={RelativeSource AncestorType=ScrollViewer},
+                                        Converter={StaticResource NullToVis}}">
+                                <Image Source="{Binding DataContext.QrImage,
+                                           RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
+                                       Width="80" Height="80" />
+                            </Border>
 
-                                <!-- QR code -->
-                                <Border Grid.Column="1" Margin="20,0,0,0"
-                                        Visibility="{Binding DataContext.QrImage,
-                                            RelativeSource={RelativeSource AncestorType=ScrollViewer},
-                                            Converter={StaticResource NullToVis}}">
-                                    <Image Source="{Binding DataContext.QrImage,
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding DataContext.ExchangeRateText,
                                                RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
-                                           Width="90" Height="90" />
-                                </Border>
-                            </Grid>
+                                           FontSize="10" Foreground="#888888"
+                                           Visibility="{Binding AppliedExchangeRate.IsIdentity,
+                                               Converter={StaticResource InvBoolToVis}}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- FOOTER: Verification section -->
+                        <Border BorderBrush="#CCCCCC" BorderThickness="0,1,0,0"
+                                Padding="0,12,0,0" Background="#F8F9FA">
+                            <StackPanel>
+                                <TextBlock Text="VERIFICACIÓN VERIFACTU"
+                                           FontSize="9" FontWeight="SemiBold"
+                                           Foreground="#94A3B8" Margin="0,0,0,6" />
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Código de origen:"
+                                               Style="{StaticResource InvoiceLabel}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding BillingSource}"
+                                               Style="{StaticResource InvoiceValue}" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Hash SHA-256:"
+                                               Style="{StaticResource InvoiceLabel}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Hash}"
+                                               Style="{StaticResource InvoiceValue}"
+                                               FontFamily="Consolas" FontSize="9"
+                                               TextWrapping="Wrap" />
+                                </Grid>
+                            </StackPanel>
                         </Border>
 
                     </StackPanel>
