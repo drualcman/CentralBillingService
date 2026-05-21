@@ -12,10 +12,10 @@ public partial class App : System.Windows.Application
             .ConfigureAppConfiguration((_, config) =>
             {
                 config.SetBasePath(AppContext.BaseDirectory)
-                      .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+                      .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
 #if DEBUG
-            .AddJsonFile("appsettings.Development.json", optional: true)
-            .AddUserSecrets<App>()
+                        .AddJsonFile("appsettings.Development.json", optional: true)
+                        .AddUserSecrets<App>()
 #endif
             ;
             })
@@ -65,31 +65,5 @@ public partial class App : System.Windows.Application
             await _host.StopAsync(TimeSpan.FromSeconds(5));
 
         base.OnExit(e);
-    }
-
-    private static BillingSourceConfig BuildBillingSourceConfig(IConfigurationSection s)
-    {
-        var i = s.GetSection("Issuer");
-        return new BillingSourceConfig
-        {
-            BillingSource = s["BillingSource"] ?? "",
-            Secret = s["Secret"] ?? "",
-            Issuer = new IssuerConfig
-            {
-                LegalName = i["LegalName"] ?? "",
-                TradeName = i["TradeName"],
-                TaxIdValue = i["TaxIdValue"] ?? "",
-                TaxIdCountryCode = i["TaxIdCountryCode"] ?? "ES",
-                Email = i["Email"] ?? "",
-                Phone = i["Phone"],
-                Website = i["Website"],
-                AddressLine1 = i["AddressLine1"] ?? "",
-                AddressLine2 = i["AddressLine2"],
-                City = i["City"] ?? "",
-                Province = i["Province"],
-                PostalCode = i["PostalCode"] ?? "",
-                AddressCountryCode = i["AddressCountryCode"] ?? "ES",
-            },
-        };
     }
 }
