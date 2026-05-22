@@ -122,15 +122,15 @@
                                           Style="{StaticResource MaterialDesignOutlinedComboBox}"
                                           SelectedItem="{Binding PaymentMethod}"
                                           ItemsSource="{x:Static vm:CreateInvoiceViewModel.PaymentMethods}" />
-                                <TextBox Margin="0,0,6,12"
+                                <TextBox Margin="6,0,0,12"
                                          materialDesign:HintAssist.Hint="Referencia de pago *"
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          Text="{Binding PaymentReference}" />
-                                <TextBox Margin="6,0,0,12"
-                                         materialDesign:HintAssist.Hint="Datos de transacción"
-                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                         Text="{Binding TransactionData}" />
                             </UniformGrid>
+                            <TextBox Margin="0,0,0,12"
+                                     materialDesign:HintAssist.Hint="Datos de transacción"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     Text="{Binding TransactionData}" />
                             <Grid Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
