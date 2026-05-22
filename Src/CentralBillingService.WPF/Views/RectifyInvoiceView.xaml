@@ -93,12 +93,16 @@
                                           Text="{Binding RectificativeSerie}"
                                           ItemsSource="{Binding AvailableSeries}"
                                           DisplayMemberPath="Code" />
-                                <ComboBox Margin="6,0,0,12"
-                                          materialDesign:HintAssist.Hint="Tipo de rectificación *"
-                                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                          ItemsSource="{x:Static vm:RectifyInvoiceViewModel.RectificationTypes}"
-                                          SelectedItem="{Binding SelectedRectificationType}" />
+                                <DatePicker Margin="6,0,0,12"
+                                            materialDesign:HintAssist.Hint="Fecha emisión *"
+                                            Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                            SelectedDate="{Binding IssueDate}" />
                             </UniformGrid>
+                            <ComboBox Margin="0,0,0,12"
+                                      materialDesign:HintAssist.Hint="Tipo de rectificación *"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                      ItemsSource="{x:Static vm:RectifyInvoiceViewModel.RectificationTypes}"
+                                      SelectedItem="{Binding SelectedRectificationType}" />
                             <TextBox Margin="0,0,0,12"
                                      materialDesign:HintAssist.Hint="Motivo (mínimo 10 caracteres) *"
                                      Style="{StaticResource MaterialDesignOutlinedTextBox}"

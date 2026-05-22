@@ -52,7 +52,8 @@ public sealed class RectifyInvoiceUseCase
         var config = _registry.GetConfig(command.BillingSource, command.Secret);
         var numberProvider = _numberProviderFactory.GetFor(config);
 
-        var year = DateOnly.FromDateTime(DateTime.UtcNow).Year;
+        var issueDate = command.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var year = issueDate.Year;
         var domainRequest = MapToDomainRequest(command);
 
         // Intentar cargar la factura original; si no existe, buscar entre las rectificativas
@@ -154,6 +155,7 @@ public sealed class RectifyInvoiceUseCase
         RectificationType = cmd.RectificationType == RectificationType.Substitution
             ? RectificationType.Substitution
             : RectificationType.Difference,
+        IssueDate = cmd.IssueDate,
         Lines = cmd.Lines?.Select(l => new InvoiceLineData
         {
             Description = l.Description,

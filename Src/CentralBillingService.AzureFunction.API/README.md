@@ -145,6 +145,7 @@ Billing sources and secrets are defined in the application configuration. Reques
 
 - All request and response bodies are **JSON**
 - Dates use **ISO 8601** format: `"2026-05-15"` for `DateOnly`, `"2026-05-15T10:00:00Z"` for timestamps
+- `issueDate` is optional in `POST /api/invoices` and `POST /api/invoices/{id}/rectify`. When omitted, the server defaults to **today in UTC** (`DateTime.UtcNow`). Always provide the field explicitly if you need the invoice date to match the caller's local date.
 - Money amounts are plain `decimal` values; currency is always specified in a sibling `currencyCode` field
 - Error responses follow the **RFC 7807 Problem Details** format:
 

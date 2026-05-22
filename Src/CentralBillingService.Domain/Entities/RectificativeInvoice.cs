@@ -174,6 +174,7 @@ public sealed class RectificativeInvoice
         List<InvoiceLine> lines,
         ExchangeRate appliedExchangeRate,
         IInvoiceHasher hasher,
+        DateOnly issueDate,
         string paymentReference,
         string? previousHash = null,
         string? notes = null,
@@ -188,7 +189,6 @@ public sealed class RectificativeInvoice
                 $"Solo se puede rectificar una factura en estado Issued o Rectified. " +
                 $"Estado actual: {originalInvoice.Status}.");
 
-        var issueDate = DateOnly.FromDateTime(DateTime.UtcNow);
         var createdAt = DateTimeOffset.UtcNow;
 
         // Construcción temporal para calcular el hash
@@ -252,6 +252,7 @@ public sealed class RectificativeInvoice
         List<InvoiceLine> lines,
         ExchangeRate appliedExchangeRate,
         IInvoiceHasher hasher,
+        DateOnly issueDate,
         string paymentReference,
         string? previousHash = null,
         string? notes = null,
@@ -266,7 +267,6 @@ public sealed class RectificativeInvoice
                 $"Solo se puede rectificar una factura rectificativa en estado Issued. " +
                 $"Estado actual: {originalRectificative.Status}.");
 
-        var issueDate = DateOnly.FromDateTime(DateTime.UtcNow);
         var createdAt = DateTimeOffset.UtcNow;
 
         var temp = new RectificativeInvoice(

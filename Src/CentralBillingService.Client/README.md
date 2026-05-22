@@ -80,6 +80,8 @@ All methods are `async` and accept an implicit or explicit `CancellationToken`.
 
 ### Create an Invoice
 
+> **Date handling:** `IssueDate` is optional for both `CreateInvoiceAsync` and `RectifyInvoiceAsync`. If omitted, the server uses **today's date in UTC** (`DateTime.UtcNow`). Always pass the field explicitly if the caller's local date may differ from UTC (e.g. late-night requests in UTC+1/+2).
+
 ```csharp
 var result = await cbs.CreateInvoiceAsync(new CreateInvoiceCommand
 {
@@ -210,6 +212,7 @@ RectifyInvoiceResult result = await cbs.RectifyInvoiceAsync(
         RectificativeSerie  = "R",
         RectificationType   = RectificationType.Substitution,
         Reason              = "Incorrect recipient tax ID",
+        IssueDate           = DateOnly.FromDateTime(DateTime.Today),
         PaymentReference    = "REF-R-001"
     });
 

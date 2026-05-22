@@ -16,6 +16,9 @@ public sealed class RectifyInvoiceCommand
     public required string Reason { get; init; }
     public required RectificationType RectificationType { get; init; }
 
+    /// <summary>Issue date. Defaults to today (UTC) if not provided.</summary>
+    public DateOnly? IssueDate { get; init; }
+
     /// <summary>
     /// Required only for Difference rectifications.
     /// For Substitution, lines are derived automatically from the original.

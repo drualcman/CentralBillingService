@@ -47,8 +47,8 @@ public sealed class RectifyInvoiceService
     {
         _registry.GetConfig(request.BillingSource, request.Secret);
 
-        var year = DateOnly.FromDateTime(DateTime.UtcNow).Year;
-        var rectNumber = InvoiceNumber.Create(request.RectificativeSerie, year, reservedNumber);
+        var issueDate = request.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var rectNumber = InvoiceNumber.Create(request.RectificativeSerie, issueDate.Year, reservedNumber);
 
         List<InvoiceLine> lines;
         ExchangeRate primaryRate;
@@ -79,6 +79,7 @@ public sealed class RectifyInvoiceService
             lines: lines,
             appliedExchangeRate: primaryRate,
             hasher: _hasher,
+            issueDate: issueDate,
             previousHash: previousHash,
             notes: request.Notes,
             paymentMethod: request.PaymentMethod,
@@ -104,8 +105,8 @@ public sealed class RectifyInvoiceService
     {
         _registry.GetConfig(request.BillingSource, request.Secret);
 
-        var year = DateOnly.FromDateTime(DateTime.UtcNow).Year;
-        var rectNumber = InvoiceNumber.Create(request.RectificativeSerie, year, reservedNumber);
+        var issueDate = request.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var rectNumber = InvoiceNumber.Create(request.RectificativeSerie, issueDate.Year, reservedNumber);
 
         List<InvoiceLine> lines;
         ExchangeRate primaryRate;
@@ -134,6 +135,7 @@ public sealed class RectifyInvoiceService
             lines: lines,
             appliedExchangeRate: primaryRate,
             hasher: _hasher,
+            issueDate: issueDate,
             previousHash: previousHash,
             notes: request.Notes,
             paymentMethod: request.PaymentMethod,

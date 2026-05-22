@@ -5,6 +5,7 @@ internal sealed class RectifyInvoiceRequest
     public required string RectificativeSerie { get; init; }
     public required string Reason { get; init; }
     public required RectificationType RectificationType { get; init; }
+    public DateOnly? IssueDate { get; init; }
     public IReadOnlyList<InvoiceLineDto>? Lines { get; init; }
     public string? Notes { get; init; }
     public string? PaymentMethod { get; init; }

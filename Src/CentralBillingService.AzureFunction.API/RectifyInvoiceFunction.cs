@@ -37,6 +37,7 @@ public sealed class RectifyInvoiceFunction
                 RectificationType = request.RectificationType,
                 RectificativeSerie = request.RectificativeSerie,
                 Reason = request.Reason,
+                IssueDate = request.IssueDate,
                 Lines = request.Lines,
                 PaymentMethod = request.PaymentMethod,
                 PaymentReference = request.PaymentReference,

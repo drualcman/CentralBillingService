@@ -17,6 +17,7 @@ public partial class RectifyInvoiceViewModel : ObservableObject
     [ObservableProperty] ObservableCollection<ProductRecord> availableProducts = [];
 
     [ObservableProperty] string rectificativeSerie = "R";
+    [ObservableProperty] DateTime issueDate = DateTime.Today;
     [ObservableProperty] string reason = string.Empty;
     [ObservableProperty] string selectedRectificationType = "Substitution";
     [ObservableProperty] string paymentReference = string.Empty;
@@ -200,6 +201,7 @@ public partial class RectifyInvoiceViewModel : ObservableObject
                 Secret = BillingSource.Secret,
                 OriginalInvoiceNumber = OriginalInvoiceNumber,
                 RectificativeSerie = RectificativeSerie.Trim().ToUpperInvariant(),
+                IssueDate = DateOnly.FromDateTime(IssueDate),
                 Reason = Reason.Trim(),
                 RectificationType = type,
                 PaymentReference = PaymentReference.Trim(),
