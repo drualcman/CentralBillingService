@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
     {
         // Build the registry once from config — singleton for the lifetime of the app    
         ConfigureOptionsHelper.ConfigureOptions(services, options, CbsOptions.SectionKey);
+        services.AddScoped<IMailService, MailService>();
         services.AddSingleton<BillingSourceRegistry>();
         services.AddScoped<CreateInvoiceService>();
         services.AddScoped<RectifyInvoiceService>();

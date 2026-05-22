@@ -1,6 +1,8 @@
+global using CentralBillingService.Domain.Builders;
 global using CentralBillingService.Domain.DTOs;
 global using CentralBillingService.Domain.Entities;
 global using CentralBillingService.Domain.Exceptions;
+global using CentralBillingService.Domain.Handlers;
 global using CentralBillingService.Domain.Helpers;
 global using CentralBillingService.Domain.Interfaces;
 global using CentralBillingService.Domain.Models;
@@ -10,6 +12,9 @@ global using CentralBillingService.Domain.ValueObjects;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Options;
+global using System.Collections.Concurrent;
+global using System.Net.Http.Json;
 global using System.Runtime.Serialization;
+global using System.Text;
 global using System.Text.Json;
 global using System.Text.Json.Serialization;
