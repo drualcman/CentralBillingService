@@ -5,7 +5,7 @@ internal sealed class CreateInvoiceRequest
     public required string Serie { get; init; }
     public required RecipientDto Recipient { get; init; }
     public required IReadOnlyList<InvoiceLineDto> Lines { get; init; }
-    public required string OriginCurrencyCode { get; init; }
+    public string? OriginCurrencyCode { get; init; }
     public DateOnly? IssueDate { get; init; }
     public DateOnly? ValueDate { get; init; }
     public string? Notes { get; init; }
