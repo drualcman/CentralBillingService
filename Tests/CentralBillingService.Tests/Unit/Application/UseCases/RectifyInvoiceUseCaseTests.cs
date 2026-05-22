@@ -30,7 +30,7 @@ public class RectifyInvoiceUseCaseTests
             .GetLastHashAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns((string?)null);
 
-        _useCase = new RectifyInvoiceUseCase(domainService, registry, _repository, _eventDispatcher, new FakeInvoiceHasher(), _numberProviderFactory, blobStorage);
+        _useCase = new RectifyInvoiceUseCase(domainService, registry, _repository, _eventDispatcher, new FakeInvoiceHasher(), _numberProviderFactory, blobStorage, Substitute.For<IIso9001>());
     }
 
     private static RectifyInvoiceCommand BuildCommand(

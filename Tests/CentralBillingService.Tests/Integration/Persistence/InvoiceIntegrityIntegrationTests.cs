@@ -84,7 +84,7 @@ public sealed class InvoiceIntegrityIntegrationTests(CbsDatabaseFixture fixture)
 
         var registry = InvoiceBuilder.DefaultRegistry(billingSource, "secret123");
         var repo = NewRepository();
-        var useCase = new VerifyInvoiceIntegrityUseCase(repo, registry, RealHasher);
+        var useCase = new VerifyInvoiceIntegrityUseCase(repo, registry, RealHasher, Substitute.For<IIso9001>());
 
         var query = new VerifyInvoiceQuery
         {

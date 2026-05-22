@@ -11,6 +11,8 @@ public partial class InvoiceDetailViewModel : ObservableObject
     [ObservableProperty] InvoiceResult? invoice;
     [ObservableProperty] bool isLoading;
     [ObservableProperty] string? errorMessage;
+    [ObservableProperty] string? emailSuccessMessage;
+    [ObservableProperty] string? emailErrorMessage;
 
     public InvoiceDetailViewModel(
         IServiceScopeFactory scopeFactory,
@@ -53,4 +55,32 @@ public partial class InvoiceDetailViewModel : ObservableObject
 
     [RelayCommand]
     void GoBack() => _goBack();
+
+    [RelayCommand]
+    async Task SendPdfByEmail()
+    {
+        EmailSuccessMessage = null;
+        EmailErrorMessage = null;
+
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var useCase = scope.ServiceProvider.GetRequiredService<SendInvoicePdfByEmailUseCase>();
+
+            var result = await useCase.ExecuteAsync(new SendInvoicePdfByEmailQuery
+            {
+                BillingSource = BillingSource.Name,
+                InvoiceNumber = InvoiceNumber,
+            });
+
+            if (result.Success)
+                EmailSuccessMessage = result.Message;
+            else
+                EmailErrorMessage = result.Message;
+        }
+        catch (Exception ex)
+        {
+            EmailErrorMessage = ex.Message;
+        }
+    }
 }

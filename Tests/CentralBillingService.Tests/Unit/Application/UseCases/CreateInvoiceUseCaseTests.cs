@@ -32,7 +32,7 @@ public class CreateInvoiceUseCaseTests
 
         _useCase = new CreateInvoiceUseCase(
             domainService, registry, _repository, _eventDispatcher,
-            _numberProviderFactory, blobStorage);
+            _numberProviderFactory, blobStorage, Substitute.For<IIso9001>());
     }
 
     private static CreateInvoiceCommand BuildCommand(string currencyCode = "EUR") => new()

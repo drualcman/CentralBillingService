@@ -1,5 +1,3 @@
-using CentralBillingService.Domain.Helpers;
-
 namespace CentralBillingService.Application.UseCases;
 
 /// <summary>
@@ -28,6 +26,7 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
     private readonly IInvoiceEventDispatcher _eventDispatcher;
     private readonly IInvoiceNumberProviderFactory _numberProviderFactory;
     private readonly IBlobStorageService _blobStorage;
+    private readonly IIso9001 _iso9001;
 
     public CreateInvoiceUseCase(
         CreateInvoiceService domainService,
@@ -35,7 +34,8 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
         IInvoiceRepository repository,
         IInvoiceEventDispatcher eventDispatcher,
         IInvoiceNumberProviderFactory numberProviderFactory,
-        IBlobStorageService blobStorage)
+        IBlobStorageService blobStorage,
+        IIso9001 iso9001)
     {
         _domainService = domainService;
         _registry = registry;
@@ -43,6 +43,7 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
         _eventDispatcher = eventDispatcher;
         _numberProviderFactory = numberProviderFactory;
         _blobStorage = blobStorage;
+        _iso9001 = iso9001;
     }
 
     public async Task<InvoiceResult> ExecuteAsync(
@@ -52,50 +53,72 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
         // 1. Application-level validation
         Validate(command);
 
-        // 2. Validate that the billing source exists and get config
-        var config = _registry.GetConfig(command.BillingSource, command.Secret);
-        var numberProvider = _numberProviderFactory.GetFor(config);
+        string reference = GetReference(command);
 
-        var issueDate = command.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        await _iso9001.Register(reference, this, "Received create invoice command", command);
 
-        // 3. Reserve the next sequence number — durable and atomic.
-        //    This also implicitly locks the BillingSource+Serie+Year slot
-        //    so concurrent requests cannot get the same number.
-        var reservedNumber = await numberProvider.ReserveNextNumberAsync(
-            command.BillingSource,
-            command.Serie,
-            issueDate.Year,
-            cancellationToken);
+        try
+        {
+            // 2. Validate that the billing source exists and get config
+            var config = _registry.GetConfig(command.BillingSource, command.Secret);
+            var numberProvider = _numberProviderFactory.GetFor(config);
 
-        // 4. Get the previous hash for the chain — same key: BillingSource+Serie+Year
-        var previousHash = await _repository.GetLastHashAsync(
-            command.BillingSource,
-            command.Serie,
-            issueDate.Year,
-            cancellationToken);
+            var issueDate = command.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
-        // 5. Map command → domain request
-        var domainRequest = MapToDomainRequest(command);
+            // 3. Reserve the next sequence number — durable and atomic.
+            //    This also implicitly locks the BillingSource+Serie+Year slot
+            //    so concurrent requests cannot get the same number.
+            var reservedNumber = await numberProvider.ReserveNextNumberAsync(
+                command.BillingSource,
+                command.Serie,
+                issueDate.Year,
+                cancellationToken);
 
-        // 6. Domain service: exchange rate, hash computation, immutability rules
-        var invoice = await _domainService.ExecuteAsync(
-            domainRequest, reservedNumber, previousHash, cancellationToken);
+            // 4. Get the previous hash for the chain — same key: BillingSource+Serie+Year
+            var previousHash = await _repository.GetLastHashAsync(
+                command.BillingSource,
+                command.Serie,
+                issueDate.Year,
+                cancellationToken);
 
-        // Compute the QR blob URL deterministically from the invoice number and attach it
-        // before persisting — the URL is stable regardless of when the image is generated.        
-        invoice.AttachQrCode(_blobStorage.GetQrUrl(
-            InvoiceHelper.GetQrFileName(invoice.BillingSource, invoice.Number.Value)));
+            // 5. Map command → domain request
+            var domainRequest = MapToDomainRequest(command);
 
-        // 7. Persist — the invoice is stored with its QR URL already set
-        await _repository.SaveAsync(invoice, cancellationToken);
-        // 9. Dispatch events — failures here do NOT roll back the invoice
-        await DispatchSafelyAsync(invoice, cancellationToken);
+            // 6. Domain service: exchange rate, hash computation, immutability rules
+            var invoice = await _domainService.ExecuteAsync(
+                domainRequest, reservedNumber, previousHash, cancellationToken);
 
-        // 10. Return DTO — no domain types escape this layer
-        return InvoiceResultMapper.ToResult(invoice);
+            // Compute the QR blob URL deterministically from the invoice number and attach it
+            // before persisting — the URL is stable regardless of when the image is generated.
+            invoice.AttachQrCode(_blobStorage.GetQrUrl(
+                InvoiceHelper.GetQrFileName(invoice.BillingSource, invoice.Number.Value)));
+
+            // 7. Persist — the invoice is stored with its QR URL already set
+            await _repository.SaveAsync(invoice, cancellationToken);
+
+            var result = InvoiceResultMapper.ToResult(invoice);
+
+            await _iso9001.Register(reference, this, "Invoice created and persisted", result);
+
+            // 9. Dispatch events — failures here do NOT roll back the invoice
+            await DispatchSafelyAsync(invoice, cancellationToken);
+
+            // 10. Return DTO — no domain types escape this layer
+            return result;
+        }
+        catch (Exception ex)
+        {
+            await _iso9001.Error(reference, this, ex);
+            throw;
+        }
     }
 
     // ── Private ────────────────────────────────────────────────────────────
+
+    private static string GetReference(CreateInvoiceCommand command) =>
+        !string.IsNullOrWhiteSpace(command.Recipient?.Email) ? command.Recipient.Email :
+        !string.IsNullOrWhiteSpace(command.Recipient?.TaxIdValue) ? command.Recipient.TaxIdValue :
+        Guid.NewGuid().ToString();
 
     private static void Validate(CreateInvoiceCommand command)
     {
@@ -164,10 +187,7 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
         }
         catch (Exception ex)
         {
-            // Log and continue — the invoice is already persisted.
-            // A failed notification must never undo a legally issued invoice.
-            // TODO: inject ILogger<CreateInvoiceUseCase> and log ex here.
-            _ = ex;
+            await _iso9001.Error(invoice.Number.Value, this, ex);
         }
     }
 }

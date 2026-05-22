@@ -11,7 +11,8 @@ public class VerifyInvoiceIntegrityUseCaseTests
         _repository = Substitute.For<IInvoiceRepository>();
         _hasher = new FakeInvoiceHasher();
         var registry = InvoiceBuilder.DefaultRegistry("web-test", "secret123");
-        _useCase = new VerifyInvoiceIntegrityUseCase(_repository, registry, _hasher);
+        var iso9001 = Substitute.For<IIso9001>();
+        _useCase = new VerifyInvoiceIntegrityUseCase(_repository, registry, _hasher, iso9001);
     }
 
     private static VerifyInvoiceQuery Query(

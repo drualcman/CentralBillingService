@@ -61,14 +61,26 @@
                                FontSize="12" Foreground="#64748B" />
                 </StackPanel>
 
-                <!-- Status chip -->
-                <Border Grid.Column="2" CornerRadius="12"
-                        Background="{Binding Invoice.Status, Converter={StaticResource StatusBrush}}"
-                        Padding="14,6" VerticalAlignment="Center"
-                        Visibility="{Binding Invoice, Converter={StaticResource HasValue}}">
-                    <TextBlock Text="{Binding Invoice.Status, Converter={StaticResource StatusLabel}}"
-                               Foreground="White" FontWeight="SemiBold" FontSize="12" />
-                </Border>
+                <!-- Status chip + Send email button -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border CornerRadius="12"
+                            Background="{Binding Invoice.Status, Converter={StaticResource StatusBrush}}"
+                            Padding="14,6"
+                            Visibility="{Binding Invoice, Converter={StaticResource HasValue}}">
+                        <TextBlock Text="{Binding Invoice.Status, Converter={StaticResource StatusLabel}}"
+                                   Foreground="White" FontWeight="SemiBold" FontSize="12" />
+                    </Border>
+                    <Button Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Command="{Binding SendPdfByEmailCommand}"
+                            Visibility="{Binding Invoice, Converter={StaticResource HasValue}}"
+                            ToolTip="Enviar la factura PDF al email del destinatario">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="EmailOutline" Width="16" Height="16"
+                                                     VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Enviar por email" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -85,6 +97,32 @@
             <!-- Invoice detail -->
             <StackPanel Margin="24" MaxWidth="900"
                         Visibility="{Binding Invoice, Converter={StaticResource HasValue}}">
+
+                <!-- Email send success banner -->
+                <Border Background="#ECFDF5" BorderBrush="#6EE7B7" BorderThickness="1"
+                        CornerRadius="8" Margin="0,0,0,16" Padding="16,12"
+                        Visibility="{Binding EmailSuccessMessage, Converter={StaticResource HasValue}}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="EmailCheckOutline" Foreground="#059669"
+                                                 Width="20" Height="20" VerticalAlignment="Center"
+                                                 Margin="0,0,10,0" />
+                        <TextBlock Text="{Binding EmailSuccessMessage}" Foreground="#065F46"
+                                   VerticalAlignment="Center" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Email send warning banner (no email configured) -->
+                <Border Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1"
+                        CornerRadius="8" Margin="0,0,0,16" Padding="16,12"
+                        Visibility="{Binding EmailErrorMessage, Converter={StaticResource HasValue}}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="EmailAlertOutline" Foreground="#B45309"
+                                                 Width="20" Height="20" VerticalAlignment="Center"
+                                                 Margin="0,0,10,0" />
+                        <TextBlock Text="{Binding EmailErrorMessage}" Foreground="#92400E"
+                                   VerticalAlignment="Center" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
 
                 <!-- Tamper warning banner -->
                 <Border Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1"

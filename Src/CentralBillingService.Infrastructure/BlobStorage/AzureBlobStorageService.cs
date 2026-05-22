@@ -35,6 +35,23 @@ public sealed class AzureBlobStorageService : IBlobStorageService
         CancellationToken cancellationToken = default) =>
         UploadAsync(blobName, _containerInvoiceName, content, cancellationToken);
 
+    public async Task<byte[]?> DownloadInvoiceAsync(
+        string blobName,
+        CancellationToken cancellationToken = default)
+    {
+        var container = new BlobContainerClient(_connectionString, _containerInvoiceName);
+        var blob = container.GetBlobClient(blobName);
+        try
+        {
+            var response = await blob.DownloadContentAsync(cancellationToken);
+            return response.Value.Content.ToArray();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private string GetBlobUrl(string blobName, string containerName)
     {
         var container = new BlobContainerClient(_connectionString, containerName);

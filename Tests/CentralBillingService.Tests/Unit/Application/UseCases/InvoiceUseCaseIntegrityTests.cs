@@ -119,7 +119,7 @@ public class InvoiceUseCaseIntegrityTests
         var numberProviderFactory = Substitute.For<IInvoiceNumberProviderFactory>();
         var blobStorage = Substitute.For<IBlobStorageService>();
         blobStorage.GetQrUrl(Arg.Any<string>()).Returns("https://storage.test/qr/test.png");
-        var useCase = new RectifyInvoiceUseCase(domainService, registry, _repository, eventDispatcher, _hasher, numberProviderFactory, blobStorage);
+        var useCase = new RectifyInvoiceUseCase(domainService, registry, _repository, eventDispatcher, _hasher, numberProviderFactory, blobStorage, Substitute.For<IIso9001>());
 
         var tampered = TamperedInvoice(ValidInvoice());
         _repository.FindByNumberAsync("web-test", tampered.Number.Value, Arg.Any<CancellationToken>())

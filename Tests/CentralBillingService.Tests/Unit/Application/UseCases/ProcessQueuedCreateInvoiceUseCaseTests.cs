@@ -85,7 +85,7 @@ public class ProcessQueuedCreateInvoiceUseCaseTests
         };
         var options = Options.Create(new CbsOptions { BillingSources = [config] });
         var registry = new BillingSourceRegistry(options);
-        return new ProcessQueuedCreateInvoiceUseCase(_createUseCase, registry, _queuePublisher, _callbackNotifier);
+        return new ProcessQueuedCreateInvoiceUseCase(_createUseCase, registry, _queuePublisher, _callbackNotifier, Substitute.For<IIso9001>());
     }
 
     [Fact]

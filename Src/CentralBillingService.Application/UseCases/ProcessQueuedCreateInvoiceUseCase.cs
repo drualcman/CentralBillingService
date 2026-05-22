@@ -18,17 +18,20 @@ public sealed class ProcessQueuedCreateInvoiceUseCase
     private readonly BillingSourceRegistry _registry;
     private readonly IInvoiceResultQueuePublisher _queuePublisher;
     private readonly IInvoiceResultCallbackNotifier _callbackNotifier;
+    private readonly IIso9001 _iso9001;
 
     public ProcessQueuedCreateInvoiceUseCase(
         ICreateInvoiceUseCase createUseCase,
         BillingSourceRegistry registry,
         IInvoiceResultQueuePublisher queuePublisher,
-        IInvoiceResultCallbackNotifier callbackNotifier)
+        IInvoiceResultCallbackNotifier callbackNotifier,
+        IIso9001 iso9001)
     {
         _createUseCase = createUseCase;
         _registry = registry;
         _queuePublisher = queuePublisher;
         _callbackNotifier = callbackNotifier;
+        _iso9001 = iso9001;
     }
 
     public async Task<InvoiceResult> ExecuteAsync(
@@ -58,7 +61,7 @@ public sealed class ProcessQueuedCreateInvoiceUseCase
         }
         catch (Exception ex)
         {
-            _ = ex; // TODO: inject ILogger and log
+            await _iso9001.Error(result.InvoiceNumber, this, ex);
         }
     }
 
@@ -71,7 +74,7 @@ public sealed class ProcessQueuedCreateInvoiceUseCase
         }
         catch (Exception ex)
         {
-            _ = ex; // TODO: inject ILogger and log
+            await _iso9001.Error(result.InvoiceNumber, this, ex);
         }
     }
 }

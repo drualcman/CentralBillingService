@@ -237,14 +237,26 @@
                         </div>
                     </div>
 
+                    @if (_sendMessage is not null)
+                    {
+                        <div class="alert @_sendAlertClass alert-dismissible mt-3" role="alert">
+                            @_sendMessage
+                            <button type="button" class="btn-close" @onclick="@(() => _sendMessage = null)" aria-label="Close"></button>
+                        </div>
+                    }
+
                     <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                         <a class="btn btn-outline-primary"
                            href="@GetPreviewUrl()">
                             View invoice
                         </a>
-                        <a href="@_pdfUrl" class="btn btn-outline-secondary">
-                            Download PDF 
-                        </a>
+                        <button class="btn btn-outline-secondary" @onclick="SendPdfAsync" disabled="@_sending">
+                            @if (_sending)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                            }
+                            Send PDF by email
+                        </button>
                     </div>
 
                 </div>
@@ -284,7 +296,10 @@
     private string _fRecipientTaxId = "";
     private DateOnly? _fIssueDate;
     private decimal? _fAmount;
-    private string _pdfUrl = "";
+
+    private bool _sending;
+    private string? _sendMessage;
+    private string _sendAlertClass = "alert-success";
 
     protected override async Task OnInitializedAsync() => await VerifyAsync();
 
@@ -303,13 +318,8 @@
                 + (_recipientTaxId is not null ? $"&recipienttaxid={Uri.EscapeDataString(_recipientTaxId)}" : "")
                 + (_issueDate is not null ? $"&issuedate={Uri.EscapeDataString(_issueDate)}" : "")
                 + (_amount is not null ? $"&amount={Uri.EscapeDataString(_amount)}" : "");
-            var reportTask = Http.GetFromJsonAsync<VerifyInvoiceResponse>(url);
-            url = $"invoices/{Uri.EscapeDataString(_invoiceNumber)}/pdf"
-                + (string.IsNullOrWhiteSpace(BillingSource) ? "" : $"?billingsource={Uri.EscapeDataString(BillingSource)}");
-            var urlTask = Http.GetFromJsonAsync<string>(url);
-            await Task.WhenAll(reportTask, urlTask);
-            _result = await reportTask;
-            _pdfUrl = await urlTask;
+
+            _result = await Http.GetFromJsonAsync<VerifyInvoiceResponse>(url);
         }
         catch (HttpRequestException ex)
         {
@@ -324,6 +334,46 @@
             _loading = false;
         }
     }
+
+    private async Task SendPdfAsync()
+    {
+        _sending = true;
+        _sendMessage = null;
+
+        try
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"invoices/{Uri.EscapeDataString(_invoiceNumber!)}/send-pdf");
+            if (!string.IsNullOrWhiteSpace(BillingSource))
+                request.Headers.Add("x-cbs-billing-source", BillingSource);
+
+            var response = await Http.SendAsync(request);
+            var result = await response.Content.ReadFromJsonAsync<SendPdfResult>();
+
+            if (result?.Success is true)
+            {
+                _sendAlertClass = "alert-success";
+                _sendMessage = result.Message;
+            }
+            else
+            {
+                _sendAlertClass = "alert-warning";
+                _sendMessage = result?.Message ?? "Could not send the invoice.";
+            }
+        }
+        catch (Exception)
+        {
+            _sendAlertClass = "alert-danger";
+            _sendMessage = "An error occurred while contacting the service.";
+        }
+        finally
+        {
+            _sending = false;
+        }
+    }
+
+    private record SendPdfResult(bool Success, string Message);
 
     private void HandleManualVerify()
     {

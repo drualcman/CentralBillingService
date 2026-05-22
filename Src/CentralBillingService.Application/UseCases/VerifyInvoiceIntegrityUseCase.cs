@@ -19,15 +19,18 @@ public sealed class VerifyInvoiceIntegrityUseCase
     private readonly IInvoiceRepository _repository;
     private readonly BillingSourceRegistry _registry;
     private readonly IInvoiceHasher _hasher;
+    private readonly IIso9001 _iso9001;
 
     public VerifyInvoiceIntegrityUseCase(
         IInvoiceRepository repository,
         BillingSourceRegistry registry,
-        IInvoiceHasher hasher)
+        IInvoiceHasher hasher,
+        IIso9001 iso9001)
     {
         _repository = repository;
         _registry = registry;
         _hasher = hasher;
+        _iso9001 = iso9001;
     }
 
     public async Task<VerifyInvoiceResult> ExecuteAsync(
@@ -41,31 +44,51 @@ public sealed class VerifyInvoiceIntegrityUseCase
         if (string.IsNullOrWhiteSpace(query.ProvidedHash))
             throw new ArgumentException("ProvidedHash is required.", nameof(query.ProvidedHash));
 
+        await _iso9001.Register(query.InvoiceNumber, this, "Verification requested", query);
+
         _registry.GetConfig(query.BillingSource);
 
         var invoice = await _repository.FindByNumberAsync(
             query.BillingSource, query.InvoiceNumber, cancellationToken);
 
         if (invoice is not null)
-            return BuildResult(
+        {
+            var result = BuildResult(
                 query.InvoiceNumber, invoice.Hash, invoice.VerifyIntegrity(_hasher), query.ProvidedHash,
                 invoice.Issuer.TaxId.Value, invoice.Issuer.DisplayName,
                 invoice.Recipient.TaxId.Value, invoice.Recipient.DisplayName,
                 invoice.IssueDate, invoice.TotalEur.Amount,
                 query.ProvidedRecipientTaxId, query.ProvidedIssueDate, query.ProvidedTotalEur);
 
+            await RegisterVerificationResult(result);
+            return result;
+        }
+
         var rectificative = await _repository.FindRectificativeByNumberAsync(
             query.BillingSource, query.InvoiceNumber, cancellationToken);
 
         if (rectificative is not null)
-            return BuildResult(
+        {
+            var result = BuildResult(
                 query.InvoiceNumber, rectificative.Hash, rectificative.VerifyIntegrity(_hasher), query.ProvidedHash,
                 rectificative.Issuer.TaxId.Value, rectificative.Issuer.DisplayName,
                 rectificative.Recipient.TaxId.Value, rectificative.Recipient.DisplayName,
                 rectificative.IssueDate, rectificative.TotalEur.Amount,
                 query.ProvidedRecipientTaxId, query.ProvidedIssueDate, query.ProvidedTotalEur);
 
+            await RegisterVerificationResult(result);
+            return result;
+        }
+
         throw new InvoiceNotFoundException(query.InvoiceNumber);
+    }
+
+    private async Task RegisterVerificationResult(VerifyInvoiceResult result)
+    {
+        if (result.IsValid)
+            await _iso9001.Register(result.InvoiceNumber, this, result.Message);
+        else
+            await _iso9001.Error(result.InvoiceNumber, this, result.Message);
     }
 
     private static VerifyInvoiceResult BuildResult(

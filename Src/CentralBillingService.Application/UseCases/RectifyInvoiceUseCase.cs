@@ -25,6 +25,7 @@ public sealed class RectifyInvoiceUseCase
     private readonly IInvoiceHasher _hasher;
     private readonly IInvoiceNumberProviderFactory _numberProviderFactory;
     private readonly IBlobStorageService _blobStorage;
+    private readonly IIso9001 _iso9001;
 
     public RectifyInvoiceUseCase(
         RectifyInvoiceService domainService,
@@ -33,7 +34,8 @@ public sealed class RectifyInvoiceUseCase
         IInvoiceEventDispatcher eventDispatcher,
         IInvoiceHasher hasher,
         IInvoiceNumberProviderFactory numberProviderFactory,
-        IBlobStorageService blobStorage)
+        IBlobStorageService blobStorage,
+        IIso9001 iso9001)
     {
         _domainService = domainService;
         _registry = registry;
@@ -42,6 +44,7 @@ public sealed class RectifyInvoiceUseCase
         _hasher = hasher;
         _numberProviderFactory = numberProviderFactory;
         _blobStorage = blobStorage;
+        _iso9001 = iso9001;
     }
 
     public async Task<RectifyInvoiceResult> ExecuteAsync(
@@ -49,81 +52,100 @@ public sealed class RectifyInvoiceUseCase
         CancellationToken cancellationToken = default)
     {
         Validate(command);
-        var config = _registry.GetConfig(command.BillingSource, command.Secret);
-        var numberProvider = _numberProviderFactory.GetFor(config);
 
-        var issueDate = command.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var year = issueDate.Year;
-        var domainRequest = MapToDomainRequest(command);
+        string reference = command.OriginalInvoiceNumber;
 
-        // Intentar cargar la factura original; si no existe, buscar entre las rectificativas
-        var originalInvoice = await _repository.FindByNumberAsync(
-            command.BillingSource, command.OriginalInvoiceNumber, cancellationToken);
+        await _iso9001.Register(reference, this, "Received rectify invoice command", command);
 
-        if (originalInvoice is not null)
+        try
         {
-            if (!originalInvoice.VerifyIntegrity(_hasher))
-                throw new InvoiceTamperingDetectedException(originalInvoice.Number.Value, originalInvoice.Hash);
+            var config = _registry.GetConfig(command.BillingSource, command.Secret);
+            var numberProvider = _numberProviderFactory.GetFor(config);
 
-            var reservedNumber = await numberProvider.ReserveNextNumberAsync(
-                originalInvoice.BillingSource, command.RectificativeSerie, year, cancellationToken);
-            var previousHash = await _repository.GetLastHashAsync(
-                originalInvoice.BillingSource, command.RectificativeSerie, year, cancellationToken);
+            var issueDate = command.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+            var year = issueDate.Year;
+            var domainRequest = MapToDomainRequest(command);
 
-            var domainResult = await _domainService.ExecuteAsync(
-                domainRequest, originalInvoice, reservedNumber, previousHash, cancellationToken);
+            // Intentar cargar la factura original; si no existe, buscar entre las rectificativas
+            var originalInvoice = await _repository.FindByNumberAsync(
+                command.BillingSource, command.OriginalInvoiceNumber, cancellationToken);
 
-            // Compute the QR blob URL deterministically from the invoice number and attach it
-            // before persisting — the URL is stable regardless of when the image is generated.
-            domainResult.Rectificative.AttachQrCode(
-                _blobStorage.GetQrUrl(
-                    InvoiceHelper.GetQrFileName(domainResult.Rectificative.BillingSource, domainResult.Rectificative.Number.Value)));
-
-            await _repository.SaveRectificativeAsync(
-                domainResult.Rectificative, domainResult.UpdatedOriginal, cancellationToken);
-
-            await DispatchSafelyAsync(
-                domainResult.Rectificative, cancellationToken);
-
-            return new RectifyInvoiceResult
+            if (originalInvoice is not null)
             {
-                UpdatedOriginal = InvoiceResultMapper.ToResult(domainResult.UpdatedOriginal),
-                Rectificative = RectificativeInvoiceResultMapper.ToResult(domainResult.Rectificative),
+                if (!originalInvoice.VerifyIntegrity(_hasher))
+                    throw new InvoiceTamperingDetectedException(originalInvoice.Number.Value, originalInvoice.Hash);
+
+                var reservedNumber = await numberProvider.ReserveNextNumberAsync(
+                    originalInvoice.BillingSource, command.RectificativeSerie, year, cancellationToken);
+                var previousHash = await _repository.GetLastHashAsync(
+                    originalInvoice.BillingSource, command.RectificativeSerie, year, cancellationToken);
+
+                var domainResult = await _domainService.ExecuteAsync(
+                    domainRequest, originalInvoice, reservedNumber, previousHash, cancellationToken);
+
+                // Compute the QR blob URL deterministically from the invoice number and attach it
+                // before persisting — the URL is stable regardless of when the image is generated.
+                domainResult.Rectificative.AttachQrCode(
+                    _blobStorage.GetQrUrl(
+                        InvoiceHelper.GetQrFileName(domainResult.Rectificative.BillingSource, domainResult.Rectificative.Number.Value)));
+
+                await _repository.SaveRectificativeAsync(
+                    domainResult.Rectificative, domainResult.UpdatedOriginal, cancellationToken);
+
+                var result = new RectifyInvoiceResult
+                {
+                    UpdatedOriginal = InvoiceResultMapper.ToResult(domainResult.UpdatedOriginal),
+                    Rectificative = RectificativeInvoiceResultMapper.ToResult(domainResult.Rectificative),
+                };
+
+                await _iso9001.Register(domainResult.Rectificative.Number.Value, this, "Invoice rectified and persisted", result);
+
+                await DispatchSafelyAsync(domainResult.Rectificative, cancellationToken);
+
+                return result;
+            }
+
+            // La factura original es una rectificativa
+            var originalRectificative = await _repository.FindRectificativeByNumberAsync(
+                command.BillingSource, command.OriginalInvoiceNumber, cancellationToken);
+
+            if (originalRectificative is null)
+                throw new InvoiceNotFoundException(command.OriginalInvoiceNumber);
+
+            if (!originalRectificative.VerifyIntegrity(_hasher))
+                throw new InvoiceTamperingDetectedException(originalRectificative.Number.Value, originalRectificative.Hash);
+
+            var reservedNumber2 = await numberProvider.ReserveNextNumberAsync(
+                originalRectificative.BillingSource, command.RectificativeSerie, year, cancellationToken);
+            var previousHash2 = await _repository.GetLastHashAsync(
+                originalRectificative.BillingSource, command.RectificativeSerie, year, cancellationToken);
+
+            var domainResult2 = await _domainService.ExecuteFromRectificativeAsync(
+                domainRequest, originalRectificative, reservedNumber2, previousHash2, cancellationToken);
+
+            domainResult2.Rectificative.AttachQrCode(_blobStorage
+                .GetQrUrl(InvoiceHelper.GetQrFileName(domainResult2.Rectificative.BillingSource, domainResult2.Rectificative.Number.Value)));
+
+            await _repository.SaveRectificativeFromRectificativeAsync(
+                domainResult2.Rectificative, domainResult2.UpdatedOriginal, cancellationToken);
+
+            var result2 = new RectifyInvoiceResult
+            {
+                UpdatedOriginal = InvoiceResultMapper.ToResult(domainResult2.UpdatedOriginal),
+                Rectificative = RectificativeInvoiceResultMapper.ToResult(domainResult2.Rectificative),
             };
+
+            await _iso9001.Register(domainResult2.Rectificative.Number.Value, this, "Invoice rectified and persisted", result2);
+
+            await DispatchSafelyAsync(domainResult2.Rectificative, cancellationToken);
+
+            return result2;
         }
-
-        // La factura original es una rectificativa
-        var originalRectificative = await _repository.FindRectificativeByNumberAsync(
-            command.BillingSource, command.OriginalInvoiceNumber, cancellationToken);
-
-        if (originalRectificative is null)
-            throw new InvoiceNotFoundException(command.OriginalInvoiceNumber);
-
-        if (!originalRectificative.VerifyIntegrity(_hasher))
-            throw new InvoiceTamperingDetectedException(originalRectificative.Number.Value, originalRectificative.Hash);
-
-        var reservedNumber2 = await numberProvider.ReserveNextNumberAsync(
-            originalRectificative.BillingSource, command.RectificativeSerie, year, cancellationToken);
-        var previousHash2 = await _repository.GetLastHashAsync(
-            originalRectificative.BillingSource, command.RectificativeSerie, year, cancellationToken);
-
-        var domainResult2 = await _domainService.ExecuteFromRectificativeAsync(
-            domainRequest, originalRectificative, reservedNumber2, previousHash2, cancellationToken);
-
-        domainResult2.Rectificative.AttachQrCode(_blobStorage
-            .GetQrUrl(InvoiceHelper.GetQrFileName(domainResult2.Rectificative.BillingSource, domainResult2.Rectificative.Number.Value)));
-
-        await _repository.SaveRectificativeFromRectificativeAsync(
-            domainResult2.Rectificative, domainResult2.UpdatedOriginal, cancellationToken);
-
-        await DispatchSafelyAsync(
-            domainResult2.Rectificative, cancellationToken);
-
-        return new RectifyInvoiceResult
+        catch (Exception ex)
         {
-            UpdatedOriginal = InvoiceResultMapper.ToResult(domainResult2.UpdatedOriginal),
-            Rectificative = RectificativeInvoiceResultMapper.ToResult(domainResult2.Rectificative),
-        };
+            await _iso9001.Error(reference, this, ex);
+            throw;
+        }
     }
 
     // ── Private ────────────────────────────────────────────────────────────
@@ -181,7 +203,7 @@ public sealed class RectifyInvoiceUseCase
         }
         catch (Exception ex)
         {
-            _ = ex;
+            await _iso9001.Error(rectificative.Number.Value, this, ex);
         }
     }
 }

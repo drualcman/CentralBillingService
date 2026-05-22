@@ -38,4 +38,12 @@ public interface IBlobStorageService
         string blobName,
         byte[] content,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Downloads the invoice blob identified by <paramref name="blobName"/> and
+    /// returns its raw bytes, or <see langword="null"/> if the blob does not exist.
+    /// </summary>
+    Task<byte[]?> DownloadInvoiceAsync(
+        string blobName,
+        CancellationToken cancellationToken = default);
 }
