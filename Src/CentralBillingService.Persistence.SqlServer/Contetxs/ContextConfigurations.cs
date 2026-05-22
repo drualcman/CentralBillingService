@@ -13,7 +13,7 @@ internal static class ContextConfigurations
 
             e.Property(x => x.InvoiceNumber).HasMaxLength(30).IsRequired();
             e.Property(x => x.BillingSource).HasMaxLength(50).IsRequired();
-            e.Property(x => x.Serie).HasMaxLength(10).IsRequired();
+            e.Property(x => x.Serie).HasMaxLength(25).IsRequired();
             e.Property(x => x.Status).HasMaxLength(20).IsRequired();
             e.Property(x => x.InvoiceType).HasMaxLength(1).IsRequired().HasDefaultValue("F");
 
@@ -124,7 +124,7 @@ internal static class ContextConfigurations
             e.HasKey(x => x.Id);
 
             e.Property(x => x.BillingSource).HasMaxLength(50).IsRequired();
-            e.Property(x => x.Serie).HasMaxLength(10).IsRequired();
+            e.Property(x => x.Serie).HasMaxLength(25).IsRequired();
             e.Property(x => x.LastHash).HasMaxLength(64);
 
             // Optimistic concurrency — SQL Server rowversion
