@@ -22,7 +22,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
     [ObservableProperty] ClientRecord? selectedClient;
 
     // Invoice header
-    [ObservableProperty] string serie = "F";
+    [ObservableProperty] string serie = "";
     [ObservableProperty] string? invoiceNumberClientPrefix;
     [ObservableProperty] string? invoiceNumberClientSuffix;
     [ObservableProperty] DateTime issueDate = DateTime.Today;
@@ -232,7 +232,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            ErrorMessage = GetDeepMessage(ex);
         }
         finally
         {
@@ -329,6 +329,13 @@ public partial class CreateInvoiceViewModel : ObservableObject
 
     [RelayCommand]
     void Cancel() => _onCancel();
+
+    private static string GetDeepMessage(Exception ex)
+    {
+        var inner = ex;
+        while (inner.InnerException != null) inner = inner.InnerException;
+        return inner == ex ? ex.Message : $"{ex.Message}\n→ {inner.Message}";
+    }
 
     private bool Validate()
     {

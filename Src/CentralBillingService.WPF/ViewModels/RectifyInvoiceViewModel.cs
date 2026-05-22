@@ -150,7 +150,7 @@ public partial class RectifyInvoiceViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            ErrorMessage = GetDeepMessage(ex);
         }
         finally
         {
@@ -229,7 +229,7 @@ public partial class RectifyInvoiceViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            ErrorMessage = GetDeepMessage(ex);
         }
         finally
         {
@@ -246,6 +246,13 @@ public partial class RectifyInvoiceViewModel : ObservableObject
 
     [RelayCommand]
     void Cancel() => _onCancel();
+
+    private static string GetDeepMessage(Exception ex)
+    {
+        var inner = ex;
+        while (inner.InnerException != null) inner = inner.InnerException;
+        return inner == ex ? ex.Message : $"{ex.Message}\n→ {inner.Message}";
+    }
 
     private bool Validate()
     {
