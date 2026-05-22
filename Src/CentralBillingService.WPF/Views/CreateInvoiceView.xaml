@@ -127,6 +127,10 @@
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          Text="{Binding PaymentReference}" />
                             </UniformGrid>
+                            <DatePicker Margin="0,0,0,12"
+                                        materialDesign:HintAssist.Hint="Fecha de vencimiento (opcional)"
+                                        Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                        SelectedDate="{Binding ValueDate}" />
                             <TextBox Margin="0,0,0,12"
                                      materialDesign:HintAssist.Hint="Datos de transacción"
                                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
