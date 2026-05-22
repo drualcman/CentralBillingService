@@ -119,8 +119,9 @@ public partial class MasterDataViewModel : ObservableObject
         ClientEditError = null;
         if (string.IsNullOrWhiteSpace(EditClientLegalName))
         { ClientEditError = "El nombre fiscal es obligatorio."; return; }
-        if (string.IsNullOrWhiteSpace(EditClientTaxId))
-        { ClientEditError = "El NIF/VAT es obligatorio."; return; }
+        if (string.IsNullOrWhiteSpace(EditClientTaxId) &&
+            EditClientTaxIdCountry.Trim().Equals("ES", StringComparison.OrdinalIgnoreCase))
+        { ClientEditError = "El NIF/VAT es obligatorio para clientes españoles."; return; }
         if (string.IsNullOrWhiteSpace(EditClientEmail) || !EditClientEmail.Contains('@'))
         { ClientEditError = "El email es obligatorio y debe ser válido."; return; }
         if (string.IsNullOrWhiteSpace(EditClientAddress))

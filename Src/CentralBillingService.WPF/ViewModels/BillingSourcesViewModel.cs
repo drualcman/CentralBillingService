@@ -86,8 +86,9 @@ public partial class BillingSourcesViewModel : ObservableObject
         { EditError = "El secreto (token de autenticación) es obligatorio."; return; }
         if (string.IsNullOrWhiteSpace(EditLegalName))
         { EditError = "El nombre fiscal es obligatorio."; return; }
-        if (string.IsNullOrWhiteSpace(EditTaxIdValue))
-        { EditError = "El NIF/VAT es obligatorio."; return; }
+        if (string.IsNullOrWhiteSpace(EditTaxIdValue) &&
+            EditTaxIdCountryCode.Trim().Equals("ES", StringComparison.OrdinalIgnoreCase))
+        { EditError = "El NIF/VAT es obligatorio para entidades españolas."; return; }
         if (string.IsNullOrWhiteSpace(EditEmail) || !EditEmail.Contains('@'))
         { EditError = "El email debe ser válido."; return; }
         if (string.IsNullOrWhiteSpace(EditAddressLine1))

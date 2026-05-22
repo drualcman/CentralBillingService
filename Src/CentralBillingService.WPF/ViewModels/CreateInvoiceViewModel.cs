@@ -243,8 +243,10 @@ public partial class CreateInvoiceViewModel : ObservableObject
     [RelayCommand]
     void SaveClientToMaster()
     {
-        if (string.IsNullOrWhiteSpace(RecipientLegalName) || string.IsNullOrWhiteSpace(RecipientTaxId))
-        { SaveToMasterMessage = "Completa al menos nombre fiscal y NIF antes de guardar."; return; }
+        bool isSpanishRecipient = RecipientCountry.Trim().Equals("ES", StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(RecipientLegalName) ||
+            (isSpanishRecipient && string.IsNullOrWhiteSpace(RecipientTaxId)))
+        { SaveToMasterMessage = "Completa al menos el nombre fiscal" + (isSpanishRecipient ? " y NIF" : "") + " antes de guardar."; return; }
 
         var clients = _masterDataStore.LoadClients();
         var existing = clients.FirstOrDefault(c =>
@@ -343,8 +345,9 @@ public partial class CreateInvoiceViewModel : ObservableObject
         { ErrorMessage = "La serie es obligatoria."; return false; }
         if (string.IsNullOrWhiteSpace(RecipientLegalName))
         { ErrorMessage = "El nombre fiscal del destinatario es obligatorio."; return false; }
-        if (string.IsNullOrWhiteSpace(RecipientTaxId))
-        { ErrorMessage = "El NIF del destinatario es obligatorio."; return false; }
+        if (string.IsNullOrWhiteSpace(RecipientTaxId) &&
+            RecipientCountry.Trim().Equals("ES", StringComparison.OrdinalIgnoreCase))
+        { ErrorMessage = "El NIF del destinatario es obligatorio para destinatarios españoles."; return false; }
         if (string.IsNullOrWhiteSpace(RecipientEmail))
         { ErrorMessage = "El email del destinatario es obligatorio."; return false; }
         if (string.IsNullOrWhiteSpace(RecipientAddress))

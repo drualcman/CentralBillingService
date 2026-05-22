@@ -177,7 +177,7 @@
                                      Text="{Binding EditTradeName, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                         <StackPanel Margin="4,0,8,0">
-                            <TextBlock Style="{StaticResource FieldLabel}" Text="NIF / VAT *" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="NIF / VAT" />
                             <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                      Text="{Binding EditTaxIdValue, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
