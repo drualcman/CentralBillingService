@@ -20,6 +20,8 @@ internal static class InvoiceMapper
         Serie = invoice.Number.Serie,
         SequenceNumber = invoice.Number.Number,
         Year = invoice.Number.Year,
+        ClientNumberPrefix = invoice.Number.ClientNumberPrefix,
+        ClientNumberSuffix = invoice.Number.ClientNumberSuffix,
         Status = invoice.Status.ToString(),
         InvoiceType = "F",
 
@@ -87,6 +89,8 @@ internal static class InvoiceMapper
         Serie = invoice.Number.Serie,
         SequenceNumber = invoice.Number.Number,
         Year = invoice.Number.Year,
+        ClientNumberPrefix = invoice.Number.ClientNumberPrefix,
+        ClientNumberSuffix = invoice.Number.ClientNumberSuffix,
         Status = invoice.Status.ToString(),
         InvoiceType = "R",
 
@@ -195,7 +199,7 @@ internal static class InvoiceMapper
 
         return Invoice.Reconstitute(
             id: e.Id,
-            number: InvoiceNumber.Create(e.Serie, e.Year, e.SequenceNumber),
+            number: InvoiceNumber.Create(e.Serie, e.Year, e.SequenceNumber, e.ClientNumberPrefix, e.ClientNumberSuffix),
             billingSource: e.BillingSource,
             issuer: issuer,
             recipient: recipient,
@@ -242,7 +246,7 @@ internal static class InvoiceMapper
 
         return RectificativeInvoice.Reconstitute(
             id: e.Id,
-            number: InvoiceNumber.Create(e.Serie, e.Year, e.SequenceNumber),
+            number: InvoiceNumber.Create(e.Serie, e.Year, e.SequenceNumber, e.ClientNumberPrefix, e.ClientNumberSuffix),
             billingSource: e.BillingSource,
             originalNumber: InvoiceNumber.CreateFromFormatted(e.OriginalInvoiceNumber!),
             originalIssueDate: e.OriginalIssueDate!.Value,

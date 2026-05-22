@@ -562,7 +562,8 @@ public sealed class SqlInvoiceReadContextTests(CbsDatabaseFixture fixture)
             "Error en los datos del cliente - test integración",
             RectificationType.Substitution,
             lines, ExchangeRate.Identity(DateTimeOffset.UtcNow),
-            RealHasher, paymentReference: "PAY-REC-001",
+            RealHasher, issueDate: new DateOnly(2026, 1, 15),
+            paymentReference: "PAY-REC-001",
             previousHash: previousHash);
         rect.Issue();
         return rect;

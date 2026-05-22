@@ -30,6 +30,18 @@ public sealed class CreateInvoiceRequest
     /// </summary>
     public required string Serie { get; init; }
 
+    /// <summary>
+    /// Prefijo personalizado del cliente que se inserta entre el año y el guion separador.
+    /// Ej: "0501" produce SERIE-20260501-0001. Null = sin prefijo.
+    /// </summary>
+    public string? InvoiceNumberClientPrefix { get; init; }
+
+    /// <summary>
+    /// Sufijo personalizado del cliente que se añade tras el número correlativo.
+    /// Ej: "A" produce SERIE-2026-0001A. Null = sin sufijo.
+    /// </summary>
+    public string? InvoiceNumberClientSuffix { get; init; }
+
     /// <summary>Datos fiscales del cliente receptor</summary>
     public required RecipientData Recipient { get; init; }
 

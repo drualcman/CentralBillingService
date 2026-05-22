@@ -22,6 +22,7 @@ public class RectificativeInvoiceTests
             lines,
             ExchangeRate.Identity(DateTimeOffset.UtcNow),
             Hasher,
+            new DateOnly(2026, 1, 15),
             "PAY-002");
     }
 
@@ -102,6 +103,7 @@ public class RectificativeInvoiceTests
             [],
             ExchangeRate.Identity(DateTimeOffset.UtcNow),
             Hasher,
+            new DateOnly(2026, 1, 15),
             "PAY-002"));
     }
 

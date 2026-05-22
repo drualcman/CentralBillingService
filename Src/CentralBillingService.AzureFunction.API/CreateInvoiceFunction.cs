@@ -30,6 +30,8 @@ public sealed class CreateInvoiceFunction
                 BillingSource = RequestHelper.GetBillingSource(req),
                 Secret = RequestHelper.GetSecret(req),
                 Serie = request.Serie,
+                InvoiceNumberClientPrefix = request.InvoiceNumberClientPrefix,
+                InvoiceNumberClientSuffix = request.InvoiceNumberClientSuffix,
                 Recipient = request.Recipient,
                 Lines = request.Lines,
                 OriginCurrencyCode = request.OriginCurrencyCode,

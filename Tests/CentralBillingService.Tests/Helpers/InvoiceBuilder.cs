@@ -101,6 +101,7 @@ public static class InvoiceBuilder
             lines: [DefaultLine()],
             appliedExchangeRate: ExchangeRate.Identity(DateTimeOffset.UtcNow),
             hasher: hasher ?? Hasher,
+            issueDate: new DateOnly(2026, 1, 15),
             paymentReference: "PAY-REC-001",
             previousHash: previousHash);
         rectificative.Issue();

@@ -497,6 +497,7 @@ public sealed class SqlInvoiceWriteContextTests(CbsDatabaseFixture fixture)
             lines,
             ExchangeRate.Identity(DateTimeOffset.UtcNow),
             RealHasher,
+            issueDate: new DateOnly(2026, 1, 15),
             paymentReference: "PAY-REC-001",
             previousHash: previousHash);
         rect.Issue();

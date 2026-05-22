@@ -14,6 +14,8 @@ public sealed class InvoiceEntity
     public string Serie { get; set; } = string.Empty;
     public int SequenceNumber { get; set; }
     public int Year { get; set; }
+    public string? ClientNumberPrefix { get; set; }
+    public string? ClientNumberSuffix { get; set; }
     public string Status { get; set; } = string.Empty;
 
     /// <summary>"F" for standard invoice, "R" for rectificative invoice.</summary>

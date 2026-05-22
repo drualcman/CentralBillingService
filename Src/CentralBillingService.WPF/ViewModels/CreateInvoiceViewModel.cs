@@ -21,6 +21,8 @@ public partial class CreateInvoiceViewModel : ObservableObject
 
     // Invoice header
     [ObservableProperty] string serie = "F";
+    [ObservableProperty] string? invoiceNumberClientPrefix;
+    [ObservableProperty] string? invoiceNumberClientSuffix;
     [ObservableProperty] DateTime issueDate = DateTime.Today;
     [ObservableProperty] string? notes;
     [ObservableProperty] string paymentMethod = "TRANSFER";
@@ -188,6 +190,8 @@ public partial class CreateInvoiceViewModel : ObservableObject
                 BillingSource = BillingSource.Name,
                 Secret = BillingSource.Secret,
                 Serie = Serie.Trim().ToUpperInvariant(),
+                InvoiceNumberClientPrefix = string.IsNullOrWhiteSpace(InvoiceNumberClientPrefix) ? null : InvoiceNumberClientPrefix.Trim(),
+                InvoiceNumberClientSuffix = string.IsNullOrWhiteSpace(InvoiceNumberClientSuffix) ? null : InvoiceNumberClientSuffix.Trim(),
                 OriginCurrencyCode = null, // per-line currencies are used instead
                 IssueDate = DateOnly.FromDateTime(IssueDate),
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),

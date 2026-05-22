@@ -3,6 +3,8 @@ namespace CentralBillingService.AzureFunction.API.Requests;
 internal sealed class CreateInvoiceRequest
 {
     public required string Serie { get; init; }
+    public string? InvoiceNumberClientPrefix { get; init; }
+    public string? InvoiceNumberClientSuffix { get; init; }
     public required RecipientDto Recipient { get; init; }
     public required IReadOnlyList<InvoiceLineDto> Lines { get; init; }
     public string? OriginCurrencyCode { get; init; }

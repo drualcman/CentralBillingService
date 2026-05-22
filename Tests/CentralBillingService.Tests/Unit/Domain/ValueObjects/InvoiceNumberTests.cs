@@ -53,29 +53,61 @@ public class InvoiceNumberTests
     }
 
     [Fact]
-    public void CreateFromFormatted_parses_correctly()
+    public void CreateFromFormatted_roundtrips_simple_format()
     {
         var number = InvoiceNumber.CreateFromFormatted("FOTO2026-0003");
-        Assert.Equal("FOTO", number.Serie);
-        Assert.Equal(2026, number.Year);
-        Assert.Equal(3, number.Number);
+        Assert.Equal("FOTO2026-0003", number.Value);
     }
 
     [Fact]
-    public void CreateFromFormatted_single_char_serie()
+    public void CreateFromFormatted_roundtrips_serie_with_dash()
     {
-        var number = InvoiceNumber.CreateFromFormatted("F2026-0001");
-        Assert.Equal("F", number.Serie);
+        var number = InvoiceNumber.CreateFromFormatted("GLUONSERGI-2026-0001");
+        Assert.Equal("GLUONSERGI-2026-0001", number.Value);
+    }
+
+    [Fact]
+    public void CreateFromFormatted_roundtrips_format_with_prefix_and_suffix()
+    {
+        var number = InvoiceNumber.CreateFromFormatted("GLUONSERGI-20260501-0001A");
+        Assert.Equal("GLUONSERGI-20260501-0001A", number.Value);
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    [InlineData("ABCD")]
-    [InlineData("X-0001")]
-    public void CreateFromFormatted_invalid_format_throws(string formatted)
+    public void CreateFromFormatted_empty_throws(string formatted)
     {
         Assert.Throws<DomainException>(() => InvoiceNumber.CreateFromFormatted(formatted));
+    }
+
+    [Fact]
+    public void Create_with_prefix_builds_correct_value()
+    {
+        var number = InvoiceNumber.Create("GLUONSERGI-", 2026, 1, clientNumberPrefix: "0501");
+        Assert.Equal("GLUONSERGI-20260501-0001", number.Value);
+    }
+
+    [Fact]
+    public void Create_with_suffix_builds_correct_value()
+    {
+        var number = InvoiceNumber.Create("F", 2026, 3, clientNumberSuffix: "A");
+        Assert.Equal("F2026-0003A", number.Value);
+    }
+
+    [Fact]
+    public void Create_with_prefix_and_suffix_builds_correct_value()
+    {
+        var number = InvoiceNumber.Create("GLUONSERGI-", 2026, 1, "0501", "A");
+        Assert.Equal("GLUONSERGI-20260501-0001A", number.Value);
+    }
+
+    [Fact]
+    public void Create_whitespace_prefix_treated_as_null()
+    {
+        var number = InvoiceNumber.Create("F", 2026, 1, clientNumberPrefix: "  ");
+        Assert.Equal("F2026-0001", number.Value);
+        Assert.Null(number.ClientNumberPrefix);
     }
 
     [Fact]

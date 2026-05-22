@@ -4,6 +4,7 @@ using CentralBillingService.Persistence.SqlServer.Contetxs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CentralBillingService.Persistence.SqlServer.Migrations.SqlInvoiceContext
 {
     [DbContext(typeof(SqlInvoiceWriteContext))]
-    partial class SqlInvoiceWriteContextModelSnapshot : ModelSnapshot
+    [Migration("20260522040324_AddClientNumberPrefixSuffix")]
+    partial class AddClientNumberPrefixSuffix
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

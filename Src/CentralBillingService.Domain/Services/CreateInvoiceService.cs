@@ -62,7 +62,9 @@ public sealed class CreateInvoiceService
 
         // 4. Build invoice number from the pre-reserved sequence number
         var issueDate = request.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var invoiceNumber = InvoiceNumber.Create(request.Serie, issueDate.Year, reservedNumber);
+        var invoiceNumber = InvoiceNumber.Create(
+            request.Serie, issueDate.Year, reservedNumber,
+            request.InvoiceNumberClientPrefix, request.InvoiceNumberClientSuffix);
 
         // 5. Create and immediately issue the invoice
         var invoice = Invoice.Create(

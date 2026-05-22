@@ -1,28 +1,47 @@
 namespace CentralBillingService.Domain.ValueObjects;
 
 /// <summary>
-/// Número de factura: serie + número correlativo dentro del año.
-/// Formato: {Serie}{Año}-{Número:D4}
-/// Ejemplos: F2026-0001, REC2026-0001 (rectificativa), FOTO2026-0012
+/// Número de factura: serie + año + prefijo cliente (opcional) + número correlativo + sufijo cliente (opcional).
+/// Formato: {Serie}{Año}{ClientNumberPrefix}-{Número:D4}{ClientNumberSuffix}
+/// Ejemplos:
+///   F2026-0001                          (sin prefix/suffix)
+///   GLUONSERGI-20260501-0001            (serie con guion, prefix=0501)
+///   GLUONSERGI-20260501-0001A           (serie con guion, prefix=0501, suffix=A)
 ///
-/// La serie permite distinguir facturas por origen o tipo.
-/// El número correlativo es global dentro de la serie+año — lo genera
-/// el secuenciador, nunca el dominio directamente.
+/// ClientNumberPrefix y ClientNumberSuffix son opcionales y los envía el caller.
+/// El año y el número correlativo los genera siempre el sistema.
 /// </summary>
 public sealed class InvoiceNumber
 {
     public string Serie { get; }
     public int Year { get; }
     public int Number { get; }
+    public string? ClientNumberPrefix { get; }
+    public string? ClientNumberSuffix { get; }
 
-    private InvoiceNumber(string serie, int year, int number)
+    // Only set when created via CreateFromFormatted — avoids re-parsing ambiguous strings.
+    private readonly string? _rawFormattedValue;
+
+    private InvoiceNumber(string serie, int year, int number,
+        string? clientNumberPrefix, string? clientNumberSuffix)
     {
         Serie = serie;
         Year = year;
         Number = number;
+        ClientNumberPrefix = clientNumberPrefix;
+        ClientNumberSuffix = clientNumberSuffix;
     }
 
-    public static InvoiceNumber Create(string serie, int year, int number)
+    private InvoiceNumber(string rawFormattedValue)
+    {
+        _rawFormattedValue = rawFormattedValue;
+        Serie = string.Empty;
+        Year = 0;
+        Number = 0;
+    }
+
+    public static InvoiceNumber Create(string serie, int year, int number,
+        string? clientNumberPrefix = null, string? clientNumberSuffix = null)
     {
         if (string.IsNullOrWhiteSpace(serie))
             throw new DomainException("The invoice number series cannot be empty.");
@@ -35,43 +54,33 @@ public sealed class InvoiceNumber
         if (number <= 0)
             throw new DomainException($"The sequential number must be positive. Received: {number}.");
 
-        return new InvoiceNumber(normalizedSerie, year, number);
+        var normalizedPrefix = string.IsNullOrWhiteSpace(clientNumberPrefix)
+            ? null : clientNumberPrefix.Trim();
+        var normalizedSuffix = string.IsNullOrWhiteSpace(clientNumberSuffix)
+            ? null : clientNumberSuffix.Trim();
+
+        return new InvoiceNumber(normalizedSerie, year, number, normalizedPrefix, normalizedSuffix);
     }
 
     /// <summary>
-    /// Parses a formatted invoice number string back into an InvoiceNumber.
-    /// Expected format: {Serie}{Year}-{Number} e.g. "FOTO2026-0003"
-    /// Used when rehydrating from persistence.
+    /// Wraps a formatted invoice number string for use as a reference (e.g. RectifiedByNumber).
+    /// Only .Value is reliable on the result — Serie/Year/Number are not parsed.
+    /// Used when rehydrating reference numbers from persistence.
     /// </summary>
     public static InvoiceNumber CreateFromFormatted(string formatted)
     {
         if (string.IsNullOrWhiteSpace(formatted))
             throw new DomainException("Formatted invoice number cannot be empty.");
 
-        var dashIndex = formatted.IndexOf('-');
-        if (dashIndex < 5)
-            throw new DomainException($"Invalid formatted invoice number: '{formatted}'.");
-
-        var prefix = formatted[..dashIndex];        // e.g. "FOTO2026"
-        var numStr = formatted[(dashIndex + 1)..];  // e.g. "0003"
-
-        if (prefix.Length < 5)
-            throw new DomainException($"Invalid formatted invoice number: '{formatted}'.");
-
-        var yearStr = prefix[^4..];    // last 4 chars of prefix
-        var serie = prefix[..^4];    // everything before the year
-
-        if (!int.TryParse(yearStr, out var year) || !int.TryParse(numStr, out var number))
-            throw new DomainException($"Invalid formatted invoice number: '{formatted}'.");
-
-        return Create(serie, year, number);
+        return new InvoiceNumber(formatted.Trim());
     }
 
     /// <summary>
     /// Canonical representation: what appears on the invoice and in VeriFactu.
-    /// Ej: F2026-0001
+    /// Ej: F2026-0001, GLUONSERGI-20260501-0001A
     /// </summary>
-    public string Value => $"{Serie}{Year}-{Number:D4}";
+    public string Value => _rawFormattedValue
+        ?? $"{Serie}{Year}{ClientNumberPrefix ?? string.Empty}-{Number:D4}{ClientNumberSuffix ?? string.Empty}";
 
     public override string ToString() => Value;
 

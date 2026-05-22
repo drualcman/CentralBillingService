@@ -120,6 +120,8 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
         Secret = cmd.Secret,
         BillingSource = cmd.BillingSource,
         Serie = cmd.Serie,
+        InvoiceNumberClientPrefix = cmd.InvoiceNumberClientPrefix,
+        InvoiceNumberClientSuffix = cmd.InvoiceNumberClientSuffix,
         OriginCurrencyCode = cmd.OriginCurrencyCode,
         IssueDate = cmd.IssueDate,
         ValueDate = cmd.ValueDate,

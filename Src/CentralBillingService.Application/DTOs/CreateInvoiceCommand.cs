@@ -25,6 +25,18 @@ public sealed class CreateInvoiceCommand
     /// </summary>
     public required string Serie { get; init; }
 
+    /// <summary>
+    /// Prefijo personalizado que se inserta entre el año y el guion separador.
+    /// Ej: "0501" produce SERIE-20260501-0001. Null = sin prefijo.
+    /// </summary>
+    public string? InvoiceNumberClientPrefix { get; init; }
+
+    /// <summary>
+    /// Sufijo personalizado que se añade tras el número correlativo.
+    /// Ej: "A" produce SERIE-2026-0001A. Null = sin sufijo.
+    /// </summary>
+    public string? InvoiceNumberClientSuffix { get; init; }
+
     public required RecipientDto Recipient { get; init; }
     public required IReadOnlyList<InvoiceLineDto> Lines { get; init; }
 
