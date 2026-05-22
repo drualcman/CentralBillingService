@@ -17,7 +17,7 @@
                     <option value="">Todos</option>
                     @foreach (var src in BillingSources)
                     {
-                        <option value="@src">@src</option>
+                        <option value="@src.Code">@src.DisplayName</option>
                     }
                 </select>
             </div>
@@ -75,7 +75,7 @@ else if (Result is not null)
                 @Result.TotalCount facturas
                 @if (!string.IsNullOrEmpty(SelectedBillingSource))
                 {
-                    <span class="badge ms-2 text-bg-secondary">@SelectedBillingSource</span>
+                    <span class="badge ms-2 text-bg-secondary">@(BillingSources.FirstOrDefault(s => s.Code == SelectedBillingSource)?.DisplayName ?? SelectedBillingSource)</span>
                 }
             </span>
             <span class="text-muted small">Página @Result.Page de @Result.TotalPages</span>
@@ -155,7 +155,7 @@ else if (Result is not null)
 
 @code {
     private PublicInvoiceListResponse? Result;
-    private List<string> BillingSources = [];
+    private List<BillingSourceItem> BillingSources = [];
     private bool IsLoading = true;
     private string? ErrorMessage;
 
@@ -175,7 +175,7 @@ else if (Result is not null)
     {
         try
         {
-            var sources = await Http.GetFromJsonAsync<List<string>>("public/billing-sources");
+            var sources = await Http.GetFromJsonAsync<List<BillingSourceItem>>("public/billing-sources");
             BillingSources = sources ?? [];
         }
         catch

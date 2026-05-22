@@ -1,5 +1,7 @@
 namespace CentralBillingService.AzureFunction.API;
 
+public record PublicBillingSourceItem(string Code, string DisplayName);
+
 /// <summary>
 /// Public endpoint — no API key required.
 /// Returns the list of registered billing source identifiers.
@@ -22,7 +24,12 @@ public sealed class GetBillingSourcesFunction
         HttpRequestData req,
         CancellationToken cancellationToken)
     {
-        var sources = _registry.GetAll().Select(c => c.BillingSource).OrderBy(s => s).ToList();
+        var sources = _registry.GetAll()
+            .Select(c => new PublicBillingSourceItem(
+                c.BillingSource,
+                !string.IsNullOrWhiteSpace(c.Issuer.TradeName) ? c.Issuer.TradeName! : c.Issuer.LegalName))
+            .OrderBy(s => s.DisplayName)
+            .ToList();
 
         var response = req.CreateResponse(HttpStatusCode.OK);
         await response.WriteAsJsonAsync(sources, cancellationToken);

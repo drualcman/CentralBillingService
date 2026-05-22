@@ -8,7 +8,7 @@ public partial class GlobalInvoicesViewModel : ObservableObject
     private readonly BillingSourceRegistry _registry;
     private readonly Action<object> _navigate;
 
-    public string[] AllBillingSources { get; }
+    public BillingSourceEntry[] AllBillingSources { get; }
 
     [ObservableProperty] ObservableCollection<InvoiceSummaryResult> allInvoices = [];
     [ObservableProperty] InvoiceSummaryResult? selectedInvoice;
@@ -42,7 +42,15 @@ public partial class GlobalInvoicesViewModel : ObservableObject
         _scopeFactory = scopeFactory;
         _registry = registry;
         _navigate = navigate;
-        AllBillingSources = ["", .. registry.GetAll().Select(c => c.BillingSource).Order()];
+        AllBillingSources =
+        [
+            new BillingSourceEntry("", ""),
+            .. registry.GetAll()
+                .Select(c => new BillingSourceEntry(
+                    c.BillingSource,
+                    !string.IsNullOrWhiteSpace(c.Issuer.TradeName) ? c.Issuer.TradeName! : c.Issuer.LegalName))
+                .OrderBy(e => e.DisplayName)
+        ];
     }
 
     public async Task LoadAsync()

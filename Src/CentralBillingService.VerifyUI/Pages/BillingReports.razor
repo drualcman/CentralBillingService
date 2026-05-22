@@ -16,7 +16,7 @@
                     <option value="">Todos los orígenes</option>
                     @foreach (var src in BillingSources)
                     {
-                        <option value="@src">@src</option>
+                        <option value="@src.Code">@src.DisplayName</option>
                     }
                 </select>
             </div>
@@ -119,7 +119,7 @@ else if (Summary is not null)
 
 @code {
     private InvoicesSummaryResponse? Summary;
-    private List<string> BillingSources = [];
+    private List<BillingSourceItem> BillingSources = [];
     private bool IsLoading = true;
     private string? ErrorMessage;
     private string SelectedBillingSource = "";
@@ -133,7 +133,7 @@ else if (Summary is not null)
     {
         try
         {
-            var sources = await Http.GetFromJsonAsync<List<string>>("public/billing-sources");
+            var sources = await Http.GetFromJsonAsync<List<BillingSourceItem>>("public/billing-sources");
             BillingSources = sources ?? [];
         }
         catch

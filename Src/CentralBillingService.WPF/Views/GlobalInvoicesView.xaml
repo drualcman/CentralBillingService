@@ -67,7 +67,9 @@
                           materialDesign:HintAssist.Hint="Origen"
                           Style="{StaticResource MaterialDesignOutlinedComboBox}"
                           ItemsSource="{Binding AllBillingSources}"
-                          SelectedItem="{Binding FilterBillingSource}" />
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          SelectedValue="{Binding FilterBillingSource}" />
 
                 <ComboBox Grid.Column="1" Margin="0,0,8,0"
                           materialDesign:HintAssist.Hint="Estado"
