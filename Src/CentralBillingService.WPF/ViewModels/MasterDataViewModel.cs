@@ -6,6 +6,8 @@ public partial class MasterDataViewModel : ObservableObject
 {
     private readonly LocalMasterDataStore _store;
 
+    public SequenceAdminViewModel SequenceAdmin { get; }
+
     // ── Collections ──────────────────────────────────────────────────────────
     [ObservableProperty] ObservableCollection<ClientRecord>  clients  = [];
     [ObservableProperty] ObservableCollection<SeriesRecord>  series   = [];
@@ -57,9 +59,10 @@ public partial class MasterDataViewModel : ObservableObject
     [ObservableProperty] string editNoteName    = "";
     [ObservableProperty] string editNoteContent = "";
 
-    public MasterDataViewModel(LocalMasterDataStore store)
+    public MasterDataViewModel(LocalMasterDataStore store, SequenceAdminViewModel sequenceAdmin)
     {
         _store = store;
+        SequenceAdmin = sequenceAdmin;
         Reload();
     }
 

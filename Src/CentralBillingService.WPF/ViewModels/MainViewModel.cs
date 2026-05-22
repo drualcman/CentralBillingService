@@ -1,4 +1,5 @@
 using CentralBillingService.Domain.Services;
+using CentralBillingService.Persistence.SqlServer.Admin;
 
 namespace CentralBillingService.WPF.ViewModels;
 
@@ -9,6 +10,7 @@ public partial class MainViewModel : ObservableObject
     private readonly LocalMasterDataStore _masterDataStore;
     private readonly AppSettingsService _appSettingsService;
     private readonly BillingSourceRegistry _registry;
+    private readonly ISequenceAdminService _sequenceAdminService;
 
     [ObservableProperty]
     ObservableCollection<BillingSourceSummary> billingSources = [];
@@ -24,13 +26,14 @@ public partial class MainViewModel : ObservableObject
 
     public MainViewModel(IServiceScopeFactory scopeFactory, IConfiguration config,
         LocalMasterDataStore masterDataStore, AppSettingsService appSettingsService,
-        BillingSourceRegistry registry)
+        BillingSourceRegistry registry, ISequenceAdminService sequenceAdminService)
     {
         _scopeFactory = scopeFactory;
         _config = config;
         _masterDataStore = masterDataStore;
         _appSettingsService = appSettingsService;
         _registry = registry;
+        _sequenceAdminService = sequenceAdminService;
 
         LoadBillingSources();
     }
@@ -130,7 +133,9 @@ public partial class MainViewModel : ObservableObject
     void OpenMasterData()
     {
         SelectedBillingSource = null;
-        CurrentView = new MasterDataViewModel(_masterDataStore);
+        var billingSources = BillingSources.Select(s => s.Name).ToList();
+        var sequenceAdmin = new SequenceAdminViewModel(_sequenceAdminService, billingSources);
+        CurrentView = new MasterDataViewModel(_masterDataStore, sequenceAdmin);
         OnPropertyChanged(nameof(EmptyStateVisible));
     }
 }
