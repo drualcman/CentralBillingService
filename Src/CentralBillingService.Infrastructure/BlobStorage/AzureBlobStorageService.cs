@@ -41,15 +41,21 @@ public sealed class AzureBlobStorageService : IBlobStorageService
     {
         var container = new BlobContainerClient(_connectionString, _containerInvoiceName);
         var blob = container.GetBlobClient(blobName);
-        try
+        bool hasFile = await blob.ExistsAsync();
+        if (hasFile)
         {
-            var response = await blob.DownloadContentAsync(cancellationToken);
-            return response.Value.Content.ToArray();
+            try
+            {
+                var response = await blob.DownloadContentAsync(cancellationToken);
+                return response.Value.Content.ToArray();
+            }
+            catch
+            {
+                return null;
+            }
         }
-        catch
-        {
-            return null;
-        }
+        return null;
+
     }
 
     private string GetBlobUrl(string blobName, string containerName)
@@ -66,10 +72,21 @@ public sealed class AzureBlobStorageService : IBlobStorageService
     {
         var container = new BlobContainerClient(_connectionString, containerName);
         await container.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: cancellationToken);
-
         var blob = container.GetBlobClient(blobName);
-        using var stream = new MemoryStream(content);
-        await blob.UploadAsync(stream, cancellationToken: cancellationToken);
-        return blob.Uri.ToString();
+        bool hasFile = await blob.ExistsAsync();
+        if (!hasFile)
+        {
+            try
+            {
+                using var stream = new MemoryStream(content);
+                await blob.UploadAsync(stream, cancellationToken: cancellationToken);
+                return blob.Uri.ToString();
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+        return string.Empty;
     }
 }
