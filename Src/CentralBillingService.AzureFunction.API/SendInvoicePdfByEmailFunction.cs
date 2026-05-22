@@ -20,7 +20,7 @@ public sealed class SendInvoicePdfByEmailFunction
     /// </summary>
     [Function(nameof(SendInvoicePdfByEmailFunction))]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "invoices/{invoiceNumber}/send-pdf")]
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "invoices/{invoiceNumber}/send-pdf")]
         HttpRequestData req,
         string invoiceNumber,
         CancellationToken cancellationToken)
