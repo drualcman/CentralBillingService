@@ -1,3 +1,5 @@
+using CentralBillingService.Persistence.SqlServer.Admin;
+
 namespace CentralBillingService.WPF;
 
 public partial class App : System.Windows.Application
@@ -26,7 +28,8 @@ public partial class App : System.Windows.Application
                 // BillingParty has a private constructor so the config binder cannot
                 // instantiate it automatically. We build each BillingSourceConfig manually.
                 services.AddBillingDomain(
-                    opts => cfg.GetSection(CbsOptions.SectionKey).Bind(opts));
+                    opts => cfg.GetSection(CbsOptions.SectionKey).Bind(opts),
+                    mail => cfg.GetSection(EmailOptions.SectionKey).Bind(mail));
 
                 services.AddBillingApplication();
                 services.AddBillingInfrastructure();
@@ -39,6 +42,9 @@ public partial class App : System.Windows.Application
                 // Master data (local JSON store)
                 services.AddSingleton<LocalMasterDataStore>();
                 services.AddSingleton<AppSettingsService>();
+
+                // Admin service — WPF only, not registered in the Azure Function
+                services.AddSingleton<ISequenceAdminService, SequenceAdminService>();
 
                 // ViewModels
                 services.AddSingleton<MainViewModel>();

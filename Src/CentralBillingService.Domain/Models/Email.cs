@@ -3,7 +3,7 @@
 public class Email
 {
     public string Subject { get; set; }
-    public int CompanyId { get; set; } = 5;
+    public int CompanyId { get; set; } = 0;
     public List<Addressee> Recipients { get; set; }
     public string Content { get; set; }
     public List<Attachment> Attachments { get; set; }

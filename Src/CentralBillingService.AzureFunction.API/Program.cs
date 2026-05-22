@@ -11,7 +11,8 @@ builder.Configuration
 ;
 builder.Services
     .AddBillingDomain(
-        options => builder.Configuration.GetSection(CbsOptions.SectionKey).Bind(options)
+        options => builder.Configuration.GetSection(CbsOptions.SectionKey).Bind(options),
+        mail => builder.Configuration.GetSection(EmailOptions.SectionKey).Bind(mail)
     )
     .AddBillingApplication()
     .AddBillingInfrastructure()

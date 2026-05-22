@@ -16,10 +16,12 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddBillingDomain(
         this IServiceCollection services,
-        Action<CbsOptions> options)
+        Action<CbsOptions> options,
+        Action<EmailOptions> mailOptions)
     {
         // Build the registry once from config — singleton for the lifetime of the app    
         ConfigureOptionsHelper.ConfigureOptions(services, options, CbsOptions.SectionKey);
+        ConfigureOptionsHelper.ConfigureOptions(services, mailOptions, EmailOptions.SectionKey);
         services.AddScoped<IMailService, MailService>();
         services.AddSingleton<BillingSourceRegistry>();
         services.AddScoped<CreateInvoiceService>();
