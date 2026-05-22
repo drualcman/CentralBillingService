@@ -55,6 +55,8 @@ public partial class App : System.Windows.Application
 
         await _host.StartAsync();
 
+        await _host.Services.ApplyMigrationsAsync();
+
         var window = _host.Services.GetRequiredService<MainWindow>();
         window.Show();
     }

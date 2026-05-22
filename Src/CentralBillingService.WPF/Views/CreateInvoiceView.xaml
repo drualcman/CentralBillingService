@@ -200,9 +200,10 @@
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          Text="{Binding RecipientTaxId}" />
                                 <TextBox Margin="6,0,0,12"
-                                         materialDesign:HintAssist.Hint="País del NIF (ES, GB...)*"
+                                         materialDesign:HintAssist.Hint="País *"
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                         Text="{Binding RecipientTaxIdCountry}" />
+                                         Text="{Binding RecipientCountry}"
+                                         ToolTip="Código de país ISO (ES, GB, US…)" />
                                 <TextBox Margin="0,0,6,12"
                                          materialDesign:HintAssist.Hint="Email *"
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
@@ -228,10 +229,6 @@
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          Text="{Binding RecipientPostalCode}" />
                                 <TextBox Margin="0,0,6,12"
-                                         materialDesign:HintAssist.Hint="País (ES, GB, US...)*"
-                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                         Text="{Binding RecipientCountry}" />
-                                <TextBox Margin="6,0,0,12"
                                          materialDesign:HintAssist.Hint="ID externo (opcional)"
                                          ToolTip="Identificador del cliente en tu sistema (CRM, ERP…)"
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"

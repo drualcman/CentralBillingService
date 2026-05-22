@@ -29,4 +29,15 @@ public static class PersistenceServiceCollectionExtensions
 
         return services;
     }
+
+    /// <summary>
+    /// Applies any pending EF Core migrations to the database.
+    /// Call this once at application startup before serving requests.
+    /// </summary>
+    public static async Task ApplyMigrationsAsync(this IServiceProvider services)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SqlInvoiceWriteContext>();
+        await db.Database.MigrateAsync();
+    }
 }

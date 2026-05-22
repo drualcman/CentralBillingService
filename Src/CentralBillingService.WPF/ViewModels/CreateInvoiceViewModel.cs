@@ -36,7 +36,6 @@ public partial class CreateInvoiceViewModel : ObservableObject
     [ObservableProperty] string recipientLegalName = string.Empty;
     [ObservableProperty] string? recipientTradeName;
     [ObservableProperty] string recipientTaxId = string.Empty;
-    [ObservableProperty] string recipientTaxIdCountry = "ES";
     [ObservableProperty] string recipientEmail = string.Empty;
     [ObservableProperty] string? recipientPhone;
     [ObservableProperty] string recipientAddress = string.Empty;
@@ -157,18 +156,17 @@ public partial class CreateInvoiceViewModel : ObservableObject
     partial void OnSelectedClientChanged(ClientRecord? value)
     {
         if (value is null) return;
-        RecipientLegalName    = value.LegalName;
-        RecipientTradeName    = value.TradeName;
-        RecipientTaxId        = value.TaxId;
-        RecipientTaxIdCountry = value.TaxIdCountry;
-        RecipientEmail        = value.Email ?? "";
-        RecipientPhone        = value.Phone;
-        RecipientAddress      = value.Address ?? "";
-        RecipientCity         = value.City ?? "";
-        RecipientProvince     = value.Province;
-        RecipientPostalCode   = value.PostalCode ?? "";
-        RecipientCountry      = value.Country ?? "ES";
-        RecipientExternalId   = value.ExternalId;
+        RecipientLegalName  = value.LegalName;
+        RecipientTradeName  = value.TradeName;
+        RecipientTaxId      = value.TaxId;
+        RecipientEmail      = value.Email ?? "";
+        RecipientPhone      = value.Phone;
+        RecipientAddress    = value.Address ?? "";
+        RecipientCity       = value.City ?? "";
+        RecipientProvince   = value.Province;
+        RecipientPostalCode = value.PostalCode ?? "";
+        RecipientCountry    = value.Country ?? value.TaxIdCountry;
+        RecipientExternalId = value.ExternalId;
     }
 
     [RelayCommand]
@@ -208,7 +206,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
                     LegalName = RecipientLegalName.Trim(),
                     TradeName = string.IsNullOrWhiteSpace(RecipientTradeName) ? null : RecipientTradeName.Trim(),
                     TaxIdValue = RecipientTaxId.Trim().ToUpperInvariant(),
-                    TaxIdCountryCode = RecipientTaxIdCountry.Trim().ToUpperInvariant(),
+                    TaxIdCountryCode = RecipientCountry.Trim().ToUpperInvariant(),
                     Email = RecipientEmail.Trim().ToLowerInvariant(),
                     Phone = string.IsNullOrWhiteSpace(RecipientPhone) ? null : RecipientPhone.Trim(),
                     AddressLine1 = RecipientAddress.Trim(),
@@ -256,7 +254,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
         {
             existing.LegalName   = RecipientLegalName.Trim();
             existing.TradeName   = string.IsNullOrWhiteSpace(RecipientTradeName) ? null : RecipientTradeName.Trim();
-            existing.TaxIdCountry = RecipientTaxIdCountry.Trim().ToUpperInvariant();
+            existing.TaxIdCountry = RecipientCountry.Trim().ToUpperInvariant();
             existing.Email       = string.IsNullOrWhiteSpace(RecipientEmail) ? null : RecipientEmail.Trim();
             existing.Phone       = string.IsNullOrWhiteSpace(RecipientPhone) ? null : RecipientPhone.Trim();
             existing.Address     = string.IsNullOrWhiteSpace(RecipientAddress) ? null : RecipientAddress.Trim();
@@ -273,7 +271,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
                 LegalName   = RecipientLegalName.Trim(),
                 TradeName   = string.IsNullOrWhiteSpace(RecipientTradeName) ? null : RecipientTradeName.Trim(),
                 TaxId        = RecipientTaxId.Trim().ToUpperInvariant(),
-                TaxIdCountry = RecipientTaxIdCountry.Trim().ToUpperInvariant(),
+                TaxIdCountry = RecipientCountry.Trim().ToUpperInvariant(),
                 Email        = string.IsNullOrWhiteSpace(RecipientEmail) ? null : RecipientEmail.Trim(),
                 Phone        = string.IsNullOrWhiteSpace(RecipientPhone) ? null : RecipientPhone.Trim(),
                 Address      = string.IsNullOrWhiteSpace(RecipientAddress) ? null : RecipientAddress.Trim(),
