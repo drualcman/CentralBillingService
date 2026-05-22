@@ -476,6 +476,120 @@
                 </Grid>
             </TabItem>
 
+            <!-- ══════════════════════════════════════════
+                 TAB: NOTAS / PLANTILLAS
+                 ══════════════════════════════════════════ -->
+            <TabItem Header="Notas">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <materialDesign:Card Grid.Row="0" Margin="16,12,16,4"
+                                         materialDesign:ElevationAssist.Elevation="Dp1"
+                                         UniformCornerRadius="10" Padding="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Background="White" BorderBrush="#E2E8F0"
+                                    BorderThickness="0,0,0,1" Padding="12,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource TabActionButton}"
+                                            Command="{Binding NewNoteCommand}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Plus" Margin="0,0,4,0"
+                                                                      VerticalAlignment="Center" />
+                                            <TextBlock Text="Nueva" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource TabActionButton}"
+                                            Command="{Binding EditNoteCommand}"
+                                            IsEnabled="{Binding SelectedNote, Converter={StaticResource HasValue}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Pencil" Margin="0,0,4,0"
+                                                                      VerticalAlignment="Center" />
+                                            <TextBlock Text="Editar" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource TabActionButton}"
+                                            Command="{Binding DeleteNoteCommand}"
+                                            IsEnabled="{Binding SelectedNote, Converter={StaticResource HasValue}}"
+                                            Foreground="#EF4444">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="TrashCanOutline" Margin="0,0,4,0"
+                                                                      VerticalAlignment="Center" />
+                                            <TextBlock Text="Eliminar" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+
+                            <DataGrid Grid.Row="1"
+                                      ItemsSource="{Binding Notes}"
+                                      SelectedItem="{Binding SelectedNote}"
+                                      Style="{StaticResource MaterialDesignDataGrid}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False" IsReadOnly="True"
+                                      SelectionMode="Single" RowHeight="44"
+                                      GridLinesVisibility="Horizontal"
+                                      HorizontalGridLinesBrush="#F1F5F9">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Nombre"    Binding="{Binding Name}"    Width="220" />
+                                    <DataGridTextColumn Header="Contenido" Binding="{Binding Content}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </materialDesign:Card>
+
+                    <!-- Edit form -->
+                    <materialDesign:Card Grid.Row="1" Margin="16,0,16,12"
+                                         materialDesign:ElevationAssist.Elevation="Dp2"
+                                         UniformCornerRadius="10" Padding="20"
+                                         Visibility="{Binding IsEditingNote, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="DATOS DE LA NOTA / PLANTILLA"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Foreground="#64748B" Margin="0,0,0,4" />
+
+                            <Border Background="#FEF2F2" CornerRadius="6" Padding="12,8" Margin="0,0,0,8"
+                                    Visibility="{Binding NoteEditError, Converter={StaticResource HasValue}}">
+                                <TextBlock Text="{Binding NoteEditError}" Foreground="#DC2626"
+                                           FontSize="12" TextWrapping="Wrap" />
+                            </Border>
+
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Nombre *  (p.ej. Datos Bancarios, Aviso Legal…)" />
+                            <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     Text="{Binding EditNoteName, UpdateSourceTrigger=PropertyChanged}"
+                                     Margin="0,0,0,8" />
+
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Contenido" />
+                            <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     Text="{Binding EditNoteContent, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True" MinLines="4" MaxLines="10"
+                                     VerticalScrollBarVisibility="Auto"
+                                     Margin="0,0,0,12" />
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                        Command="{Binding CancelNoteEditCommand}"
+                                        Margin="0,0,8,0">
+                                    Cancelar
+                                </Button>
+                                <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Command="{Binding SaveNoteCommand}"
+                                        materialDesign:ButtonAssist.CornerRadius="8">
+                                    Guardar nota
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </materialDesign:Card>
+                </Grid>
+            </TabItem>
+
         </TabControl>
     </Grid>
 </UserControl>

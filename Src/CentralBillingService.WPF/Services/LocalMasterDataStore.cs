@@ -16,10 +16,12 @@ public class LocalMasterDataStore
     public List<ClientRecord> LoadClients() => Load<ClientRecord>("clients.json");
     public List<SeriesRecord> LoadSeries() => Load<SeriesRecord>("series.json");
     public List<ProductRecord> LoadProducts() => Load<ProductRecord>("products.json");
+    public List<NoteRecord> LoadNotes() => Load<NoteRecord>("notes.json");
 
     public void SaveClients(List<ClientRecord> items) => Save("clients.json", items);
     public void SaveSeries(List<SeriesRecord> items) => Save("series.json", items);
     public void SaveProducts(List<ProductRecord> items) => Save("products.json", items);
+    public void SaveNotes(List<NoteRecord> items) => Save("notes.json", items);
 
     private List<T> Load<T>(string file)
     {

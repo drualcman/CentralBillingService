@@ -10,16 +10,19 @@ public partial class MasterDataViewModel : ObservableObject
     [ObservableProperty] ObservableCollection<ClientRecord>  clients  = [];
     [ObservableProperty] ObservableCollection<SeriesRecord>  series   = [];
     [ObservableProperty] ObservableCollection<ProductRecord> products = [];
+    [ObservableProperty] ObservableCollection<NoteRecord>    notes    = [];
 
     // ── Selected items ───────────────────────────────────────────────────────
     [ObservableProperty] ClientRecord?  selectedClient;
     [ObservableProperty] SeriesRecord?  selectedSeries;
     [ObservableProperty] ProductRecord? selectedProduct;
+    [ObservableProperty] NoteRecord?    selectedNote;
 
     // ── Edit panels visibility ────────────────────────────────────────────────
     [ObservableProperty] bool isEditingClient;
     [ObservableProperty] bool isEditingSeries;
     [ObservableProperty] bool isEditingProduct;
+    [ObservableProperty] bool isEditingNote;
 
     // ── Client edit fields ────────────────────────────────────────────────────
     [ObservableProperty] Guid   editClientId;
@@ -49,6 +52,11 @@ public partial class MasterDataViewModel : ObservableObject
     [ObservableProperty] decimal editProductTaxRate      = 21;
     [ObservableProperty] string  editProductCurrencyCode = "";
 
+    // ── Note edit fields ──────────────────────────────────────────────────────
+    [ObservableProperty] Guid   editNoteId;
+    [ObservableProperty] string editNoteName    = "";
+    [ObservableProperty] string editNoteContent = "";
+
     public MasterDataViewModel(LocalMasterDataStore store)
     {
         _store = store;
@@ -60,6 +68,7 @@ public partial class MasterDataViewModel : ObservableObject
         Clients  = new(_store.LoadClients());
         Series   = new(_store.LoadSeries());
         Products = new(_store.LoadProducts());
+        Notes    = new(_store.LoadNotes());
     }
 
     // ── Client commands ───────────────────────────────────────────────────────
@@ -276,6 +285,65 @@ public partial class MasterDataViewModel : ObservableObject
 
     [RelayCommand]
     void CancelProductEdit() { IsEditingProduct = false; SelectedProduct = null; }
+
+    // ── Note commands ─────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    void NewNote()
+    {
+        SelectedNote = null;
+        EditNoteId = Guid.NewGuid();
+        EditNoteName = EditNoteContent = "";
+        IsEditingNote = true;
+    }
+
+    [RelayCommand]
+    void EditNote()
+    {
+        if (SelectedNote is null) return;
+        EditNoteId      = SelectedNote.Id;
+        EditNoteName    = SelectedNote.Name;
+        EditNoteContent = SelectedNote.Content;
+        IsEditingNote = true;
+    }
+
+    [ObservableProperty] string? noteEditError;
+
+    [RelayCommand]
+    void SaveNote()
+    {
+        NoteEditError = null;
+        if (string.IsNullOrWhiteSpace(EditNoteName))
+        { NoteEditError = "El nombre es obligatorio."; return; }
+
+        var existing = Notes.FirstOrDefault(n => n.Id == EditNoteId);
+        if (existing is null)
+        {
+            existing = new NoteRecord { Id = EditNoteId };
+            Notes.Add(existing);
+        }
+
+        existing.Name    = EditNoteName.Trim();
+        existing.Content = EditNoteContent.Trim();
+
+        _store.SaveNotes(Notes.ToList());
+        RefreshList(Notes, existing);
+        IsEditingNote = false;
+        SelectedNote = null;
+    }
+
+    [RelayCommand]
+    void DeleteNote()
+    {
+        if (SelectedNote is null) return;
+        Notes.Remove(SelectedNote);
+        _store.SaveNotes(Notes.ToList());
+        IsEditingNote = false;
+        SelectedNote = null;
+    }
+
+    [RelayCommand]
+    void CancelNoteEdit() { IsEditingNote = false; SelectedNote = null; NoteEditError = null; }
 
     // ── Helper ────────────────────────────────────────────────────────────────
 

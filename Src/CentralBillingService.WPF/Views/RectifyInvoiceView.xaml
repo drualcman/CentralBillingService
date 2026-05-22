@@ -118,9 +118,30 @@
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          Text="{Binding PaymentMethod}" />
                             </UniformGrid>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Notas"
+                                           FontSize="11" Foreground="#64748B"
+                                           VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <TextBlock Text="Cargar plantilla:"
+                                               FontSize="11" Foreground="#64748B"
+                                               VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <ComboBox Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                              ItemsSource="{Binding AvailableNotes}"
+                                              DisplayMemberPath="Name"
+                                              materialDesign:HintAssist.Hint="Seleccionar…"
+                                              Width="200" Padding="8,4"
+                                              SelectedItem="{Binding SelectedNoteTemplate, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Grid>
                             <TextBox materialDesign:HintAssist.Hint="Notas"
                                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                     Text="{Binding Notes}" />
+                                     Text="{Binding Notes}"
+                                     AcceptsReturn="True" MinLines="2" />
                         </StackPanel>
                     </materialDesign:Card>
 

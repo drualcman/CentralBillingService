@@ -13,8 +13,10 @@ public partial class RectifyInvoiceViewModel : ObservableObject
     public string OriginalInvoiceNumber { get; }
 
     // Master data
-    [ObservableProperty] ObservableCollection<SeriesRecord> availableSeries = [];
+    [ObservableProperty] ObservableCollection<SeriesRecord>  availableSeries   = [];
     [ObservableProperty] ObservableCollection<ProductRecord> availableProducts = [];
+    [ObservableProperty] ObservableCollection<NoteRecord>    availableNotes    = [];
+    [ObservableProperty] NoteRecord? selectedNoteTemplate;
 
     [ObservableProperty] string rectificativeSerie = "R";
     [ObservableProperty] DateTime issueDate = DateTime.Today;
@@ -63,8 +65,9 @@ public partial class RectifyInvoiceViewModel : ObservableObject
         BillingSource = billingSource;
         OriginalInvoiceNumber = originalInvoiceNumber;
 
-        AvailableSeries = new ObservableCollection<SeriesRecord>(masterDataStore.LoadSeries());
+        AvailableSeries   = new ObservableCollection<SeriesRecord>(masterDataStore.LoadSeries());
         AvailableProducts = new ObservableCollection<ProductRecord>(masterDataStore.LoadProducts());
+        AvailableNotes    = new ObservableCollection<NoteRecord>(masterDataStore.LoadNotes());
 
         DifferenceLines.CollectionChanged += OnDiffLinesCollectionChanged;
     }
@@ -232,6 +235,13 @@ public partial class RectifyInvoiceViewModel : ObservableObject
         {
             IsSaving = false;
         }
+    }
+
+    partial void OnSelectedNoteTemplateChanged(NoteRecord? value)
+    {
+        if (value is null) return;
+        Notes = value.Content;
+        SelectedNoteTemplate = null;
     }
 
     [RelayCommand]

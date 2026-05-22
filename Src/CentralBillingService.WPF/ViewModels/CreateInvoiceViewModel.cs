@@ -14,9 +14,11 @@ public partial class CreateInvoiceViewModel : ObservableObject
     public BillingSourceSummary BillingSource { get; }
 
     // Master data
-    [ObservableProperty] ObservableCollection<ClientRecord> availableClients = [];
-    [ObservableProperty] ObservableCollection<SeriesRecord> availableSeries = [];
+    [ObservableProperty] ObservableCollection<ClientRecord>  availableClients  = [];
+    [ObservableProperty] ObservableCollection<SeriesRecord>  availableSeries   = [];
     [ObservableProperty] ObservableCollection<ProductRecord> availableProducts = [];
+    [ObservableProperty] ObservableCollection<NoteRecord>    availableNotes    = [];
+    [ObservableProperty] NoteRecord? selectedNoteTemplate;
     [ObservableProperty] ClientRecord? selectedClient;
 
     // Invoice header
@@ -81,6 +83,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
         AvailableClients  = new ObservableCollection<ClientRecord>(masterDataStore.LoadClients());
         AvailableSeries   = new ObservableCollection<SeriesRecord>(masterDataStore.LoadSeries());
         AvailableProducts = new ObservableCollection<ProductRecord>(masterDataStore.LoadProducts());
+        AvailableNotes    = new ObservableCollection<NoteRecord>(masterDataStore.LoadNotes());
 
         Lines.CollectionChanged += OnLinesCollectionChanged;
         foreach (var line in Lines) line.PropertyChanged += OnLineChanged;
@@ -315,6 +318,13 @@ public partial class CreateInvoiceViewModel : ObservableObject
         }
 
         _masterDataStore.SaveProducts(products);
+    }
+
+    partial void OnSelectedNoteTemplateChanged(NoteRecord? value)
+    {
+        if (value is null) return;
+        Notes = value.Content;
+        SelectedNoteTemplate = null;
     }
 
     [RelayCommand]
