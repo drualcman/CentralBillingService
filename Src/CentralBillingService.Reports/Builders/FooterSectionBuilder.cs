@@ -1,6 +1,3 @@
-using DigitalDoor.Reporting.Entities.Models;
-using DigitalDoor.Reporting.Entities.ValueObjects;
-
 namespace CentralBillingService.Reports.Builders;
 
 internal static class FooterSectionBuilder
@@ -101,7 +98,7 @@ internal static class FooterSectionBuilder
 
         footer.AddColumn(new ColumnSetup
         {
-            Format = new Format((double)InvoiceReportLayout.ContentWidth, 0.5)
+            Format = new Format((double)InvoiceReportLayout.ContentWidth, 1)
             {
                 Position = new Kernel(26, InvoiceReportLayout.Margin),
                 Background = InvoiceReportLayout.SeparatorColor
@@ -219,7 +216,7 @@ internal static class FooterSectionBuilder
 
         footer.AddColumn(new ColumnSetup
         {
-            Format = new Format((double)InvoiceReportLayout.ContentWidth, 0.5)
+            Format = new Format((double)InvoiceReportLayout.ContentWidth, 1)
             {
                 Position = new Kernel(49, InvoiceReportLayout.Margin),
                 Background = InvoiceReportLayout.SeparatorColor

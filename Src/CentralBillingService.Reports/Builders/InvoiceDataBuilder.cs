@@ -49,7 +49,7 @@ internal static class InvoiceDataBuilder
             CreateData(SectionType.Header, InvoiceReportLayout.Columns.RecipientLabel, "Cliente:"),
             CreateData(SectionType.Header, InvoiceReportLayout.Columns.RecipientName, recipient.DisplayName),
             CreateData(SectionType.Header, InvoiceReportLayout.Columns.RecipientAddress, recipient.Address.ToSingleLine()),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.RecipientTaxIdLabel, "NIF/CIF:"),
+            CreateData(SectionType.Header, InvoiceReportLayout.Columns.RecipientTaxIdLabel, "NIF/CIF/VAT-ID:"),
             CreateData(SectionType.Header, InvoiceReportLayout.Columns.RecipientTaxIdValue, recipient.TaxId.Value),
             CreateData(SectionType.Header, InvoiceReportLayout.Columns.TableHeaderBg, " "),
             CreateData(SectionType.Header, InvoiceReportLayout.Columns.DescriptionHeader, "Descripción"),
@@ -83,7 +83,8 @@ internal static class InvoiceDataBuilder
             data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TaxableBaseValue, FormatAmount(line.TaxableBaseEur.Amount)));
             data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TotalValue, FormatAmount(line.TotalEur.Amount)));
 
-            if (!line.HasCurrencyConversion) continue;
+            if (!line.HasCurrencyConversion)
+                continue;
 
             var curr = line.UnitPriceOrigin.Currency.Code;
             decimal taxOriginLine = line.TotalOrigin.Amount * line.TaxRate.Percentage / 100m;

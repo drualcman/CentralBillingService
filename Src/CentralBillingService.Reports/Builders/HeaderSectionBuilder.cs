@@ -4,10 +4,10 @@ internal static class HeaderSectionBuilder
 {
     private const decimal IssuerX = 45m;
     private const decimal IssuerW = 155m;
-    private const decimal MetaLabelX = 120m;
-    private const decimal MetaValueX = 150m;
-    private const decimal MetaW = 30m;
-    private const decimal MetaValueW = 50m;
+    private const decimal MetaLabelX = 70m;
+    private const decimal MetaValueX = 110m;
+    private const decimal MetaW = 20m;
+    private const decimal MetaValueW = 90m;
 
     public static void Build(Section header)
     {
