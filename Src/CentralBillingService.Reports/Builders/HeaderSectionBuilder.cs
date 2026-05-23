@@ -4,9 +4,10 @@ internal static class HeaderSectionBuilder
 {
     private const decimal IssuerX = 45m;
     private const decimal IssuerW = 155m;
-    private const decimal MetaLabelX = 140m;
-    private const decimal MetaValueX = 170m;
+    private const decimal MetaLabelX = 120m;
+    private const decimal MetaValueX = 150m;
     private const decimal MetaW = 30m;
+    private const decimal MetaValueW = 50m;
 
     public static void Build(Section header)
     {
@@ -112,7 +113,7 @@ internal static class HeaderSectionBuilder
         });
         header.AddColumn(new ColumnSetup
         {
-            Format = new Format((double)MetaW, 5)
+            Format = new Format((double)MetaValueW, 5)
             {
                 Position = new Kernel(42, MetaValueX),
                 TextAlignment = TextAlignment.Right,
@@ -132,7 +133,7 @@ internal static class HeaderSectionBuilder
         });
         header.AddColumn(new ColumnSetup
         {
-            Format = new Format((double)MetaW, 5)
+            Format = new Format((double)MetaValueW, 5)
             {
                 Position = new Kernel(48, MetaValueX),
                 TextAlignment = TextAlignment.Right
@@ -160,7 +161,7 @@ internal static class HeaderSectionBuilder
         });
         header.AddColumn(new ColumnSetup
         {
-            Format = new Format(80, 5)
+            Format = new Format(135, 5)
             {
                 Position = new Kernel(67, 15m),
                 FontDetails = new Font(new Shade(10), new FontStyle(700))
@@ -169,18 +170,18 @@ internal static class HeaderSectionBuilder
         });
         header.AddColumn(new ColumnSetup
         {
-            Format = new Format(95, 5) { Position = new Kernel(73, 15m) },
+            Format = new Format(135, 5) { Position = new Kernel(73, 15m) },
             DataColumn = new Item(InvoiceReportLayout.Columns.RecipientAddress)
         });
 
         header.AddColumn(new ColumnSetup
         {
-            Format = new Format(80, 5) { Position = new Kernel(61, 110m) },
+            Format = new Format(45, 5) { Position = new Kernel(61, 155m) },
             DataColumn = new Item(InvoiceReportLayout.Columns.RecipientTaxIdLabel)
         });
         header.AddColumn(new ColumnSetup
         {
-            Format = new Format(80, 5) { Position = new Kernel(67, 110m) },
+            Format = new Format(45, 5) { Position = new Kernel(67, 155m) },
             DataColumn = new Item(InvoiceReportLayout.Columns.RecipientTaxIdValue)
         });
     }
