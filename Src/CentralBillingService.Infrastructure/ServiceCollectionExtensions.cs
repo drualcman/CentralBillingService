@@ -1,3 +1,5 @@
+using Iso9001Client;
+
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
@@ -16,14 +18,11 @@ public static class ServiceCollectionExtensions
     /// Swap these out for production implementations without touching domain or application.
     /// </summary>
     public static IServiceCollection AddBillingInfrastructure(
-        this IServiceCollection services)
+        this IServiceCollection services,
+        Action<Iso9001ClientOptions> iso9001Options)
     {
-        //Iso 9001 Databases
-        services.AddIso9001Databases();
-        services.AddAuditLogCoreServices();
-        services.AddIncidentReportCoreServices();
+        services.AddIso9001Client(iso9001Options);
         services.AddReportingPresenterPdfServices();
-        services.AddScoped<IIso9001, Iso9001Service>();
 
         // Hashing
         services.AddScoped<IInvoiceHasher, Sha256InvoiceHasher>();

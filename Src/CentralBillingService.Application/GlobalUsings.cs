@@ -16,4 +16,6 @@ global using CentralBillingService.Domain.ValueObjects;
 global using CentralBillingService.Reports;
 global using DigitalDoor.Reporting.Entities.Interfaces;
 global using DigitalDoor.Reporting.Entities.ViewModels;
+global using Iso9001Client;
 global using Microsoft.Extensions.Logging;
+global using System.Text.Json;

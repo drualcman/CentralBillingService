@@ -3,6 +3,7 @@
     <File Path="Documentation/dev_full_plan.md" />
     <File Path="Documentation/dev_week_plan.md" />
   </Folder>
+  <Project Path="../Iso9001Client/Src/Iso9001Client/Iso9001Client.csproj" />
   <Project Path="Src/CentralBillingService.Application/CentralBillingService.Application.csproj" Id="790b2c54-e07c-475b-9908-48a2fb2e35b2" />
   <Project Path="Src/CentralBillingService.AzureFunction.API/CentralBillingService.AzureFunction.API.csproj" Id="b7b5c080-88ba-43f5-bb44-02babb66ed57" />
   <Project Path="Src/CentralBillingService.Client/CentralBillingService.Client.csproj" Id="dfe0b0cf-8a6a-4826-9c02-55e4ea8f8bdc" />

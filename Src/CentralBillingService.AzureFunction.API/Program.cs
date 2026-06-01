@@ -15,7 +15,9 @@ builder.Services
         mail => builder.Configuration.GetSection(EmailOptions.SectionKey).Bind(mail)
     )
     .AddBillingApplication()
-    .AddBillingInfrastructure()
+    .AddBillingInfrastructure(
+        iso9001 => builder.Configuration.GetSection(Iso9001ClientOptions.SectionKey).Bind(iso9001)
+    )
     .AddSqlServerPersistence(
         options => builder.Configuration.GetSection(DatabaseOptions.SectionKey).Bind(options)
     )

@@ -19,7 +19,6 @@ public static class PersistenceServiceCollectionExtensions
            Action<DatabaseOptions> options)
     {
         ConfigureOptionsHelper.ConfigureOptions(services, options, DatabaseOptions.SectionKey);
-        services.AddDbContext<IIso9001Context, Iso9001Context>(ServiceLifetime.Scoped);
         services.AddDbContext<IInvoiceReadContext, SqlInvoiceReadContext>(ServiceLifetime.Scoped);
         services.AddDbContext<IInvoiceWriteContext, SqlInvoiceWriteContext>(ServiceLifetime.Scoped);
 

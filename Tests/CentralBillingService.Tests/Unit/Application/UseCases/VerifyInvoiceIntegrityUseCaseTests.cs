@@ -18,11 +18,11 @@ public class VerifyInvoiceIntegrityUseCaseTests
     private static VerifyInvoiceQuery Query(
         string invoiceNumber = "TEST2026-0001",
         string providedHash = "PLACEHOLDER_HASH") => new()
-    {
-        BillingSource = "web-test",
-        InvoiceNumber = invoiceNumber,
-        ProvidedHash = providedHash
-    };
+        {
+            BillingSource = "web-test",
+            InvoiceNumber = invoiceNumber,
+            ProvidedHash = providedHash
+        };
 
     private static Invoice TamperedInvoice(Invoice original) =>
         Invoice.Reconstitute(

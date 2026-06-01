@@ -1,4 +1,5 @@
 using CentralBillingService.Persistence.SqlServer.Admin;
+using Iso9001Client;
 
 namespace CentralBillingService.WPF;
 
@@ -32,7 +33,9 @@ public partial class App : System.Windows.Application
                     mail => cfg.GetSection(EmailOptions.SectionKey).Bind(mail));
 
                 services.AddBillingApplication();
-                services.AddBillingInfrastructure();
+                services.AddBillingInfrastructure(
+                    iso9001 => cfg.GetSection(Iso9001ClientOptions.SectionKey).Bind(iso9001)
+                    );
 
                 services.AddSqlServerPersistence(opts =>
                     cfg.GetSection(DatabaseOptions.SectionKey).Bind(opts));

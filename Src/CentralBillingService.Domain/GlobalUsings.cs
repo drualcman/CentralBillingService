@@ -9,6 +9,7 @@ global using CentralBillingService.Domain.Models;
 global using CentralBillingService.Domain.Options;
 global using CentralBillingService.Domain.Services;
 global using CentralBillingService.Domain.ValueObjects;
+global using Iso9001Client;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Options;

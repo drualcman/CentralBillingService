@@ -10,6 +10,7 @@ global using CentralBillingService.Domain.Options;
 global using CentralBillingService.Domain.Services;
 global using CentralBillingService.Domain.ValueObjects;
 global using CentralBillingService.Persistence.SqlServer.Options;
+global using Iso9001Client;
 global using Microsoft.AspNetCore.Http;
 global using Microsoft.Azure.Functions.Worker;
 global using Microsoft.Azure.Functions.Worker.Builder;

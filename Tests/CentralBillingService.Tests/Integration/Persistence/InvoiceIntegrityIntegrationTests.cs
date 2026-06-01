@@ -1,5 +1,3 @@
-using CentralBillingService.Infrastructure.Persistence;
-
 namespace CentralBillingService.Tests.Integration.Persistence;
 
 /// <summary>
