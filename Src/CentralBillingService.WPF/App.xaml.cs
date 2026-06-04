@@ -11,69 +11,87 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
-        _host = Host.CreateDefaultBuilder()
-            .ConfigureAppConfiguration((_, config) =>
-            {
-                config.SetBasePath(AppContext.BaseDirectory)
-                      .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        var splash = new SplashWindow();
+        splash.Show();
+
+        try
+        {
+            splash.SetStatus("Configurando servicios...");
+
+            _host = Host.CreateDefaultBuilder()
+                .ConfigureAppConfiguration((_, config) =>
+                {
+                    config.SetBasePath(AppContext.BaseDirectory)
+                          .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
 #if DEBUG
-                        .AddJsonFile("appsettings.Development.json", optional: true)
-                        .AddUserSecrets<App>()
+                            .AddJsonFile("appsettings.Development.json", optional: true)
+                            .AddUserSecrets<App>()
 #endif
-            ;
-            })
-            .ConfigureServices((context, services) =>
-            {
-                var cfg = context.Configuration;
+                    ;
+                })
+                .ConfigureServices((context, services) =>
+                {
+                    var cfg = context.Configuration;
 
-                // BillingParty has a private constructor so the config binder cannot
-                // instantiate it automatically. We build each BillingSourceConfig manually.
-                services.AddBillingDomain(
-                    opts => cfg.GetSection(CbsOptions.SectionKey).Bind(opts),
-                    mail => cfg.GetSection(EmailOptions.SectionKey).Bind(mail));
+                    // BillingParty has a private constructor so the config binder cannot
+                    // instantiate it automatically. We build each BillingSourceConfig manually.
+                    services.AddBillingDomain(
+                        opts => cfg.GetSection(CbsOptions.SectionKey).Bind(opts),
+                        mail => cfg.GetSection(EmailOptions.SectionKey).Bind(mail));
 
-                services.AddBillingApplication();
-                services.AddBillingInfrastructure(
-                    iso9001 => cfg.GetSection(Iso9001ClientOptions.SectionKey).Bind(iso9001)
-                    );
+                    services.AddBillingApplication();
+                    services.AddBillingInfrastructure(
+                        iso9001 => cfg.GetSection(Iso9001ClientOptions.SectionKey).Bind(iso9001)
+                        );
 
-                services.AddSqlServerPersistence(opts =>
-                    cfg.GetSection(DatabaseOptions.SectionKey).Bind(opts));
+                    services.AddSqlServerPersistence(opts =>
+                        cfg.GetSection(DatabaseOptions.SectionKey).Bind(opts));
 
-                services.AddSingleton<IConfiguration>(cfg);
+                    services.AddSingleton<IConfiguration>(cfg);
 
-                // Master data (local JSON store)
-                services.AddSingleton<LocalMasterDataStore>();
-                services.AddSingleton<AppSettingsService>();
+                    // Master data (local JSON store)
+                    services.AddSingleton<LocalMasterDataStore>();
+                    services.AddSingleton<AppSettingsService>();
 
-                // Admin service — WPF only, not registered in the Azure Function
-                services.AddSingleton<ISequenceAdminService, SequenceAdminService>();
+                    // Admin service — WPF only, not registered in the Azure Function
+                    services.AddSingleton<ISequenceAdminService, SequenceAdminService>();
 
-                // ViewModels
-                services.AddSingleton<MainViewModel>();
-                services.AddTransient<InvoicesViewModel>();
-                services.AddTransient<InvoiceDetailViewModel>();
-                services.AddTransient<CreateInvoiceViewModel>();
-                services.AddTransient<RectifyInvoiceViewModel>();
-                services.AddTransient<VerifyInvoiceViewModel>();
+                    // ViewModels
+                    services.AddSingleton<MainViewModel>();
+                    services.AddTransient<InvoicesViewModel>();
+                    services.AddTransient<InvoiceDetailViewModel>();
+                    services.AddTransient<CreateInvoiceViewModel>();
+                    services.AddTransient<RectifyInvoiceViewModel>();
+                    services.AddTransient<VerifyInvoiceViewModel>();
 
-                // Main window
-                services.AddSingleton<MainWindow>();
-            })
-            .Build();
+                    // Main window
+                    services.AddSingleton<MainWindow>();
+                })
+                .Build();
 
-        await _host.StartAsync();
+            await _host.StartAsync();
 
-        await _host.Services.ApplyMigrationsAsync();
+            splash.SetStatus("Aplicando migraciones de base de datos...");
+            await _host.Services.ApplyMigrationsAsync();
 
-        var window = _host.Services.GetRequiredService<MainWindow>();
-        window.Show();
+            splash.SetStatus("Iniciando interfaz...");
+            var window = _host.Services.GetRequiredService<MainWindow>();
+            window.Show();
+            splash.Close();
+        }
+        catch (Exception ex)
+        {
+            splash.ShowError(ex.Message);
+        }
     }
 
     protected override async void OnExit(ExitEventArgs e)
     {
-        using (_host)
-            await _host.StopAsync(TimeSpan.FromSeconds(5));
+        if (_host is not null)
+        {
+            using (_host)
+                await _host.StopAsync(TimeSpan.FromSeconds(5));
+        }
 
         base.OnExit(e);
     }
