@@ -9,6 +9,9 @@
     }
   },
   "extensions": {
+    "queues": {
+      "messageEncoding": "none"
+    },
     "http": {
       "routePrefix": "api"
     }

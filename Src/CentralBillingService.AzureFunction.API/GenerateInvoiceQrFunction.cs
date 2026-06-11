@@ -31,7 +31,7 @@ public sealed class GenerateInvoiceQrFunction
 
         try
         {
-            var deserialized = JsonSerializer.Deserialize<GenerateInvoiceQrCommand>(message, JsonOptions.Default);
+            var deserialized = QueueMessageSerializer.Deserialize<GenerateInvoiceQrCommand>(message, JsonOptions.Default);
             command = deserialized ?? throw new JsonException("Message deserialized to null.");
         }
         catch (Exception ex)

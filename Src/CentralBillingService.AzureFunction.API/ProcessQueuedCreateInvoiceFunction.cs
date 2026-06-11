@@ -23,7 +23,7 @@ public sealed class ProcessQueuedCreateInvoiceFunction
 
         try
         {
-            var deserialized = JsonSerializer.Deserialize<CreateInvoiceCommand>(message, JsonOptions.Default);
+            var deserialized = QueueMessageSerializer.Deserialize<CreateInvoiceCommand>(message, JsonOptions.Default);
             command = deserialized ?? throw new JsonException("Message deserialized to null.");
         }
         catch (Exception ex)
