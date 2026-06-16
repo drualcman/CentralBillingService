@@ -20,6 +20,16 @@
                     }
                 </select>
             </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Año</label>
+                <select class="form-select form-select-sm" @bind="SelectedYearValue">
+                    <option value="">Todos los años</option>
+                    @foreach (var year in AvailableYears)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </div>
         </div>
     </div>
 </div>
@@ -46,7 +56,7 @@ else if (Summary is not null)
         Resumen anual
     </h5>
     <div class="row g-3 mb-5">
-        @foreach (var item in Summary.Annual)
+        @foreach (var item in Filter(Summary.Annual))
         {
             <div class="col-sm-6 col-lg-3">
                 <div class="summary-card">
@@ -60,7 +70,7 @@ else if (Summary is not null)
                 </div>
             </div>
         }
-        @if (!Summary.Annual.Any())
+        @if (!Filter(Summary.Annual).Any())
         {
             <div class="col-12 text-muted">Sin datos para el período seleccionado.</div>
         }
@@ -71,7 +81,7 @@ else if (Summary is not null)
         Por trimestre
     </h5>
     <div class="row g-3 mb-5">
-        @foreach (var item in Summary.Quarterly)
+        @foreach (var item in Filter(Summary.Quarterly))
         {
             <div class="col-sm-6 col-lg-3">
                 <div class="summary-card">
@@ -85,7 +95,7 @@ else if (Summary is not null)
                 </div>
             </div>
         }
-        @if (!Summary.Quarterly.Any())
+        @if (!Filter(Summary.Quarterly).Any())
         {
             <div class="col-12 text-muted">Sin datos para el período seleccionado.</div>
         }
@@ -96,7 +106,7 @@ else if (Summary is not null)
         Por cuatrimestre
     </h5>
     <div class="row g-3 mb-5">
-        @foreach (var item in Summary.FourMonthly)
+        @foreach (var item in Filter(Summary.FourMonthly))
         {
             <div class="col-sm-6 col-lg-4">
                 <div class="summary-card">
@@ -110,7 +120,7 @@ else if (Summary is not null)
                 </div>
             </div>
         }
-        @if (!Summary.FourMonthly.Any())
+        @if (!Filter(Summary.FourMonthly).Any())
         {
             <div class="col-12 text-muted">Sin datos para el período seleccionado.</div>
         }
@@ -123,6 +133,22 @@ else if (Summary is not null)
     private bool IsLoading = true;
     private string? ErrorMessage;
     private string SelectedBillingSource = "";
+    private int? SelectedYear;
+    private bool _yearInitialized;
+
+    private string SelectedYearValue
+    {
+        get => SelectedYear?.ToString() ?? "";
+        set => SelectedYear = int.TryParse(value, out var year) ? year : null;
+    }
+
+    private IEnumerable<int> AvailableYears =>
+        Summary?.Annual.Select(a => a.Year).Distinct().OrderByDescending(y => y)
+        ?? Enumerable.Empty<int>();
+
+    private IEnumerable<InvoicesPeriodSummaryResponse> Filter(
+        IEnumerable<InvoicesPeriodSummaryResponse> items) =>
+        SelectedYear is null ? items : items.Where(i => i.Year == SelectedYear);
 
     protected override async Task OnInitializedAsync()
     {
@@ -155,6 +181,15 @@ else if (Summary is not null)
                 : $"public/invoices/summary?billingSource={Uri.EscapeDataString(SelectedBillingSource)}";
 
             Summary = await Http.GetFromJsonAsync<InvoicesSummaryResponse>(url);
+
+            if (!_yearInitialized && Summary is not null)
+            {
+                var currentYear = DateTime.Now.Year;
+                SelectedYear = AvailableYears.Contains(currentYear)
+                    ? currentYear
+                    : AvailableYears.Cast<int?>().FirstOrDefault();
+                _yearInitialized = true;
+            }
         }
         catch (Exception ex)
         {

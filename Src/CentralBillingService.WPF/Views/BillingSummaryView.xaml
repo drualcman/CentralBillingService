@@ -51,6 +51,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="150" />
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0" Text="Resultados de facturación"
@@ -62,6 +63,14 @@
                           Style="{StaticResource MaterialDesignOutlinedComboBox}"
                           ItemsSource="{Binding AllBillingSources}"
                           SelectedItem="{Binding SelectedBillingSource}"
+                          VerticalAlignment="Center" />
+
+                <ComboBox Grid.Column="2" Margin="12,0,0,0"
+                          materialDesign:HintAssist.Hint="Año"
+                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                          ItemsSource="{Binding AvailableYears}"
+                          SelectedItem="{Binding SelectedYear}"
+                          DisplayMemberPath="Display"
                           VerticalAlignment="Center" />
             </Grid>
         </Border>
@@ -98,7 +107,7 @@
                         <TextBlock Text="RESUMEN ANUAL"
                                    FontSize="11" FontWeight="SemiBold"
                                    Foreground="#94A3B8" Margin="0,0,0,12" />
-                        <ItemsControl ItemsSource="{Binding Summary.Annual}">
+                        <ItemsControl ItemsSource="{Binding FilteredAnnual}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel />
@@ -133,7 +142,7 @@
                         <TextBlock Text="POR TRIMESTRE"
                                    FontSize="11" FontWeight="SemiBold"
                                    Foreground="#94A3B8" Margin="0,0,0,12" />
-                        <ItemsControl ItemsSource="{Binding Summary.Quarterly}">
+                        <ItemsControl ItemsSource="{Binding FilteredQuarterly}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel />
@@ -168,7 +177,7 @@
                         <TextBlock Text="POR CUATRIMESTRE"
                                    FontSize="11" FontWeight="SemiBold"
                                    Foreground="#94A3B8" Margin="0,0,0,12" />
-                        <ItemsControl ItemsSource="{Binding Summary.FourMonthly}">
+                        <ItemsControl ItemsSource="{Binding FilteredFourMonthly}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel />
