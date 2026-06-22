@@ -1,0 +1,132 @@
+@page "/contact"
+@inject HttpClient Http
+
+<PageTitle>Contacto — Portal de Verificación de Facturas</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-9 col-lg-7">
+        <div class="card shadow-sm border-0 my-4">
+            <div class="card-body p-4 p-md-5">
+
+                <h1 class="h3 fw-bold mb-1">Contacto</h1>
+                <p class="text-muted mb-4">
+                    ¿Tienes alguna duda sobre una factura o sobre este servicio? Escríbenos y te
+                    responderemos lo antes posible.
+                </p>
+
+                @if (_sent)
+                {
+                    <div class="alert alert-success" role="alert">
+                        @(_resultMessage ?? "Tu mensaje se ha enviado correctamente. Te responderemos pronto.")
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="Reset">
+                        Enviar otro mensaje
+                    </button>
+                }
+                else
+                {
+                    <EditForm Model="_form" OnValidSubmit="SendAsync">
+                        <DataAnnotationsValidator />
+
+                        @if (_error is not null)
+                        {
+                            <div class="alert alert-danger" role="alert">@_error</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Nombre</label>
+                            <InputText class="form-control" @bind-Value="_form.Name" placeholder="Tu nombre" />
+                            <ValidationMessage For="() => _form.Name" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Correo electrónico</label>
+                            <InputText class="form-control" type="email" @bind-Value="_form.Email"
+                                       placeholder="tu@email.com" />
+                            <ValidationMessage For="() => _form.Email" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Mensaje</label>
+                            <InputTextArea class="form-control" rows="5" @bind-Value="_form.Message"
+                                           placeholder="¿En qué podemos ayudarte?" />
+                            <ValidationMessage For="() => _form.Message" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-2">
+                            <BlazorBasics.Captcha.CaptchaComponent>
+                                <AfterValidate>
+                                    <button type="submit" class="btn btn-primary" disabled="@_sending">
+                                        @if (_sending)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        }
+                                        Enviar mensaje
+                                    </button>
+                                </AfterValidate>
+                            </BlazorBasics.Captcha.CaptchaComponent>
+                        </div>
+                        <p class="text-muted small mb-0">
+                            Resuelve la comprobación anti-spam para habilitar el botón de envío.
+                        </p>
+                    </EditForm>
+                }
+
+                <div class="mt-4 pt-3 border-top">
+                    <a href="/" class="btn btn-outline-secondary btn-sm">← Volver al verificador</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly ContactForm _form = new();
+    private bool _sending;
+    private bool _sent;
+    private string? _error;
+    private string? _resultMessage;
+
+    private async Task SendAsync()
+    {
+        _sending = true;
+        _error = null;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("contact", _form);
+            var result = await response.Content.ReadFromJsonAsync<ContactResult>();
+
+            if (response.IsSuccessStatusCode && result?.Success is true)
+            {
+                _resultMessage = result.Message;
+                _sent = true;
+            }
+            else
+            {
+                _error = result?.Message ?? "No se pudo enviar el mensaje. Inténtalo de nuevo más tarde.";
+            }
+        }
+        catch (Exception)
+        {
+            _error = "Se ha producido un error al contactar con el servicio. Inténtalo de nuevo más tarde.";
+        }
+        finally
+        {
+            _sending = false;
+        }
+    }
+
+    private void Reset()
+    {
+        _sent = false;
+        _error = null;
+        _resultMessage = null;
+        _form.Name = string.Empty;
+        _form.Email = string.Empty;
+        _form.Message = string.Empty;
+    }
+
+    private record ContactResult(bool Success, string Message);
+}

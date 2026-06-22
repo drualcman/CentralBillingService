@@ -32,6 +32,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<PublicListInvoicesUseCase>();
         services.AddScoped<GetInvoicesSummaryUseCase>();
         services.AddScoped<SendInvoicePdfByEmailUseCase>();
+        services.AddScoped<SendContactMessageUseCase>();
 
         return services;
     }
