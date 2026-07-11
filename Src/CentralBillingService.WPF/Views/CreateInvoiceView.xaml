@@ -123,7 +123,7 @@
                                       materialDesign:HintAssist.Hint="Método de pago *"
                                       Style="{StaticResource MaterialDesignOutlinedComboBox}"
                                       SelectedItem="{Binding PaymentMethod}"
-                                      ItemsSource="{x:Static vm:CreateInvoiceViewModel.PaymentMethods}" Width="348" />
+                                      ItemsSource="{x:Static vm:CreateInvoiceViewModel.PaymentMethods}" />
 
                             <DockPanel Margin="0,0,0,4">
                                 <Button DockPanel.Dock="Right"
@@ -134,7 +134,8 @@
                                         ToolTip="Generar una referencia única nueva">
                                     <materialDesign:PackIcon Kind="Refresh" Width="24" Height="24" />
                                 </Button>
-                                <TextBox materialDesign:HintAssist.Hint="Referencia de pago *"
+                                <TextBox Margin="0,0,0,12"
+                                    materialDesign:HintAssist.Hint="Referencia de pago *"
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          Text="{Binding PaymentReference}"
                                          ToolTip="Se genera automáticamente y debe ser única. Puedes sustituirla por una referencia de pago real (transferencia, Bizum, etc.)." />
