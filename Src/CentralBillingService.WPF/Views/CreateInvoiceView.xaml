@@ -117,16 +117,33 @@
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          Text="{Binding InvoiceNumberClientSuffix}"
                                          ToolTip="Se añade tras el número correlativo: SERIE-AÑO-0001[sufijo]" />
-                                <ComboBox Margin="0,0,6,12"
-                                          materialDesign:HintAssist.Hint="Método de pago *"
-                                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                          SelectedItem="{Binding PaymentMethod}"
-                                          ItemsSource="{x:Static vm:CreateInvoiceViewModel.PaymentMethods}" />
-                                <TextBox Margin="6,0,0,12"
-                                         materialDesign:HintAssist.Hint="Referencia de pago *"
-                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                         Text="{Binding PaymentReference}" />
                             </UniformGrid>
+
+                            <ComboBox Margin="0,0,0,12"
+                                      materialDesign:HintAssist.Hint="Método de pago *"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                      SelectedItem="{Binding PaymentMethod}"
+                                      ItemsSource="{x:Static vm:CreateInvoiceViewModel.PaymentMethods}" Width="348" />
+
+                            <DockPanel Margin="0,0,0,4">
+                                <Button DockPanel.Dock="Right"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Command="{Binding RegenerateReferenceCommand}"
+                                        ToolTip="Generar una referencia única nueva">
+                                    <materialDesign:PackIcon Kind="Refresh" Width="24" Height="24" />
+                                </Button>
+                                <TextBox materialDesign:HintAssist.Hint="Referencia de pago *"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Text="{Binding PaymentReference}"
+                                         ToolTip="Se genera automáticamente y debe ser única. Puedes sustituirla por una referencia de pago real (transferencia, Bizum, etc.)." />
+                            </DockPanel>
+                            <TextBlock Margin="0,0,0,12"
+                                       Foreground="#DC2626"
+                                       TextWrapping="Wrap"
+                                       Text="{Binding PaymentReferenceWarning}"
+                                       Visibility="{Binding PaymentReferenceWarning, Converter={StaticResource HasValue}}" />
                             <DatePicker Margin="0,0,0,12"
                                         materialDesign:HintAssist.Hint="Fecha de vencimiento (opcional)"
                                         Style="{StaticResource MaterialDesignOutlinedDatePicker}"
@@ -135,7 +152,7 @@
                                      materialDesign:HintAssist.Hint="Datos de transacción"
                                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                      Text="{Binding TransactionData}" />
-                            <Grid Margin="0,0,0,4">
+                            <Grid Margin="0,0,0,6">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -228,12 +245,12 @@
                                          materialDesign:HintAssist.Hint="Código postal *"
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          Text="{Binding RecipientPostalCode}" />
-                                <TextBox Margin="0,0,6,12"
+                            </UniformGrid>
+                            <TextBox Margin="0,0,0,12"
                                          materialDesign:HintAssist.Hint="ID externo (opcional)"
                                          ToolTip="Identificador del cliente en tu sistema (CRM, ERP…)"
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          Text="{Binding RecipientExternalId}" />
-                            </UniformGrid>
                         </StackPanel>
                     </materialDesign:Card>
 

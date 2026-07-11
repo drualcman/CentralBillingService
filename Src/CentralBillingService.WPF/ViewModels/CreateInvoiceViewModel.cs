@@ -1,3 +1,4 @@
+using CentralBillingService.Application.Interfaces;
 using CentralBillingService.Domain.Interfaces;
 using CentralBillingService.Domain.ValueObjects;
 using CentralBillingService.WPF.Services;
@@ -87,6 +88,66 @@ public partial class CreateInvoiceViewModel : ObservableObject
 
         Lines.CollectionChanged += OnLinesCollectionChanged;
         foreach (var line in Lines) line.PropertyChanged += OnLineChanged;
+
+        // Pre-fill a unique payment reference so a manual invoice is never left empty and can't
+        // collide with an existing one by accident. The user may replace it with a real reference.
+        SetGeneratedReference();
+    }
+
+    // When a change comes from typing (not our own generation), verify uniqueness as soon as the
+    // user leaves the field (the TextBox binding updates the source on LostFocus) and warn inline,
+    // showing the invoice that already uses this reference.
+    [ObservableProperty] string? paymentReferenceWarning;
+
+    private bool _suppressReferenceCheck;
+
+    [RelayCommand]
+    void RegenerateReference() => SetGeneratedReference();
+
+    private void SetGeneratedReference()
+    {
+        _suppressReferenceCheck = true;
+        PaymentReference = GenerateReference();
+        _suppressReferenceCheck = false;
+        PaymentReferenceWarning = null;
+    }
+
+    // Manual invoices often have no external payment reference, yet CBS requires it to be unique
+    // (and it is part of the VeriFactu hash). Generate a unique, human-legible default the user
+    // can keep or overwrite with a real reference (bank transfer, Bizum, etc.). Millisecond
+    // precision plus an 8-char suffix guarantees a visibly different value on every regenerate.
+    private static string GenerateReference() =>
+        $"MAN-{DateTime.Now:yyyyMMddHHmmssfff}-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+
+    partial void OnPaymentReferenceChanged(string value)
+    {
+        if (_suppressReferenceCheck) return;
+        _ = CheckReferenceDuplicateAsync(value);
+    }
+
+    private async Task CheckReferenceDuplicateAsync(string reference)
+    {
+        var trimmed = reference?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            PaymentReferenceWarning = null;
+            return;
+        }
+
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IInvoiceRepository>();
+            var duplicate = await repository.FindByPaymentReferenceAsync(BillingSource.Name, trimmed);
+            PaymentReferenceWarning = duplicate is not null
+                ? $"Ya existe una factura con esta referencia: {duplicate.Number.Value}."
+                : null;
+        }
+        catch
+        {
+            // Inline hint only — never block the form on a lookup failure; Save() re-checks anyway.
+            PaymentReferenceWarning = null;
+        }
     }
 
     private void OnLinesCollectionChanged(object? sender,
@@ -185,6 +246,20 @@ public partial class CreateInvoiceViewModel : ObservableObject
         try
         {
             using var scope = _scopeFactory.CreateScope();
+
+            // Proactive uniqueness check (WPF only): CBS would silently return the existing invoice
+            // for a duplicate payment reference — correct for automated API retries, but here it
+            // would look like a new invoice was created when it wasn't. So we check first and stop,
+            // telling the user which invoice already uses this reference.
+            var repository = scope.ServiceProvider.GetRequiredService<IInvoiceRepository>();
+            var duplicate = await repository.FindByPaymentReferenceAsync(BillingSource.Name, PaymentReference.Trim());
+            if (duplicate is not null)
+            {
+                ErrorMessage = $"Ya existe una factura con esta referencia de pago: {duplicate.Number.Value}. " +
+                               "Cambia la referencia o pulsa el botón de regenerar.";
+                return;
+            }
+
             var useCase = scope.ServiceProvider.GetRequiredService<CreateInvoiceUseCase>();
 
             await useCase.ExecuteAsync(new CreateInvoiceCommand
