@@ -13,7 +13,11 @@ public static partial class DependencyContainer
             throw new ArgumentException("CbsOptions.Uri must be configured.", nameof(options));
 
         services.AddTransient<AuthorizationHandler>();
-        services.AddHttpClient<ICbsService, CbsHttpClient>(client => client.BaseAddress = new Uri(values.Uri))
+        services.AddHttpClient<ICbsService, CbsHttpClient>(client =>
+        {
+            client.BaseAddress = new Uri(values.Uri);
+            client.Timeout = TimeSpan.FromSeconds(values.TimeoutSeconds > 0 ? values.TimeoutSeconds : 200);
+        })
             .AddHttpMessageHandler<AuthorizationHandler>();
         return services;
     }

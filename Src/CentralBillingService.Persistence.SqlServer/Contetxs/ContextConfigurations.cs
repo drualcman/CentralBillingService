@@ -76,6 +76,13 @@ internal static class ContextConfigurations
             // Indexes
             e.HasIndex(x => x.InvoiceNumber).IsUnique();
             e.HasIndex(x => new { x.BillingSource, x.Serie, x.Year, x.SequenceNumber }).IsUnique();
+
+            // Idempotency backstop: a standard invoice's payment reference is unique per billing
+            // source, so a retried/concurrent payment webhook cannot create a duplicate invoice.
+            // Filtered to InvoiceType = 'F' — rectificatives ("R") carry their own references.
+            e.HasIndex(x => new { x.BillingSource, x.PaymentReference })
+             .IsUnique()
+             .HasFilter("[InvoiceType] = 'F'");
             e.HasIndex(x => new { x.BillingSource, x.RecipientTaxIdValue });
             e.HasIndex(x => new { x.BillingSource, x.RecipientExternalId });
             e.HasIndex(x => x.IssueDate);

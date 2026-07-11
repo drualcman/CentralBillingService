@@ -12,6 +12,19 @@ namespace CentralBillingService.Application.Interfaces;
 public interface IInvoiceNumberProvider
 {
     /// <summary>
+    /// True when the number authority is the local billing database (e.g. Spain / VeriFactu).
+    /// In that case the number reservation and the invoice persistence can — and must — happen
+    /// in a single database transaction (see IInvoiceRepository.CreateAtomicAsync), so a
+    /// cancellation or failure rolls back cleanly and never leaves a reserved number without
+    /// its invoice (a gap in the correlative numbering).
+    ///
+    /// False when the number is issued by an external authority (e.g. Mexico SAT): the number
+    /// is obtained first via <see cref="ReserveNextNumberAsync"/> and the invoice is persisted
+    /// afterwards, because the local database cannot roll back a number the authority already issued.
+    /// </summary>
+    bool ReservesFromLocalDatabase { get; }
+
+    /// <summary>
     /// Atomically reserves and returns the next sequence number for the given
     /// BillingSource + Serie + Year combination.
     ///

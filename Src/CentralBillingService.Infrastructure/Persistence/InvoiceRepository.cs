@@ -25,6 +25,10 @@ public sealed class InvoiceRepository : IInvoiceRepository
         string billingSource, string invoiceNumber, CancellationToken cancellationToken = default) =>
         _read.FindByNumberAsync(billingSource, invoiceNumber, cancellationToken);
 
+    public Task<Invoice?> FindByPaymentReferenceAsync(
+        string billingSource, string paymentReference, CancellationToken cancellationToken = default) =>
+        _read.FindByPaymentReferenceAsync(billingSource, paymentReference, cancellationToken);
+
     public Task<string?> GetLastHashAsync(
         string billingSource,
         string serie,
@@ -52,6 +56,14 @@ public sealed class InvoiceRepository : IInvoiceRepository
 
     public Task SaveAsync(Invoice invoice, CancellationToken cancellationToken = default) =>
         _write.SaveAsync(invoice, cancellationToken);
+
+    public Task<Invoice> CreateAtomicAsync(
+        string billingSource,
+        string serie,
+        int year,
+        Func<int, string?, CancellationToken, Task<Invoice>> buildInvoice,
+        CancellationToken cancellationToken = default) =>
+        _write.CreateAtomicAsync(billingSource, serie, year, buildInvoice, cancellationToken);
 
     public Task SaveRectificativeAsync(
         RectificativeInvoice rectificative,

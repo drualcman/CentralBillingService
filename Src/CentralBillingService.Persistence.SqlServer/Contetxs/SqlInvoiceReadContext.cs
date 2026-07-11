@@ -54,6 +54,20 @@ internal sealed class SqlInvoiceReadContext(IOptions<DatabaseOptions> dbOptions)
         return entity is null ? null : InvoiceMapper.ToDomain(entity);
     }
 
+    public async Task<Invoice?> FindByPaymentReferenceAsync(
+        string billingSource,
+        string paymentReference,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await Invoices
+            .AsNoTracking()
+            .Where(s => s.BillingSource == billingSource && s.InvoiceType == "F")
+            .Include(x => x.Lines)
+            .FirstOrDefaultAsync(x => x.PaymentReference == paymentReference, cancellationToken);
+
+        return entity is null ? null : InvoiceMapper.ToDomain(entity);
+    }
+
     public async Task<string?> GetLastHashAsync(
         string billingSource,
         string serie,

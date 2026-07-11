@@ -16,6 +16,8 @@ public sealed class DatabaseInvoiceNumberProvider : IInvoiceNumberProvider
         _write = write;
     }
 
+    public bool ReservesFromLocalDatabase => true;
+
     public Task<int> ReserveNextNumberAsync(
         string billingSource,
         string serie,

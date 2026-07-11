@@ -63,38 +63,74 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
             var config = _registry.GetConfig(command.BillingSource, command.Secret);
             var numberProvider = _numberProviderFactory.GetFor(config);
 
+            // 2b. Idempotency: a retried payment webhook (PayPal/Stripe can redeliver,
+            //     and the queue can retry) must not create a second invoice for the same
+            //     payment. If one already exists for this BillingSource + PaymentReference,
+            //     return it instead of reserving a new number and issuing a duplicate.
+            var existing = await _repository.FindByPaymentReferenceAsync(
+                command.BillingSource, command.PaymentReference, cancellationToken);
+            if (existing is not null)
+            {
+                var existingResult = InvoiceResultMapper.ToResult(existing);
+                await _iso9001.Register(reference, this,
+                    "Invoice already exists for this payment reference — returning existing (idempotent)",
+                    existingResult);
+                return existingResult;
+            }
+
             var issueDate = command.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
-
-            // 3. Reserve the next sequence number — durable and atomic.
-            //    This also implicitly locks the BillingSource+Serie+Year slot
-            //    so concurrent requests cannot get the same number.
-            var reservedNumber = await numberProvider.ReserveNextNumberAsync(
-                command.BillingSource,
-                command.Serie,
-                issueDate.Year,
-                cancellationToken);
-
-            // 4. Get the previous hash for the chain — same key: BillingSource+Serie+Year
-            var previousHash = await _repository.GetLastHashAsync(
-                command.BillingSource,
-                command.Serie,
-                issueDate.Year,
-                cancellationToken);
-
-            // 5. Map command → domain request
             var domainRequest = MapToDomainRequest(command);
 
-            // 6. Domain service: exchange rate, hash computation, immutability rules
-            var invoice = await _domainService.ExecuteAsync(
-                domainRequest, reservedNumber, previousHash, cancellationToken);
+            // Builds the fully-hashed invoice from the reserved number and previous chain hash,
+            // and attaches the deterministic QR URL before persistence (the URL is stable
+            // regardless of when the image is generated). Runs the domain: exchange rate, hash
+            // computation, immutability rules.
+            async Task<Invoice> BuildInvoiceAsync(int reservedNumber, string? previousHash, CancellationToken ct)
+            {
+                var built = await _domainService.ExecuteAsync(domainRequest, reservedNumber, previousHash, ct);
+                built.AttachQrCode(_blobStorage.GetQrUrl(
+                    InvoiceHelper.GetQrFileName(built.BillingSource, built.Number.Value)));
+                return built;
+            }
 
-            // Compute the QR blob URL deterministically from the invoice number and attach it
-            // before persisting — the URL is stable regardless of when the image is generated.
-            invoice.AttachQrCode(_blobStorage.GetQrUrl(
-                InvoiceHelper.GetQrFileName(invoice.BillingSource, invoice.Number.Value)));
+            Invoice invoice;
+            try
+            {
+                if (numberProvider.ReservesFromLocalDatabase)
+                {
+                    // 3+7. Local numbering (Spain / VeriFactu): reserve the number AND persist the
+                    //      invoice in a single transaction. If the caller's HTTP client aborts (the
+                    //      request is cancelled), the whole thing rolls back and no number is burned —
+                    //      no gap in the correlative numbering.
+                    invoice = await _repository.CreateAtomicAsync(
+                        command.BillingSource, command.Serie, issueDate.Year, BuildInvoiceAsync, cancellationToken);
+                }
+                else
+                {
+                    // External authority issues the number first (it cannot be rolled back locally),
+                    // then we build and persist the invoice.
+                    var reservedNumber = await numberProvider.ReserveNextNumberAsync(
+                        command.BillingSource, command.Serie, issueDate.Year, cancellationToken);
+                    var previousHash = await _repository.GetLastHashAsync(
+                        command.BillingSource, command.Serie, issueDate.Year, cancellationToken);
+                    invoice = await BuildInvoiceAsync(reservedNumber, previousHash, cancellationToken);
+                    await _repository.SaveAsync(invoice, cancellationToken);
+                }
+            }
+            catch (DuplicatePaymentReferenceException)
+            {
+                // Lost a concurrent race after the idempotency pre-check: another request persisted
+                // the invoice for this payment reference first. Re-read it and return it.
+                var raced = await _repository.FindByPaymentReferenceAsync(
+                    command.BillingSource, command.PaymentReference, cancellationToken);
+                if (raced is null) throw;
 
-            // 7. Persist — the invoice is stored with its QR URL already set
-            await _repository.SaveAsync(invoice, cancellationToken);
+                var racedResult = InvoiceResultMapper.ToResult(raced);
+                await _iso9001.Register(reference, this,
+                    "Concurrent create collided on payment reference — returning existing (idempotent)",
+                    racedResult);
+                return racedResult;
+            }
 
             var result = InvoiceResultMapper.ToResult(invoice);
 
@@ -134,8 +170,8 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
         if (command.Recipient is null)
             throw new ArgumentException("Recipient data is required.", nameof(command));
 
-        // can't have 2 invoices with same payment reference
-        var payment = command.PaymentReference;
+        if (string.IsNullOrWhiteSpace(command.PaymentReference))
+            throw new ArgumentException("PaymentReference is required.", nameof(command));
     }
 
     private static CreateInvoiceRequest MapToDomainRequest(CreateInvoiceCommand cmd) => new()

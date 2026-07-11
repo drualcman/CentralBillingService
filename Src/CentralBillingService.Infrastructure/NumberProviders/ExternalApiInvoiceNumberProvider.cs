@@ -13,6 +13,8 @@ public sealed class ExternalApiInvoiceNumberProvider : IInvoiceNumberProvider
         _config = config;
     }
 
+    public bool ReservesFromLocalDatabase => false;
+
     public Task<int> ReserveNextNumberAsync(
         string billingSource, string serie, int year,
         CancellationToken cancellationToken = default) =>

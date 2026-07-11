@@ -58,7 +58,7 @@ public static class InvoiceBuilder
         BillingParty? issuer = null,
         BillingParty? recipient = null,
         List<InvoiceLine>? lines = null,
-        string paymentReference = "PAY-001",
+        string? paymentReference = null,
         ExchangeRate? exchangeRate = null,
         IInvoiceHasher? hasher = null,
         string? previousHash = null,
@@ -76,7 +76,10 @@ public static class InvoiceBuilder
             lines: lines ?? [DefaultLine()],
             appliedExchangeRate: rate,
             hasher: hasher ?? Hasher,
-            paymentReference: paymentReference,
+            // Default to a reference unique per (source, serie, number) so persisted invoices
+            // never collide on the (BillingSource, PaymentReference) unique index. Tests that
+            // care about a specific reference pass it explicitly.
+            paymentReference: paymentReference ?? $"PAY-{billingSource}-{serie}-{number}",
             previousHash: previousHash);
 
         invoice.Issue();

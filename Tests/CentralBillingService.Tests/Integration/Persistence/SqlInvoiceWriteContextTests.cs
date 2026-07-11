@@ -18,7 +18,7 @@ public sealed class SqlInvoiceWriteContextTests(CbsDatabaseFixture fixture)
         string serie, int number, string billingSource,
         string? previousHash = null,
         List<InvoiceLine>? lines = null,
-        string paymentReference = "PAY-001") =>
+        string? paymentReference = null) =>
         InvoiceBuilder.BuildIssued(
             serie: serie, number: number, billingSource: billingSource,
             hasher: RealHasher, previousHash: previousHash,
@@ -212,6 +212,90 @@ public sealed class SqlInvoiceWriteContextTests(CbsDatabaseFixture fixture)
         await using var readCtx = NewReadCtx();
         var lastHash = await readCtx.GetLastHashAsync(src, serie, 2026);
         Assert.Equal(inv1.Hash, lastHash);
+    }
+
+    // ── CreateAtomicAsync (reserve + persist in one transaction) ───────────
+
+    [Fact]
+    public async Task CreateAtomic_reserves_number_1_and_persists_in_one_call()
+    {
+        var src = UniqueSrc();
+        var serie = UniqueSerie();
+        await using var ctx = NewWriteCtx();
+
+        int reserved = 0;
+        var invoice = await ctx.CreateAtomicAsync(src, serie, 2026,
+            (number, previousHash, _) =>
+            {
+                reserved = number;
+                return Task.FromResult(BuildIssued(serie, number, src, previousHash: previousHash));
+            });
+
+        Assert.Equal(1, reserved);
+        Assert.Null(invoice.PreviousHash);
+
+        await using var readCtx = NewReadCtx();
+        var found = await readCtx.FindByNumberAsync(src, invoice.Number.Value);
+        Assert.NotNull(found);
+
+        await using var seqCtx = NewWriteCtx();
+        var seq = await seqCtx.InvoiceSequences
+            .FirstOrDefaultAsync(x => x.BillingSource == src && x.Serie == serie && x.Year == 2026);
+        Assert.NotNull(seq);
+        Assert.Equal(1, seq!.LastNumber);
+        Assert.Equal(invoice.Hash, seq.LastHash);
+    }
+
+    [Fact]
+    public async Task CreateAtomic_second_invoice_increments_and_chains_previous_hash()
+    {
+        var src = UniqueSrc();
+        var serie = UniqueSerie();
+        await using var ctx = NewWriteCtx();
+
+        var first = await ctx.CreateAtomicAsync(src, serie, 2026,
+            (n, prev, _) => Task.FromResult(BuildIssued(serie, n, src, previousHash: prev)));
+
+        int secondNumber = 0;
+        var second = await ctx.CreateAtomicAsync(src, serie, 2026,
+            (n, prev, _) => { secondNumber = n; return Task.FromResult(BuildIssued(serie, n, src, previousHash: prev)); });
+
+        Assert.Equal(2, secondNumber);
+        Assert.Null(first.PreviousHash);
+        Assert.Equal(first.Hash, second.PreviousHash);
+    }
+
+    [Fact]
+    public async Task CreateAtomic_rolls_back_and_leaves_no_gap_when_build_fails()
+    {
+        var src = UniqueSrc();
+        var serie = UniqueSerie();
+        await using var ctx = NewWriteCtx();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            ctx.CreateAtomicAsync(src, serie, 2026,
+                (_, _, _) => throw new InvalidOperationException("build failed")));
+
+        // The rolled-back attempt consumed no number: the next successful create still gets 1.
+        int reserved = 0;
+        await ctx.CreateAtomicAsync(src, serie, 2026,
+            (n, prev, _) => { reserved = n; return Task.FromResult(BuildIssued(serie, n, src, previousHash: prev)); });
+        Assert.Equal(1, reserved);
+    }
+
+    [Fact]
+    public async Task CreateAtomic_duplicate_payment_reference_throws_DuplicatePaymentReferenceException()
+    {
+        var src = UniqueSrc();
+        var serie = UniqueSerie();
+        await using var ctx = NewWriteCtx();
+
+        await ctx.CreateAtomicAsync(src, serie, 2026,
+            (n, prev, _) => Task.FromResult(BuildIssued(serie, n, src, previousHash: prev, paymentReference: "DUP-REF")));
+
+        await Assert.ThrowsAsync<DuplicatePaymentReferenceException>(() =>
+            ctx.CreateAtomicAsync(src, serie, 2026,
+                (n, prev, _) => Task.FromResult(BuildIssued(serie, n, src, previousHash: prev, paymentReference: "DUP-REF"))));
     }
 
     // ── VeriFactu hash chain ───────────────────────────────────────────────

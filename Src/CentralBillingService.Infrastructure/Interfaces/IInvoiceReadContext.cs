@@ -14,6 +14,13 @@ public interface IInvoiceReadContext
 
     Task<Invoice?> FindByNumberAsync(string billingSource, string invoiceNumber, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Finds a standard invoice ("F") by its payment reference within a billing source.
+    /// Used to make invoice creation idempotent: a retried payment webhook must not
+    /// produce a second invoice for the same payment. Returns null if none exists.
+    /// </summary>
+    Task<Invoice?> FindByPaymentReferenceAsync(string billingSource, string paymentReference, CancellationToken cancellationToken = default);
+
     Task<string?> GetLastHashAsync(
         string billingSource,
         string serie,

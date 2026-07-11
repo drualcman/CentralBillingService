@@ -1,3 +1,6 @@
+using CentralBillingService.Application.Exceptions;
+using Microsoft.Data.SqlClient;
+
 namespace CentralBillingService.Persistence.SqlServer.Contetxs;
 
 /// <summary>
@@ -88,6 +91,90 @@ internal sealed class SqlInvoiceWriteContext(IOptions<DatabaseOptions> dbOptions
             $"Could not reserve invoice number for {billingSource}/{serie}/{year} " +
             $"after {MaxRetries} attempts due to concurrent requests.");
     }
+
+    public async Task<Invoice> CreateAtomicAsync(
+        string billingSource,
+        string serie,
+        int year,
+        Func<int, string?, CancellationToken, Task<Invoice>> buildInvoice,
+        CancellationToken cancellationToken = default)
+    {
+        // EnableRetryOnFailure is configured, so a user-initiated transaction must run inside
+        // the execution strategy. The whole unit (lock → build → save → commit) is retried as
+        // one on a transient failure; buildInvoice may therefore run more than once.
+        var strategy = Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            // Each attempt starts from a clean tracker: a prior rolled-back attempt may have left
+            // the sequence row and a half-built invoice tracked, which we must not re-apply.
+            ChangeTracker.Clear();
+
+            await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
+
+            // Pessimistic, per-row lock on the sequence for this BillingSource+Serie+Year.
+            // UPDLOCK + HOLDLOCK serializes concurrent writers for the SAME key (and range-locks
+            // the key when the row does not exist yet, preventing two "first invoice" inserts),
+            // while leaving other billing sources / series / years free to run in parallel.
+            var sequence = await InvoiceSequences
+                .FromSqlInterpolated(
+                    $@"SELECT * FROM [InvoiceSequences] WITH (UPDLOCK, HOLDLOCK)
+                       WHERE [BillingSource] = {billingSource} AND [Serie] = {serie} AND [Year] = {year}")
+                .FirstOrDefaultAsync(cancellationToken);
+
+            int reservedNumber;
+            string? previousHash;
+            if (sequence is null)
+            {
+                reservedNumber = 1;
+                previousHash = null;
+                sequence = new InvoiceSequenceEntity
+                {
+                    Id = Guid.NewGuid(),
+                    BillingSource = billingSource,
+                    Serie = serie,
+                    Year = year,
+                    LastNumber = 1,
+                    LastHash = null,
+                };
+                InvoiceSequences.Add(sequence);
+            }
+            else
+            {
+                reservedNumber = sequence.LastNumber + 1;
+                previousHash = sequence.LastHash;
+                sequence.LastNumber = reservedNumber;
+            }
+
+            // Build the fully-hashed invoice from the reserved number and previous hash.
+            var invoice = await buildInvoice(reservedNumber, previousHash, cancellationToken);
+
+            // Advance the chain hash and insert the invoice — committed together with the
+            // sequence increment in a single SaveChanges within this transaction.
+            sequence.LastHash = invoice.Hash;
+            Invoices.Add(InvoiceMapper.ToEntity(invoice));
+
+            try
+            {
+                await SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (IsPaymentReferenceConflict(ex))
+            {
+                // A concurrent request persisted an invoice with the same payment reference first.
+                // Surface a typed signal so the use case can return the existing one (idempotent).
+                throw new DuplicatePaymentReferenceException(billingSource, invoice.PaymentReference, ex);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return invoice;
+        });
+    }
+
+    // SQL Server unique-index violation (2627 = constraint, 2601 = unique index) on the
+    // filtered BillingSource + PaymentReference index.
+    private static bool IsPaymentReferenceConflict(DbUpdateException ex) =>
+        ex.InnerException is SqlException sql
+        && (sql.Number == 2601 || sql.Number == 2627)
+        && sql.Message.Contains("PaymentReference", StringComparison.OrdinalIgnoreCase);
 
     public async Task SaveAsync(Invoice invoice, CancellationToken cancellationToken = default)
     {

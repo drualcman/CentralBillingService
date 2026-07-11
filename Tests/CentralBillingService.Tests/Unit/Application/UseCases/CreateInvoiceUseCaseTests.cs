@@ -121,6 +121,50 @@ public class CreateInvoiceUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_returns_existing_invoice_when_payment_reference_already_used()
+    {
+        var existing = InvoiceBuilder.BuildIssued(
+            serie: "FOTO", number: 5, billingSource: "web-fotos",
+            hasher: new FakeInvoiceHasher(), paymentReference: "PAY-001");
+        _repository
+            .FindByPaymentReferenceAsync("web-fotos", "PAY-001", Arg.Any<CancellationToken>())
+            .Returns(existing);
+
+        var result = await _useCase.ExecuteAsync(BuildCommand());
+
+        Assert.Equal(existing.Number.Value, result.InvoiceNumber);
+        // Idempotent: no new number reserved, nothing persisted, no event dispatched.
+        await _numberProvider.DidNotReceive()
+            .ReserveNextNumberAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+        await _repository.DidNotReceive().SaveAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>());
+        await _repository.DidNotReceive().CreateAtomicAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(),
+            Arg.Any<Func<int, string?, CancellationToken, Task<Invoice>>>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_uses_atomic_create_when_numbering_is_local()
+    {
+        _numberProvider.ReservesFromLocalDatabase.Returns(true);
+        _repository.CreateAtomicAsync(
+                Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(),
+                Arg.Any<Func<int, string?, CancellationToken, Task<Invoice>>>(), Arg.Any<CancellationToken>())
+            .Returns(ci => ci.Arg<Func<int, string?, CancellationToken, Task<Invoice>>>()
+                .Invoke(3, null, CancellationToken.None));
+
+        var result = await _useCase.ExecuteAsync(BuildCommand());
+
+        Assert.Equal("FOTO2026-0003", result.InvoiceNumber);
+        await _repository.Received(1).CreateAtomicAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(),
+            Arg.Any<Func<int, string?, CancellationToken, Task<Invoice>>>(), Arg.Any<CancellationToken>());
+        // Local numbering does NOT go through the separate reserve/save path.
+        await _numberProvider.DidNotReceive()
+            .ReserveNextNumberAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+        await _repository.DidNotReceive().SaveAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ExecuteAsync_empty_billing_source_throws_argument_exception()
     {
         var command = new CreateInvoiceCommand
