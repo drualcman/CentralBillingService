@@ -30,42 +30,48 @@ public class PostalAddressTests
         Assert.Equal("Cataluña", address.Province);
     }
 
+    // Address fields are NOT validated: for international B2C sales the postal address is not a
+    // required invoice field (only name + NIF, and only within Spain). Create just trims + stores.
+
     [Theory]
     [InlineData("", "Barcelona", "08001", "ES")]
     [InlineData("   ", "Barcelona", "08001", "ES")]
-    public void Create_empty_line1_throws(string line1, string city, string postal, string country)
+    public void Create_allows_empty_line1(string line1, string city, string postal, string country)
     {
-        Assert.Throws<DomainException>(() => PostalAddress.Create(line1, city, postal, country));
+        var address = PostalAddress.Create(line1, city, postal, country);
+        Assert.Equal("", address.Line1);
     }
 
     [Theory]
     [InlineData("Calle", "", "08001", "ES")]
     [InlineData("Calle", "   ", "08001", "ES")]
-    public void Create_empty_city_throws(string line1, string city, string postal, string country)
+    public void Create_allows_empty_city(string line1, string city, string postal, string country)
     {
-        Assert.Throws<DomainException>(() => PostalAddress.Create(line1, city, postal, country));
+        var address = PostalAddress.Create(line1, city, postal, country);
+        Assert.Equal("", address.City);
     }
 
     [Theory]
     [InlineData("Calle", "Barcelona", "", "ES")]
     [InlineData("Calle", "Barcelona", "   ", "ES")]
-    public void Create_empty_postal_code_throws(string line1, string city, string postal, string country)
+    public void Create_allows_empty_postal_code(string line1, string city, string postal, string country)
     {
-        Assert.Throws<DomainException>(() => PostalAddress.Create(line1, city, postal, country));
+        var address = PostalAddress.Create(line1, city, postal, country);
+        Assert.Equal("", address.PostalCode);
     }
 
     [Fact]
-    public void Create_invalid_country_code_length_throws()
+    public void Create_does_not_validate_country_code_length()
     {
-        Assert.Throws<DomainException>(() =>
-            PostalAddress.Create("Calle", "Barcelona", "08001", "ESP"));
+        var address = PostalAddress.Create("Calle", "Barcelona", "08001", "ESP");
+        Assert.Equal("ESP", address.CountryCode);
     }
 
     [Fact]
-    public void Create_empty_country_code_throws()
+    public void Create_allows_empty_country_code()
     {
-        Assert.Throws<DomainException>(() =>
-            PostalAddress.Create("Calle", "Barcelona", "08001", ""));
+        var address = PostalAddress.Create("Calle", "Barcelona", "08001", "");
+        Assert.Equal("", address.CountryCode);
     }
 
     [Fact]

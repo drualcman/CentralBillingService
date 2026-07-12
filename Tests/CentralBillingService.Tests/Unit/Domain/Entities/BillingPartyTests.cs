@@ -46,12 +46,21 @@ public class BillingPartyTests
 
     [Theory]
     [InlineData("notanemail")]
-    [InlineData("")]
-    [InlineData("   ")]
     public void Create_invalid_email_throws(string email)
     {
+        // Email is optional, but when provided it must look like an email (contain '@').
         Assert.Throws<DomainException>(() =>
             BillingParty.Create("Empresa SL", DefaultTaxId, DefaultAddress, email));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Create_allows_empty_email(string email)
+    {
+        // Email is not a required invoice field (international B2C), so an empty value is accepted.
+        var party = BillingParty.Create("Empresa SL", DefaultTaxId, DefaultAddress, email);
+        Assert.Equal("", party.Email);
     }
 
     [Fact]

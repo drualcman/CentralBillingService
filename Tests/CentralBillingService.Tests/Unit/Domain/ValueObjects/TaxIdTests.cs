@@ -50,12 +50,17 @@ public class TaxIdTests
         Assert.Equal("ES", taxId.CountryCode);
     }
 
+    // An empty identifier is not an error: it maps to NotProvided (B2C customer without a NIF,
+    // typical of international sales). The country code length is not validated in the domain.
+
     [Theory]
     [InlineData("", "ES")]
     [InlineData("   ", "ES")]
-    public void Create_empty_value_throws(string value, string country)
+    public void Create_empty_value_is_not_provided(string value, string country)
     {
-        Assert.Throws<DomainException>(() => TaxId.Create(value, country));
+        var taxId = TaxId.Create(value, country);
+        Assert.Equal(TaxIdType.NotProvided, taxId.Type);
+        Assert.True(taxId.IsNotProvided);
     }
 
     [Theory]
@@ -63,9 +68,10 @@ public class TaxIdTests
     [InlineData("12345678A", "ESP")]
     [InlineData("12345678A", "")]
     [InlineData("12345678A", "   ")]
-    public void Create_invalid_country_code_length_throws(string value, string country)
+    public void Create_does_not_validate_country_code_length(string value, string country)
     {
-        Assert.Throws<DomainException>(() => TaxId.Create(value, country));
+        var taxId = TaxId.Create(value, country);
+        Assert.Equal(country.Trim().ToUpperInvariant(), taxId.CountryCode);
     }
 
     [Fact]
