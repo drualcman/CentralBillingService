@@ -74,6 +74,7 @@ internal static class InvoiceResultMapper
         TotalOrigin = ToMoneyResult(line.TotalOrigin),
         TaxRatePercentage = line.TaxRate.Percentage,
         HasCurrencyConversion = line.HasCurrencyConversion,
+        ProductType = line.ProductType,
     };
 
     internal static MoneyResult ToMoneyResult(Money money) => new()

@@ -17,7 +17,13 @@ public sealed class NoneFiscalRegistrar : IFiscalRegistrar
     public Task<FiscalSubmissionOutcome> SubmitAsync(Invoice invoice, CancellationToken cancellationToken = default) =>
         Task.FromResult(new FiscalSubmissionOutcome(FiscalSubmissionState.Accepted, null, null, null, null));
 
-    public Task<IReadOnlyList<string>> GetPendingSubmissionsUpToAsync(Invoice invoice, CancellationToken cancellationToken = default) =>
+    public Task<FiscalStampResult> StampRectificativeAsync(RectificativeInvoice rectificative, RectifiedInvoiceAmounts rectifiedAmounts, CancellationToken cancellationToken = default) =>
+        Task.FromResult(FiscalStampResult.None);
+
+    public Task<FiscalSubmissionOutcome> SubmitRectificativeAsync(RectificativeInvoice rectificative, RectifiedInvoiceAmounts rectifiedAmounts, CancellationToken cancellationToken = default) =>
+        Task.FromResult(new FiscalSubmissionOutcome(FiscalSubmissionState.Accepted, null, null, null, null));
+
+    public Task<IReadOnlyList<string>> GetPendingSubmissionsUpToAsync(string billingSource, string invoiceNumber, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
 
     public Task<string?> GetLatestStalledSubmissionAsync(string billingSource, DateTimeOffset stampedBefore, CancellationToken cancellationToken = default) =>

@@ -29,6 +29,14 @@ public sealed class InvoiceRepository : IInvoiceRepository
         string billingSource, string paymentReference, CancellationToken cancellationToken = default) =>
         _read.FindByPaymentReferenceAsync(billingSource, paymentReference, cancellationToken);
 
+    public Task<bool> IsSerieUsedByAnotherBillingSourceAsync(
+        string issuerTaxId, string serie, int year, string billingSource, CancellationToken cancellationToken = default) =>
+        _read.IsSerieUsedByAnotherBillingSourceAsync(issuerTaxId, serie, year, billingSource, cancellationToken);
+
+    public Task<bool> IsSerieUsedByOrdinaryInvoicesAsync(
+        string billingSource, string serie, CancellationToken cancellationToken = default) =>
+        _read.IsSerieUsedByOrdinaryInvoicesAsync(billingSource, serie, cancellationToken);
+
     public Task<string?> GetLastHashAsync(
         string billingSource,
         string serie,

@@ -122,5 +122,8 @@ internal static class InvoiceReportLayout
         public const string FiscalQrCode = "FiscalQrCode";
         public const string FiscalQrLegend = "FiscalQrLegend";
         public const string CompanyLogoBesideFiscalQr = "CompanyLogoBesideFiscalQr";
+
+        // Footer — rectificative condition, rectified invoice and reason
+        public const string RectificationNotice = "RectificationNotice";
     }
 }

@@ -68,6 +68,29 @@ internal sealed class SqlInvoiceReadContext(IOptions<DatabaseOptions> dbOptions)
         return entity is null ? null : InvoiceMapper.ToDomain(entity);
     }
 
+    public Task<bool> IsSerieUsedByAnotherBillingSourceAsync(
+        string issuerTaxId,
+        string serie,
+        int year,
+        string billingSource,
+        CancellationToken cancellationToken = default) =>
+        Invoices
+            .AsNoTracking()
+            .AnyAsync(x => x.IssuerTaxIdValue == issuerTaxId
+                && x.Serie == serie
+                && x.Year == year
+                && x.BillingSource != billingSource, cancellationToken);
+
+    public Task<bool> IsSerieUsedByOrdinaryInvoicesAsync(
+        string billingSource,
+        string serie,
+        CancellationToken cancellationToken = default) =>
+        Invoices
+            .AsNoTracking()
+            .AnyAsync(x => x.BillingSource == billingSource
+                && x.Serie == serie
+                && x.InvoiceType == "F", cancellationToken);
+
     public async Task<string?> GetLastHashAsync(
         string billingSource,
         string serie,

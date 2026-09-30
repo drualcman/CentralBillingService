@@ -3,15 +3,14 @@
 public enum RectificationType
 {
     /// <summary>
-    /// Se emite con los importes completos de la factura original en negativo,
-    /// anulándola totalmente, más una nueva factura correcta si procede.
-    /// Es el método más común y el que mejor entienden los programas de contabilidad.
+    /// The rectificative carries the full corrected invoice (every line as it should read) and
+    /// replaces the original. AEAT VeriFactu type "S".
     /// </summary>
     Substitution,
 
     /// <summary>
-    /// Se emite solo por la diferencia entre lo facturado y lo correcto.
-    /// Más complejo de gestionar pero válido fiscalmente.
+    /// The rectificative carries only the signed difference: e.g. a negative line cancelling all or part
+    /// of an original line, plus new positive lines. AEAT VeriFactu type "I".
     /// </summary>
     Difference
 }

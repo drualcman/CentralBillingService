@@ -93,6 +93,58 @@ public class RectifyInvoiceServiceTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_substitution_with_edited_lines_issues_the_corrected_invoice()
+    {
+        Invoice original = InvoiceBuilder.BuildIssued(billingSource: "web-fotos");
+        RectifyInvoiceRequest request = new RectifyInvoiceRequest
+        {
+            BillingSource = "web-fotos",
+            Secret = "secret123",
+            Reason = "Precio acordado incorrecto",
+            RectificativeSerie = "REC",
+            RectificationType = RectificationType.Substitution,
+            PaymentReference = "PAY-002",
+            Lines =
+            [
+                new InvoiceLineData { Description = "Servicio corregido", Quantity = 2, UnitPrice = 40m, TaxRatePercentage = 21 },
+                new InvoiceLineData { Description = "Línea nueva", Quantity = 1, UnitPrice = 5m, TaxRatePercentage = 21 },
+            ]
+        };
+
+        RectifyInvoice result = await _service.ExecuteAsync(request, original, 1, null);
+
+        Assert.Equal(2, result.Rectificative.Lines.Count);
+        Assert.Equal("Servicio corregido", result.Rectificative.Lines[0].Description);
+        Assert.Equal(85m, result.Rectificative.TaxableBaseEur.Amount);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_difference_cancels_part_of_a_line_and_adds_a_new_one()
+    {
+        Invoice original = InvoiceBuilder.BuildIssued(billingSource: "web-fotos");
+        RectifyInvoiceRequest request = new RectifyInvoiceRequest
+        {
+            BillingSource = "web-fotos",
+            Secret = "secret123",
+            Reason = "Se devuelve una unidad y se cambia por otra",
+            RectificativeSerie = "REC",
+            RectificationType = RectificationType.Difference,
+            PaymentReference = "PAY-002",
+            Lines =
+            [
+                new InvoiceLineData { Description = "Unidad devuelta", Quantity = -1, UnitPrice = 100m, TaxRatePercentage = 21 },
+                new InvoiceLineData { Description = "Unidad sustituta", Quantity = 1, UnitPrice = 60m, TaxRatePercentage = 21 },
+            ]
+        };
+
+        RectifyInvoice result = await _service.ExecuteAsync(request, original, 1, null);
+
+        Assert.Equal(-100m, result.Rectificative.Lines[0].TaxableBaseEur.Amount);
+        Assert.Equal(-40m, result.Rectificative.TaxableBaseEur.Amount);
+        Assert.Equal(-48.40m, result.Rectificative.TotalEur.Amount);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_on_draft_original_throws()
     {
         var draft = Invoice.Create(

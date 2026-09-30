@@ -25,6 +25,8 @@ public sealed class RectifyInvoiceUseCase
     private readonly IInvoiceHasher _hasher;
     private readonly IInvoiceNumberProviderFactory _numberProviderFactory;
     private readonly IBlobStorageService _blobStorage;
+    private readonly IFiscalRegistrarFactory _fiscalRegistrarFactory;
+    private readonly IJobQueue _jobQueue;
     private readonly IIso9001 _iso9001;
 
     public RectifyInvoiceUseCase(
@@ -35,6 +37,8 @@ public sealed class RectifyInvoiceUseCase
         IInvoiceHasher hasher,
         IInvoiceNumberProviderFactory numberProviderFactory,
         IBlobStorageService blobStorage,
+        IFiscalRegistrarFactory fiscalRegistrarFactory,
+        IJobQueue jobQueue,
         IIso9001 iso9001)
     {
         _domainService = domainService;
@@ -44,6 +48,8 @@ public sealed class RectifyInvoiceUseCase
         _hasher = hasher;
         _numberProviderFactory = numberProviderFactory;
         _blobStorage = blobStorage;
+        _fiscalRegistrarFactory = fiscalRegistrarFactory;
+        _jobQueue = jobQueue;
         _iso9001 = iso9001;
     }
 
@@ -64,6 +70,10 @@ public sealed class RectifyInvoiceUseCase
 
             var issueDate = command.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
             var year = issueDate.Year;
+            await FiscalSerieGuard.EnsureSerieIsNotSharedAsync(
+                _repository, config, command.RectificativeSerie, year, cancellationToken);
+            await RectificativeSerieGuard.EnsureSerieIsNotUsedByOrdinaryInvoicesAsync(
+                _repository, command.BillingSource, command.RectificativeSerie, cancellationToken);
             var domainRequest = MapToDomainRequest(command);
 
             // Intentar cargar la factura original; si no existe, buscar entre las rectificativas
@@ -99,6 +109,9 @@ public sealed class RectifyInvoiceUseCase
                 };
 
                 await _iso9001.Register(domainResult.Rectificative.Number.Value, this, "Invoice rectified and persisted", result);
+
+                await StampAndEnqueueFiscalAsync(
+                    config, domainResult.Rectificative, RectifiedInvoiceAmounts.From(originalInvoice), cancellationToken);
 
                 await DispatchSafelyAsync(domainResult.Rectificative, cancellationToken);
 
@@ -137,6 +150,9 @@ public sealed class RectifyInvoiceUseCase
 
             await _iso9001.Register(domainResult2.Rectificative.Number.Value, this, "Invoice rectified and persisted", result2);
 
+            await StampAndEnqueueFiscalAsync(
+                config, domainResult2.Rectificative, RectifiedInvoiceAmounts.From(originalRectificative), cancellationToken);
+
             await DispatchSafelyAsync(domainResult2.Rectificative, cancellationToken);
 
             return result2;
@@ -149,6 +165,44 @@ public sealed class RectifyInvoiceUseCase
     }
 
     // ── Private ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Runs the billing source's fiscal registrar on the rectificative: stamps it (fingerprint + QR
+    /// content, persisted by a targeted update) and enqueues the async authority submission. No-op for
+    /// sources with Registrar.Type = "None". Best-effort: a failure is traced but never undoes the
+    /// already numbered and persisted rectificative; the recovery job retries stalled submissions.
+    /// </summary>
+    private async Task StampAndEnqueueFiscalAsync(
+        BillingSourceConfig config, RectificativeInvoice rectificative, RectifiedInvoiceAmounts rectifiedAmounts,
+        CancellationToken cancellationToken)
+    {
+        bool reportsToFiscalAuthority = config.Registrar is not null && !config.Registrar.IsNone;
+
+        if (reportsToFiscalAuthority)
+        {
+            try
+            {
+                IFiscalRegistrar registrar = _fiscalRegistrarFactory.GetFor(config);
+                FiscalStampResult stamp = await registrar.StampRectificativeAsync(rectificative, rectifiedAmounts, cancellationToken);
+
+                if (stamp.HasStamp)
+                {
+                    rectificative.AttachFiscalStamp(stamp.Huella!);
+                    if (!string.IsNullOrWhiteSpace(stamp.QrContent))
+                        rectificative.AttachFiscalQr(stamp.QrContent!);
+                    await _repository.UpdateFiscalStampAsync(
+                        rectificative.Id, stamp.Huella!, stamp.QrContent, cancellationToken);
+                }
+
+                await _jobQueue.EnqueueFiscalSubmissionAsync(
+                    new SubmitFiscalRecordCommand(rectificative.Number.Value, rectificative.BillingSource), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                await _iso9001.Error(rectificative.Number.Value, this, ex);
+            }
+        }
+    }
 
     private static void Validate(RectifyInvoiceCommand command)
     {
@@ -185,6 +239,7 @@ public sealed class RectifyInvoiceUseCase
             UnitPrice = l.UnitPrice,
             TaxRatePercentage = l.TaxRatePercentage,
             CurrencyCode = l.CurrencyCode,
+            ProductType = l.ProductType,
         }).ToList(),
         Notes = cmd.Notes,
         PaymentMethod = cmd.PaymentMethod,

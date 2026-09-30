@@ -319,10 +319,12 @@
                                                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                                      Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged}" />
                                             <ComboBox Grid.Column="4" Margin="0,0,8,0"
-                                                      materialDesign:HintAssist.Hint="IVA %"
+                                                      materialDesign:HintAssist.Hint="Imp. %"
                                                       Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                      IsEditable="True"
+                                                      ToolTip="Elige un tipo o escribe otro (entero de 0 a 100)"
                                                       ItemsSource="{x:Static models:InvoiceLineItem.TaxRates}"
-                                                      SelectedItem="{Binding TaxRate}" />
+                                                      Text="{Binding TaxRate, UpdateSourceTrigger=LostFocus}" />
                                             <Button Grid.Column="5"
                                                     Style="{StaticResource MaterialDesignIconButton}"
                                                     Foreground="#EF4444"

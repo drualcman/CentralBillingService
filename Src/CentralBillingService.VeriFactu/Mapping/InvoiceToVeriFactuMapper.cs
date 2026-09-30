@@ -1,44 +1,31 @@
-using CentralBillingService.Domain.ValueObjects; // ProductType
-using VeriFactu.Xml.Factu;      // Impuesto
-using VeriFactu.Xml.Factu.Alta; // TipoFactura
+using VeriFactu.Xml.Factu.Alta; // TipoRectificativa
 using VfInvoice = VeriFactu.Business.Invoice;
-using VfTaxItem = VeriFactu.Business.TaxItem;
+using VfRectificationItem = VeriFactu.Business.RectificationItem;
 using DomainInvoice = CentralBillingService.Domain.Entities.Invoice;
 
 namespace CentralBillingService.VeriFactu.Mapping;
 
 /// <summary>
-/// Maps a CBS domain <see cref="DomainInvoice"/> to the mdiago library's high-level
+/// Maps CBS domain invoices and rectificatives to the mdiago library's high-level
 /// <c>VeriFactu.Business.Invoice</c>, from which the RegistroAlta, huella and QR are derived.
-/// All fiscal inference (IVA vs IGIC, tax breakdown grouping) lives here, inside the adapter —
-/// the domain stays authority-agnostic.
+/// All fiscal inference lives inside the adapter — the domain stays authority-agnostic:
+/// the tax breakdown in <see cref="VeriFactuTaxBreakdownBuilder"/>, the record type and recipient
+/// identification in <see cref="VeriFactuRecipientIdentification"/>.
 ///
-/// Tax breakdown (desglose) classification:
-///  - Recipient in Spain ("ES") → subject and not exempt (CalificacionOperacion S1), taxed with
-///    IVA or IGIC. IVA vs IGIC is inferred from the ISSUER's postal code (Canary Islands 35xxx
-///    Las Palmas / 38xxx Santa Cruz de Tenerife → IGIC; mainland/Balearics → IVA), per the AEAT
-///    rule that SIF obligations apply in the Canaries with IVA references read as IGIC.
-///  - Recipient outside Spain → classified per line's <see cref="ProductType"/> (declared by the
-///    billing source, so the system stays product-agnostic):
-///      · Service → localized outside the Spanish VAT territory (TAI) → NOT SUBJECT (N2).
-///      · Good → exported → EXEMPT: intra-EU delivery (CausaExencion E5) or export outside the EU
-///        (CausaExencion E2).
-///    Registered in EUR with base and no quota. ALL invoices are registered, including
-///    0%/foreign-currency ones — the euro amounts already embed the exchange rate; the original
-///    currency is internal-only and not part of the AEAT record.
-///
-/// NOTE (confirm with tax advisor / AEAT test env): reverse charge (ISP, S2) and B2C nuances
-/// (e.g. EU digital services via OSS) are not modelled. Extend <see cref="BuildTaxItems"/> if needed.
+/// Rectificatives (R1, or R5 when rectifying a simplified invoice) reference the rectified invoice:
+///  - Substitution → AEAT "S": the rectificative carries the full corrected amounts and
+///    ImporteRectificacion carries the amounts the rectified invoice declared.
+///  - Difference → AEAT "I": the rectificative carries only the (signed) difference.
 /// </summary>
 public sealed class InvoiceToVeriFactuMapper
 {
     public VfInvoice Map(DomainInvoice invoice)
     {
-        var vf = new VfInvoice(invoice.Number.Value, invoice.IssueDate.ToDateTime(TimeOnly.MinValue), invoice.Issuer.TaxId.Value)
+        VfInvoice vf = new VfInvoice(invoice.Number.Value, invoice.IssueDate.ToDateTime(TimeOnly.MinValue), invoice.Issuer.TaxId.Value)
         {
             SellerName = invoice.Issuer.LegalName,
             Text = BuildDescription(invoice),
-            TaxItems = BuildTaxItems(invoice),
+            TaxItems = VeriFactuTaxBreakdownBuilder.Build(invoice.Lines, invoice.Issuer, invoice.Recipient),
         };
 
         // Invoice type (F1/F2) and recipient identification (NIF / IDOtro / none).
@@ -48,75 +35,52 @@ public sealed class InvoiceToVeriFactuMapper
         return vf;
     }
 
+    public VfInvoice MapRectificative(RectificativeInvoice rectificative, RectifiedInvoiceAmounts rectifiedAmounts, bool rectifiesSimplifiedInvoice)
+    {
+        bool isSubstitution = rectificative.RectificationType == RectificationType.Substitution;
+
+        VfInvoice vf = new VfInvoice(rectificative.Number.Value, rectificative.IssueDate.ToDateTime(TimeOnly.MinValue), rectificative.Issuer.TaxId.Value)
+        {
+            SellerName = rectificative.Issuer.LegalName,
+            Text = BuildDescription(rectificative),
+            TaxItems = VeriFactuTaxBreakdownBuilder.Build(rectificative.Lines, rectificative.Issuer, rectificative.Recipient),
+            RectificationType = isSubstitution ? TipoRectificativa.S : TipoRectificativa.I,
+            RectificationItems = new List<VfRectificationItem>
+            {
+                new VfRectificationItem
+                {
+                    InvoiceID = rectificative.OriginalInvoiceNumber.Value,
+                    InvoiceDate = rectificative.OriginalIssueDate.ToDateTime(TimeOnly.MinValue),
+                }
+            },
+        };
+
+        if (isSubstitution)
+        {
+            vf.RectificationTaxBase = VeriFactuTaxBreakdownBuilder.ToCents(rectifiedAmounts.TaxableBaseEur);
+            vf.RectificationTaxAmount = VeriFactuTaxBreakdownBuilder.ToCents(rectifiedAmounts.TaxAmountEur);
+        }
+
+        // Record type (R1/R5) and recipient identification, same rules as the rectified invoice.
+        VeriFactuRecipientIdentification.ApplyToRectificative(vf, rectificative, rectifiesSimplifiedInvoice);
+
+        return vf;
+    }
+
+    /// <summary>
+    /// Whether a rectificative rectifies a simplified invoice (→ R5), when the rectified invoice's own
+    /// record type is unknown (e.g. it was issued before VeriFactu was enabled): the invoice rule applied
+    /// to the amounts the rectified invoice declared.
+    /// </summary>
+    public static bool IsLikelyRectifyingSimplifiedInvoice(RectificativeInvoice rectificative, RectifiedInvoiceAmounts rectifiedAmounts) =>
+        !VeriFactuRecipientIdentification.HasTaxId(rectificative.Recipient)
+        && Math.Abs(rectifiedAmounts.TotalEur) <= VeriFactuRecipientIdentification.SimplifiedInvoiceMaxTotalEur;
+
     private static string BuildDescription(DomainInvoice invoice) =>
         !string.IsNullOrWhiteSpace(invoice.Notes) ? invoice.Notes!
         : invoice.Lines.Count > 0 ? invoice.Lines[0].Description
         : $"Factura {invoice.Number.Value}";
 
-    /// <summary>
-    /// Rounds to cents AND forces a two-decimal scale. The library writes amounts with the decimal's
-    /// own scale (15m → "15"), but the AEAT computes the huella with "15.00"; without this, round
-    /// amounts (e.g. 0 % tax) produce a huella the AEAT flags as incorrect (error 2000).
-    /// </summary>
-    private static decimal ToCents(decimal amount) =>
-        decimal.Round(amount, 2, MidpointRounding.AwayFromZero) + 0.00m;
-
-    private static List<VfTaxItem> BuildTaxItems(DomainInvoice invoice)
-    {
-        var tax = InferTax(invoice);
-
-        if (!IsDomestic(invoice))
-        {
-            // Foreign customer: classify per line by product type (service → not subject;
-            // good → exempt export). Group by the resulting classification; base in EUR, no quota.
-            var euCustomer = IsEuCountry(invoice.Recipient.Address.CountryCode);
-            return invoice.Lines
-                .GroupBy(l => l.ProductType)
-                .Select(g =>
-                {
-                    var baseEur = g.Sum(l => l.TaxableBaseEur.Amount);
-                    return g.Key == ProductType.Service
-                        ? new VfTaxItem // servicios: no sujeta por localización
-                        {
-                            TaxType = CalificacionOperacion.N2,
-                            Tax = tax, TaxRate = 0m, TaxBase = ToCents(baseEur), TaxAmount = ToCents(0m),
-                        }
-                        : new VfTaxItem // bienes: entrega exenta (intracomunitaria E5 / exportación E2)
-                        {
-                            TaxException = euCustomer ? CausaExencion.E5 : CausaExencion.E2,
-                            Tax = tax, TaxRate = 0m, TaxBase = ToCents(baseEur), TaxAmount = ToCents(0m),
-                        };
-                })
-                .ToList();
-        }
-
-        // Domestic: subject and not exempt (S1), grouped by tax rate (one row per rate).
-        return invoice.Lines
-            .GroupBy(l => l.TaxRate.Percentage)
-            .OrderBy(g => g.Key)
-            .Select(g => new VfTaxItem
-            {
-                TaxType = CalificacionOperacion.S1,
-                Tax = tax,
-                TaxRate = g.Key,
-                TaxBase = ToCents(g.Sum(l => l.TaxableBaseEur.Amount)),
-                TaxAmount = ToCents(g.Sum(l => l.TaxAmountEur.Amount)),
-            })
-            .ToList();
-    }
-
-    /// <summary>True when the recipient is in Spain (subject to IVA/IGIC); false for foreign customers.</summary>
-    private static bool IsDomestic(DomainInvoice invoice) => VeriFactuRecipientIdentification.IsDomestic(invoice);
-
-    // Picks the exemption cause for exported goods: intra-EU (E5) vs export outside the EU (E2).
-    private static bool IsEuCountry(string? code) => VeriFactuRecipientIdentification.IsEuCountry(code);
-
-    /// <summary>IGIC for issuers in the Canary Islands (postal code 35xxx/38xxx), IVA otherwise.</summary>
-    private static Impuesto InferTax(DomainInvoice invoice)
-    {
-        var pc = invoice.Issuer.Address.PostalCode ?? string.Empty;
-        return pc.StartsWith("35", StringComparison.Ordinal) || pc.StartsWith("38", StringComparison.Ordinal)
-            ? Impuesto.IGIC
-            : Impuesto.IVA;
-    }
+    private static string BuildDescription(RectificativeInvoice rectificative) =>
+        $"Rectificación de {rectificative.OriginalInvoiceNumber.Value}: {rectificative.RectificationReason}";
 }

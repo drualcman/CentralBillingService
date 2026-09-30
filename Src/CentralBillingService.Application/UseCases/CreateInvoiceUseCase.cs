@@ -85,6 +85,8 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
             }
 
             var issueDate = command.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+            await FiscalSerieGuard.EnsureSerieIsNotSharedAsync(
+                _repository, config, command.Serie, issueDate.Year, cancellationToken);
             var domainRequest = MapToDomainRequest(command);
 
             // Builds the fully-hashed invoice from the reserved number and previous chain hash,

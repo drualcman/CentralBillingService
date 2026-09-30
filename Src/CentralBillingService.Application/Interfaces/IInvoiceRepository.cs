@@ -35,6 +35,18 @@ public interface IInvoiceRepository
     /// BillingSource + Serie + Year combination.
     /// Returns null if no invoice exists yet for that combination.
     /// </summary>
+    /// <summary>
+    /// True when another billing source of the same issuer (NIF) already issued invoices in this
+    /// serie and year. The tax authority identifies an invoice by NIF + number, so two sources of the
+    /// same NIF sharing a serie would produce duplicate invoice numbers.
+    /// </summary>
+    Task<bool> IsSerieUsedByAnotherBillingSourceAsync(
+        string issuerTaxId, string serie, int year, string billingSource, CancellationToken cancellationToken = default);
+
+    /// <summary>True when the billing source has issued ordinary (non-rectificative) invoices in this serie.</summary>
+    Task<bool> IsSerieUsedByOrdinaryInvoicesAsync(
+        string billingSource, string serie, CancellationToken cancellationToken = default);
+
     Task<string?> GetLastHashAsync(
         string billingSource,
         string serie,

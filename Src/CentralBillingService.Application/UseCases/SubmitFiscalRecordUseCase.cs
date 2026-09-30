@@ -36,21 +36,22 @@ public sealed class SubmitFiscalRecordUseCase
         var config = _registry.GetConfig(command.BillingSource);
         var registrar = _registrarFactory.GetFor(config);
 
-        Invoice invoice = await LoadInvoiceAsync(command.BillingSource, command.InvoiceNumber, cancellationToken);
-
         // Chained authorities require records in stamping order: first report every still-pending
-        // predecessor of this invoice's chain, oldest first. A failure stops the drain and is rethrown,
-        // so the message is retried and a later record is never reported before an earlier one.
-        IReadOnlyList<string> pendingPredecessors = await registrar.GetPendingSubmissionsUpToAsync(invoice, cancellationToken);
+        // predecessor of this document's chain (invoices and rectificatives share it), oldest first.
+        // A failure stops the drain and is rethrown, so the message is retried and a later record is
+        // never reported before an earlier one.
+        IReadOnlyList<string> pendingPredecessors = await registrar.GetPendingSubmissionsUpToAsync(
+            command.BillingSource, command.InvoiceNumber, cancellationToken);
         foreach (string predecessorNumber in pendingPredecessors.Where(number => number != command.InvoiceNumber))
         {
-            Invoice predecessor = await LoadInvoiceAsync(command.BillingSource, predecessorNumber, cancellationToken);
-            FiscalSubmissionOutcome predecessorOutcome = await registrar.SubmitAsync(predecessor, cancellationToken);
+            FiscalSubmissionOutcome predecessorOutcome = await SubmitDocumentAsync(
+                registrar, command.BillingSource, predecessorNumber, cancellationToken);
             await _iso9001.Register(predecessorNumber, this,
                 $"Fiscal submission result (drained before {command.InvoiceNumber}): {predecessorOutcome.State}", predecessorOutcome);
         }
 
-        FiscalSubmissionOutcome outcome = await registrar.SubmitAsync(invoice, cancellationToken);
+        FiscalSubmissionOutcome outcome = await SubmitDocumentAsync(
+            registrar, command.BillingSource, command.InvoiceNumber, cancellationToken);
 
         await _iso9001.Register(command.InvoiceNumber, this,
             $"Fiscal submission result: {outcome.State}", outcome);
@@ -58,8 +59,49 @@ public sealed class SubmitFiscalRecordUseCase
         return outcome;
     }
 
-    private async Task<Invoice> LoadInvoiceAsync(string billingSource, string invoiceNumber, CancellationToken cancellationToken) =>
-        await _repository.FindByNumberAsync(billingSource, invoiceNumber, cancellationToken)
-            ?? throw new InvalidOperationException(
-                $"Invoice '{invoiceNumber}' not found for billing source '{billingSource}'.");
+    /// <summary>Submits the document with that number, whether it is an invoice or a rectificative.</summary>
+    private async Task<FiscalSubmissionOutcome> SubmitDocumentAsync(
+        IFiscalRegistrar registrar, string billingSource, string documentNumber, CancellationToken cancellationToken)
+    {
+        Invoice? invoice = await _repository.FindByNumberAsync(billingSource, documentNumber, cancellationToken);
+        FiscalSubmissionOutcome outcome;
+
+        if (invoice is not null)
+        {
+            outcome = await registrar.SubmitAsync(invoice, cancellationToken);
+        }
+        else
+        {
+            RectificativeInvoice rectificative = await _repository.FindRectificativeByNumberAsync(billingSource, documentNumber, cancellationToken)
+                ?? throw new InvalidOperationException(
+                    $"Invoice or rectificative '{documentNumber}' not found for billing source '{billingSource}'.");
+            RectifiedInvoiceAmounts rectifiedAmounts = await LoadRectifiedAmountsAsync(rectificative, cancellationToken);
+            outcome = await registrar.SubmitRectificativeAsync(rectificative, rectifiedAmounts, cancellationToken);
+        }
+
+        return outcome;
+    }
+
+    /// <summary>The rectified document may itself be an invoice or a rectificative.</summary>
+    private async Task<RectifiedInvoiceAmounts> LoadRectifiedAmountsAsync(
+        RectificativeInvoice rectificative, CancellationToken cancellationToken)
+    {
+        string rectifiedNumber = rectificative.OriginalInvoiceNumber.Value;
+        Invoice? rectifiedInvoice = await _repository.FindByNumberAsync(rectificative.BillingSource, rectifiedNumber, cancellationToken);
+        RectifiedInvoiceAmounts rectifiedAmounts;
+
+        if (rectifiedInvoice is not null)
+        {
+            rectifiedAmounts = RectifiedInvoiceAmounts.From(rectifiedInvoice);
+        }
+        else
+        {
+            RectificativeInvoice rectifiedRectificative = await _repository.FindRectificativeByNumberAsync(rectificative.BillingSource, rectifiedNumber, cancellationToken)
+                ?? throw new InvalidOperationException(
+                    $"Rectified document '{rectifiedNumber}' of '{rectificative.Number.Value}' not found for billing source '{rectificative.BillingSource}'.");
+            rectifiedAmounts = RectifiedInvoiceAmounts.From(rectifiedRectificative);
+        }
+
+        return rectifiedAmounts;
+    }
 }

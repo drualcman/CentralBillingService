@@ -82,7 +82,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
         BillingSource = billingSource;
 
         AvailableClients  = new ObservableCollection<ClientRecord>(masterDataStore.LoadClients());
-        AvailableSeries   = new ObservableCollection<SeriesRecord>(masterDataStore.LoadSeries());
+        AvailableSeries   = new ObservableCollection<SeriesRecord>(masterDataStore.LoadSeries().Where(s => !s.IsRectificative));
         AvailableProducts = new ObservableCollection<ProductRecord>(masterDataStore.LoadProducts());
         AvailableNotes    = new ObservableCollection<NoteRecord>(masterDataStore.LoadNotes());
 
@@ -298,6 +298,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
                     UnitPrice = l.UnitPrice,
                     TaxRatePercentage = l.TaxRate,
                     CurrencyCode = l.CurrencyCode,
+                    ProductType = l.ProductType,
                 }).ToList(),
             });
 
@@ -435,6 +436,8 @@ public partial class CreateInvoiceViewModel : ObservableObject
         { ErrorMessage = "Todas las líneas deben tener descripción."; return false; }
         if (Lines.Any(l => l.Quantity == 0))
         { ErrorMessage = "La cantidad de cada línea no puede ser cero."; return false; }
+        if (Lines.Any(l => l.TaxRate < 0 || l.TaxRate > 100))
+        { ErrorMessage = "El tipo impositivo de cada línea debe estar entre 0 y 100."; return false; }
         return true;
     }
 }

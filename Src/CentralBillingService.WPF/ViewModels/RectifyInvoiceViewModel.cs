@@ -1,55 +1,52 @@
-using CentralBillingService.Domain.Interfaces;
-using CentralBillingService.Domain.ValueObjects;
-
 namespace CentralBillingService.WPF.ViewModels;
 
+/// <summary>
+/// Rectifies an issued invoice (or rectificative) in one of two ways:
+///  - Substitution: the lines start as a copy of the original and are edited into the corrected invoice.
+///  - Difference: only the signed delta — cancel a whole line or n units of it (negative quantity)
+///    and/or add new positive lines.
+/// </summary>
 public partial class RectifyInvoiceViewModel : ObservableObject
 {
+    public const string SubstitutionType = "Substitution";
+    public const string DifferenceType = "Difference";
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly Action _onRectified;
     private readonly Action _onCancel;
 
     public BillingSourceSummary BillingSource { get; }
     public string OriginalInvoiceNumber { get; }
+    public InvoiceLinesEditor LinesEditor { get; }
 
-    // Master data
     [ObservableProperty] ObservableCollection<SeriesRecord>  availableSeries   = [];
     [ObservableProperty] ObservableCollection<ProductRecord> availableProducts = [];
     [ObservableProperty] ObservableCollection<NoteRecord>    availableNotes    = [];
     [ObservableProperty] NoteRecord? selectedNoteTemplate;
 
-    [ObservableProperty] string rectificativeSerie = "R";
+    [ObservableProperty] string rectificativeSerie = string.Empty;
     [ObservableProperty] DateTime issueDate = DateTime.Today;
     [ObservableProperty] string reason = string.Empty;
-    [ObservableProperty] string selectedRectificationType = "Substitution";
+    [ObservableProperty] string selectedRectificationType = SubstitutionType;
     [ObservableProperty] string paymentReference = string.Empty;
     [ObservableProperty] string? paymentMethod;
     [ObservableProperty] string? transactionData;
     [ObservableProperty] string? notes;
-    [ObservableProperty] ObservableCollection<InvoiceLineItem> differenceLines = [];
     [ObservableProperty] bool isSaving;
     [ObservableProperty] string? errorMessage;
     [ObservableProperty] bool success;
     [ObservableProperty] InvoiceResult? originalInvoice;
     [ObservableProperty] bool isLoadingOriginal;
 
-    public static string[] RectificationTypes { get; } = ["Substitution", "Difference"];
-    public bool IsDifference => SelectedRectificationType == "Difference";
+    public static string[] RectificationTypes { get; } = [SubstitutionType, DifferenceType];
+    public bool IsDifference => SelectedRectificationType == DifferenceType;
+    public bool IsSubstitution => !IsDifference;
 
-    partial void OnSelectedRectificationTypeChanged(string value) =>
-        OnPropertyChanged(nameof(IsDifference));
+    public string LinesSectionTitle => IsDifference
+        ? "LÍNEAS DE DIFERENCIA — cantidad negativa para anular (toda o parte de) una línea, positiva para añadir"
+        : "FACTURA CORREGIDA — edita las líneas tal y como deberían haber quedado";
 
-    // Default currency for new difference lines — derived from original invoice's primary currency
     public string DefaultCurrencyCode => OriginalInvoice?.AppliedExchangeRate.FromCurrency ?? "EUR";
-
-    // Live totals for difference lines (raw sums — actual EUR amounts computed at rectification time)
-    public decimal TotalsSubtotal => DifferenceLines.Sum(l => l.Quantity * l.UnitPrice);
-    public decimal TotalsTax => DifferenceLines.Sum(l => l.Quantity * l.UnitPrice * l.TaxRate / 100m);
-    public decimal TotalsTotal => TotalsSubtotal + TotalsTax;
-
-    public string TotalsSubtotalFormatted => $"{TotalsSubtotal:N2}";
-    public string TotalsTaxFormatted      => $"{TotalsTax:N2}";
-    public string TotalsTotalFormatted    => $"{TotalsTotal:N2}";
 
     public RectifyInvoiceViewModel(
         IServiceScopeFactory scopeFactory,
@@ -64,83 +61,55 @@ public partial class RectifyInvoiceViewModel : ObservableObject
         _onCancel = onCancel;
         BillingSource = billingSource;
         OriginalInvoiceNumber = originalInvoiceNumber;
+        LinesEditor = new InvoiceLinesEditor(scopeFactory, () => DefaultCurrencyCode);
 
-        AvailableSeries   = new ObservableCollection<SeriesRecord>(masterDataStore.LoadSeries());
+        AvailableSeries   = new ObservableCollection<SeriesRecord>(RectificativeSeriesFrom(masterDataStore.LoadSeries()));
         AvailableProducts = new ObservableCollection<ProductRecord>(masterDataStore.LoadProducts());
         AvailableNotes    = new ObservableCollection<NoteRecord>(masterDataStore.LoadNotes());
-
-        DifferenceLines.CollectionChanged += OnDiffLinesCollectionChanged;
     }
 
-    private void OnDiffLinesCollectionChanged(object? sender,
-        System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    /// <summary>Series flagged as rectificative; all of them while none is flagged yet.</summary>
+    private static List<SeriesRecord> RectificativeSeriesFrom(List<SeriesRecord> allSeries)
     {
-        if (e.NewItems is not null)
-            foreach (InvoiceLineItem item in e.NewItems)
-                item.PropertyChanged += OnDiffLineChanged;
-        if (e.OldItems is not null)
-            foreach (InvoiceLineItem item in e.OldItems)
-                item.PropertyChanged -= OnDiffLineChanged;
-        RefreshTotals();
+        List<SeriesRecord> rectificativeSeries = allSeries.Where(serie => serie.IsRectificative).ToList();
+        return rectificativeSeries.Count > 0 ? rectificativeSeries : allSeries;
     }
 
-    private void OnDiffLineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    partial void OnSelectedRectificationTypeChanged(string value)
     {
-        RefreshTotals();
-        if (sender is InvoiceLineItem line && e.PropertyName == nameof(InvoiceLineItem.CurrencyCode))
-        {
-            _ = FetchRateHintAsync(line);
-            if (line.CurrencyCode != "EUR")
-                line.TaxRate = 0;
-        }
+        OnPropertyChanged(nameof(IsDifference));
+        OnPropertyChanged(nameof(IsSubstitution));
+        OnPropertyChanged(nameof(LinesSectionTitle));
+        ResetLinesForSelectedType();
     }
 
-    private async Task FetchRateHintAsync(InvoiceLineItem line)
+    partial void OnOriginalInvoiceChanged(InvoiceResult? value) => ResetLinesForSelectedType();
+
+    private void ResetLinesForSelectedType()
     {
-        if (line.CurrencyCode == "EUR")
-        {
-            line.ExchangeRateHint = null;
-            return;
-        }
-        try
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var provider = scope.ServiceProvider.GetRequiredService<IExchangeRateProvider>();
-            var currency = Currency.From(line.CurrencyCode);
-            if (!provider.Supports(currency, Currency.EUR))
-            {
-                line.ExchangeRateHint = "Divisa no soportada por el proveedor de cambio";
-                return;
-            }
-            var rate = await provider.GetRateAsync(currency, Currency.EUR);
-            line.ExchangeRateHint = $"1 {line.CurrencyCode} ≈ {rate.Rate:G5} EUR";
-        }
-        catch
-        {
-            line.ExchangeRateHint = "Cambio no disponible (se calculará al emitir)";
-        }
+        List<InvoiceLineItem> startingLines = IsSubstitution && OriginalInvoice is not null
+            ? OriginalInvoice.Lines.Select(line => ToEditableLine(line, line.Quantity)).ToList()
+            : [];
+        LinesEditor.ReplaceLines(startingLines);
     }
 
-    partial void OnOriginalInvoiceChanged(InvoiceResult? value) => RefreshTotals();
-
-    private void RefreshTotals()
+    private static InvoiceLineItem ToEditableLine(InvoiceLineResult line, int quantity) => new InvoiceLineItem
     {
-        OnPropertyChanged(nameof(TotalsSubtotal));
-        OnPropertyChanged(nameof(TotalsTax));
-        OnPropertyChanged(nameof(TotalsTotal));
-        OnPropertyChanged(nameof(TotalsSubtotalFormatted));
-        OnPropertyChanged(nameof(TotalsTaxFormatted));
-        OnPropertyChanged(nameof(TotalsTotalFormatted));
-        OnPropertyChanged(nameof(DefaultCurrencyCode));
-    }
+        Description  = line.Description,
+        Quantity     = quantity,
+        UnitPrice    = line.UnitPriceOrigin.Amount,
+        TaxRate      = line.TaxRatePercentage,
+        CurrencyCode = line.UnitPriceOrigin.CurrencyCode,
+        ProductType  = line.ProductType,
+    };
 
     public async Task LoadAsync()
     {
         IsLoadingOriginal = true;
         try
         {
-            using var scope = _scopeFactory.CreateScope();
-            var useCase = scope.ServiceProvider.GetRequiredService<GetInvoiceUseCase>();
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            GetInvoiceUseCase useCase = scope.ServiceProvider.GetRequiredService<GetInvoiceUseCase>();
             OriginalInvoice = await useCase.ExecuteAsync(new GetInvoiceQuery
             {
                 BillingSource = BillingSource.Name,
@@ -148,9 +117,9 @@ public partial class RectifyInvoiceViewModel : ObservableObject
                 InvoiceNumber = OriginalInvoiceNumber,
             });
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            ErrorMessage = GetDeepMessage(ex);
+            ErrorMessage = RectifyInvoiceFormValidator.GetDeepMessage(exception);
         }
         finally
         {
@@ -158,112 +127,74 @@ public partial class RectifyInvoiceViewModel : ObservableObject
         }
     }
 
+    /// <summary>Difference: adds the original line negated in full; lower the quantity to cancel only part of it.</summary>
     [RelayCommand]
-    void AddLine()
-    {
-        var line = new InvoiceLineItem { CurrencyCode = DefaultCurrencyCode };
-        DifferenceLines.Add(line);
-    }
+    void CancelOriginalLine(InvoiceLineResult line) => LinesEditor.Lines.Add(ToEditableLine(line, -line.Quantity));
 
     [RelayCommand]
-    void RemoveLine(InvoiceLineItem line) => DifferenceLines.Remove(line);
-
-    [RelayCommand]
-    void CopyOriginalLine(InvoiceLineResult line)
-    {
-        DifferenceLines.Add(new InvoiceLineItem
-        {
-            Description  = line.Description,
-            Quantity     = -line.Quantity,
-            UnitPrice    = line.UnitPriceOrigin.Amount,
-            TaxRate      = line.TaxRatePercentage,
-            CurrencyCode = line.UnitPriceOrigin.CurrencyCode,
-        });
-    }
+    void RestoreOriginalLines() => ResetLinesForSelectedType();
 
     [RelayCommand]
     async Task Save()
     {
-        ErrorMessage = null;
-        if (!Validate())
-            return;
-
-        IsSaving = true;
-        try
+        ErrorMessage = RectifyInvoiceFormValidator.Validate(this);
+        if (ErrorMessage is null)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var useCase = scope.ServiceProvider.GetRequiredService<RectifyInvoiceUseCase>();
-
-            var type = SelectedRectificationType == "Substitution"
-                ? RectificationType.Substitution
-                : RectificationType.Difference;
-
-            await useCase.ExecuteAsync(new RectifyInvoiceCommand
+            IsSaving = true;
+            try
             {
-                BillingSource = BillingSource.Name,
-                Secret = BillingSource.Secret,
-                OriginalInvoiceNumber = OriginalInvoiceNumber,
-                RectificativeSerie = RectificativeSerie.Trim().ToUpperInvariant(),
-                IssueDate = DateOnly.FromDateTime(IssueDate),
-                Reason = Reason.Trim(),
-                RectificationType = type,
-                PaymentReference = PaymentReference.Trim(),
-                PaymentMethod = string.IsNullOrWhiteSpace(PaymentMethod) ? null : PaymentMethod.Trim(),
-                TransactionData = string.IsNullOrWhiteSpace(TransactionData) ? null : TransactionData.Trim(),
-                Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
-                Lines = type == RectificationType.Difference
-                    ? DifferenceLines.Select(l => new InvoiceLineDto
-                    {
-                        Description = l.Description.Trim(),
-                        Quantity = l.Quantity,
-                        UnitPrice = l.UnitPrice,
-                        TaxRatePercentage = l.TaxRate,
-                        CurrencyCode = l.CurrencyCode,
-                    }).ToList()
-                    : null,
-            });
+                using IServiceScope scope = _scopeFactory.CreateScope();
+                RectifyInvoiceUseCase useCase = scope.ServiceProvider.GetRequiredService<RectifyInvoiceUseCase>();
+                await useCase.ExecuteAsync(BuildCommand());
 
-            Success = true;
-            await Task.Delay(1200);
-            _onRectified();
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = GetDeepMessage(ex);
-        }
-        finally
-        {
-            IsSaving = false;
+                Success = true;
+                await Task.Delay(1200);
+                _onRectified();
+            }
+            catch (Exception exception)
+            {
+                ErrorMessage = RectifyInvoiceFormValidator.GetDeepMessage(exception);
+            }
+            finally
+            {
+                IsSaving = false;
+            }
         }
     }
 
+    private RectifyInvoiceCommand BuildCommand() => new RectifyInvoiceCommand
+    {
+        BillingSource = BillingSource.Name,
+        Secret = BillingSource.Secret,
+        OriginalInvoiceNumber = OriginalInvoiceNumber,
+        RectificativeSerie = RectificativeSerie.Trim().ToUpperInvariant(),
+        IssueDate = DateOnly.FromDateTime(IssueDate),
+        Reason = Reason.Trim(),
+        RectificationType = IsDifference ? RectificationType.Difference : RectificationType.Substitution,
+        PaymentReference = PaymentReference.Trim(),
+        PaymentMethod = string.IsNullOrWhiteSpace(PaymentMethod) ? null : PaymentMethod.Trim(),
+        TransactionData = string.IsNullOrWhiteSpace(TransactionData) ? null : TransactionData.Trim(),
+        Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
+        Lines = LinesEditor.Lines.Select(line => new InvoiceLineDto
+        {
+            Description = line.Description.Trim(),
+            Quantity = line.Quantity,
+            UnitPrice = line.UnitPrice,
+            TaxRatePercentage = line.TaxRate,
+            CurrencyCode = line.CurrencyCode,
+            ProductType = line.ProductType,
+        }).ToList(),
+    };
+
     partial void OnSelectedNoteTemplateChanged(NoteRecord? value)
     {
-        if (value is null) return;
-        Notes = value.Content;
-        SelectedNoteTemplate = null;
+        if (value is not null)
+        {
+            Notes = value.Content;
+            SelectedNoteTemplate = null;
+        }
     }
 
     [RelayCommand]
     void Cancel() => _onCancel();
-
-    private static string GetDeepMessage(Exception ex)
-    {
-        var inner = ex;
-        while (inner.InnerException != null) inner = inner.InnerException;
-        return inner == ex ? ex.Message : $"{ex.Message}\n→ {inner.Message}";
-    }
-
-    private bool Validate()
-    {
-        if (string.IsNullOrWhiteSpace(RectificativeSerie))
-        { ErrorMessage = "La serie rectificativa es obligatoria."; return false; }
-        if (string.IsNullOrWhiteSpace(Reason) || Reason.Trim().Length < 10)
-        { ErrorMessage = "El motivo debe tener al menos 10 caracteres."; return false; }
-        if (string.IsNullOrWhiteSpace(PaymentReference))
-        { ErrorMessage = "La referencia de pago es obligatoria."; return false; }
-        if (IsDifference && DifferenceLines.Count == 0)
-        { ErrorMessage = "Añade al menos una línea para una rectificación por diferencia."; return false; }
-        return true;
-    }
 }

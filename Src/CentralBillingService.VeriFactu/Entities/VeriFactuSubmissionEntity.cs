@@ -15,6 +15,9 @@ public sealed class VeriFactuSubmissionEntity
     /// <summary>Position of this record in its (NIF, billing source) chain: records are submitted in this order.</summary>
     public long ChainSequence { get; set; }
 
+    /// <summary>AEAT record type as stamped (F1, F2, R1, R5): part of the huella; F2/R5 mark a simplified invoice.</summary>
+    public string InvoiceType { get; set; } = string.Empty;
+
     /// <summary>Pending / Sent / Accepted / AcceptedWithErrors / Rejected (see FiscalSubmissionState).</summary>
     public int State { get; set; }
 

@@ -38,6 +38,7 @@ public sealed class VeriFactuDbContext : DbContext
             e.Property(x => x.PreviousNumSerie).HasMaxLength(60);
             e.Property(x => x.PreviousFechaExpedicion).HasMaxLength(10);
             e.Property(x => x.FechaHoraGenRegistro).HasMaxLength(30);
+            e.Property(x => x.InvoiceType).HasMaxLength(2);
             e.Property(x => x.Csv).HasMaxLength(50);
             e.Property(x => x.ErrorCode).HasMaxLength(20);
             e.Property(x => x.ErrorDescription).HasMaxLength(500);

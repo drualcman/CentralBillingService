@@ -18,7 +18,11 @@ public class FiscalRegistrarFactoryTests
             Task.FromResult(new FiscalStampResult("HUELLA", "https://aeat/qr"));
         public Task<FiscalSubmissionOutcome> SubmitAsync(Invoice invoice, CancellationToken ct = default) =>
             Task.FromResult(new FiscalSubmissionOutcome(FiscalSubmissionState.Accepted, "CSV", "HUELLA", null, null));
-        public Task<IReadOnlyList<string>> GetPendingSubmissionsUpToAsync(Invoice invoice, CancellationToken ct = default) =>
+        public Task<FiscalStampResult> StampRectificativeAsync(RectificativeInvoice rectificative, RectifiedInvoiceAmounts rectifiedAmounts, CancellationToken ct = default) =>
+            Task.FromResult(FiscalStampResult.None);
+        public Task<FiscalSubmissionOutcome> SubmitRectificativeAsync(RectificativeInvoice rectificative, RectifiedInvoiceAmounts rectifiedAmounts, CancellationToken ct = default) =>
+            Task.FromResult(new FiscalSubmissionOutcome(FiscalSubmissionState.Accepted, null, null, null, null));
+        public Task<IReadOnlyList<string>> GetPendingSubmissionsUpToAsync(string billingSource, string invoiceNumber, CancellationToken ct = default) =>
             Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
         public Task<string?> GetLatestStalledSubmissionAsync(string billingSource, DateTimeOffset stampedBefore, CancellationToken ct = default) =>
             Task.FromResult<string?>(null);

@@ -19,20 +19,31 @@ public class GenerateInvoiceReportUseCase(IInvoiceRepository repository,
         });
 
         Invoice? invoice;
+        string? rectificationNotice = null;
+        bool hasTamper = false;
         if (invoiceQuery.IsRectificative)
         {
             var rectificative = await repository.FindRectificativeByNumberAsync(command.BillingSource, invoiceQuery.InvoiceNumber, cancellationToken);
             if (rectificative is not null)
+            {
+                // A rectificative hashes its own content (rectified invoice, reason…): verify it as such,
+                // never as the ordinary invoice it is rendered through.
+                hasTamper = !rectificative.VerifyIntegrity(hasher);
+                rectificationNotice = BuildRectificationNotice(rectificative);
                 invoice = Invoice.Reconstitute(rectificative.Id, rectificative.Number, rectificative.BillingSource, rectificative.Issuer,
                     rectificative.Recipient, rectificative.IssueDate, null, rectificative.CreatedAt, rectificative.Lines.ToList(),
                     rectificative.AppliedExchangeRate, rectificative.Hash, rectificative.PreviousHash, rectificative.Status,
                     rectificative.PaymentReference, null, rectificative.Notes, rectificative.TransactionData, rectificative.PaymentMethod,
                     rectificative.QrCodeBlobUrl, rectificative.FiscalStamp, rectificative.FiscalQrContent);
+            }
             else
                 invoice = null;
         }
         else
+        {
             invoice = await repository.FindByIdAsync(command.BillingSource, invoiceQuery.Id, cancellationToken);
+            hasTamper = invoice is not null && !invoice.VerifyIntegrity(hasher);
+        }
 
         if (invoice is null)
         {
@@ -40,15 +51,17 @@ public class GenerateInvoiceReportUseCase(IInvoiceRepository repository,
             throw new NotFoundException($"No invoice found for '{command.InvoiceNumber}'.");
         }
 
-        invoice.VerifyIntegrity(hasher);
-
-        if (invoice.HasTamper)
+        if (hasTamper)
             logger.LogWarning(
                 "DATA INTEGRITY WARNING: Invoice {InvoiceNumber} has been tampered with. Report will show warning banner.",
                 command.InvoiceNumber);
 
         var logoUrl = string.IsNullOrWhiteSpace(config.Issuer.LogoUrl) ? "https://drualcman.blob.core.windows.net/content/SergiLogo.png" : config.Issuer.LogoUrl;
 
-        return await GenerateInvoiceReport.BuildAsync(invoice, logoUrl);
+        return await GenerateInvoiceReport.BuildAsync(invoice, hasTamper, logoUrl, rectificationNotice);
     }
+
+    private static string BuildRectificationNotice(RectificativeInvoice rectificative) =>
+        $"FACTURA RECTIFICATIVA de la factura {rectificative.OriginalInvoiceNumber.Value} del {rectificative.OriginalIssueDate:dd/MM/yyyy}. " +
+        $"Motivo: {rectificative.RectificationReason}";
 }

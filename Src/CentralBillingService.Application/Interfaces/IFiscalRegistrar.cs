@@ -36,12 +36,21 @@ public interface IFiscalRegistrar
     Task<FiscalSubmissionOutcome> SubmitAsync(Invoice invoice, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Invoice numbers still pending submission in the invoice's fiscal chain, up to and including
-    /// the invoice itself, in chain order. Chained authorities require records to be reported in
-    /// the order they were stamped, so the worker submits these one by one before the invoice.
+    /// Same as <see cref="StampAsync"/> for a rectificative, which references the rectified invoice.
+    /// <paramref name="rectifiedAmounts"/> are the amounts the rectified document declared.
+    /// </summary>
+    Task<FiscalStampResult> StampRectificativeAsync(RectificativeInvoice rectificative, RectifiedInvoiceAmounts rectifiedAmounts, CancellationToken cancellationToken = default);
+
+    /// <summary>Same as <see cref="SubmitAsync"/> for a rectificative.</summary>
+    Task<FiscalSubmissionOutcome> SubmitRectificativeAsync(RectificativeInvoice rectificative, RectifiedInvoiceAmounts rectifiedAmounts, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Document numbers (invoices and rectificatives) still pending submission in the fiscal chain of
+    /// the given document, up to and including it, in chain order. Chained authorities require records
+    /// to be reported in the order they were stamped, so the worker submits these one by one first.
     /// Empty when nothing is pending (or the registrar does not chain).
     /// </summary>
-    Task<IReadOnlyList<string>> GetPendingSubmissionsUpToAsync(Invoice invoice, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> GetPendingSubmissionsUpToAsync(string billingSource, string invoiceNumber, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// The most recent invoice number of the billing source still pending submission and stamped

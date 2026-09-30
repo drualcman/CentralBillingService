@@ -50,25 +50,9 @@ public sealed class RectifyInvoiceService
         var issueDate = request.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var rectNumber = InvoiceNumber.Create(request.RectificativeSerie, issueDate.Year, reservedNumber);
 
-        List<InvoiceLine> lines;
-        ExchangeRate primaryRate;
-
-        if (request.RectificationType == RectificationType.Substitution)
-        {
-            lines = BuildSubstitutionLines(originalInvoice.Lines);
-            // Keep original invoice's primary rate for the rectificative
-            var origCurrency = originalInvoice.AppliedExchangeRate.From;
-            primaryRate = origCurrency == Currency.EUR
-                ? ExchangeRate.Identity(DateTimeOffset.UtcNow)
-                : await _exchangeRateProvider.GetRateAsync(origCurrency, Currency.EUR, cancellationToken);
-        }
-        else
-        {
-            // Difference: each line may specify its own currency
-            var defaultCurrency = originalInvoice.AppliedExchangeRate.From.Code;
-            (lines, primaryRate) = await BuildDifferenceLinesAsync(
-                request.Lines!, defaultCurrency, originalInvoice.Recipient.Address.CountryCode, cancellationToken);
-        }
+        (List<InvoiceLine> lines, ExchangeRate primaryRate) = await BuildRectificativeLinesAsync(
+            request, originalInvoice.Lines, originalInvoice.AppliedExchangeRate.From,
+            originalInvoice.Recipient.Address.CountryCode, cancellationToken);
 
         var rectificative = RectificativeInvoice.Create(
             number: rectNumber,
@@ -108,23 +92,9 @@ public sealed class RectifyInvoiceService
         var issueDate = request.IssueDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var rectNumber = InvoiceNumber.Create(request.RectificativeSerie, issueDate.Year, reservedNumber);
 
-        List<InvoiceLine> lines;
-        ExchangeRate primaryRate;
-
-        if (request.RectificationType == RectificationType.Substitution)
-        {
-            lines = BuildSubstitutionLines(originalRectificative.Lines);
-            var origCurrency = originalRectificative.AppliedExchangeRate.From;
-            primaryRate = origCurrency == Currency.EUR
-                ? ExchangeRate.Identity(DateTimeOffset.UtcNow)
-                : await _exchangeRateProvider.GetRateAsync(origCurrency, Currency.EUR, cancellationToken);
-        }
-        else
-        {
-            var defaultCurrency = originalRectificative.AppliedExchangeRate.From.Code;
-            (lines, primaryRate) = await BuildDifferenceLinesAsync(
-                request.Lines!, defaultCurrency, originalRectificative.Recipient.Address.CountryCode, cancellationToken);
-        }
+        (List<InvoiceLine> lines, ExchangeRate primaryRate) = await BuildRectificativeLinesAsync(
+            request, originalRectificative.Lines, originalRectificative.AppliedExchangeRate.From,
+            originalRectificative.Recipient.Address.CountryCode, cancellationToken);
 
         var rectificative = RectificativeInvoice.CreateFromRectificative(
             number: rectNumber,
@@ -150,19 +120,50 @@ public sealed class RectifyInvoiceService
 
     // ── Private ────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Substitution: the lines the caller sends are the corrected invoice as it should have been; with
+    /// none, the rectified document's lines are copied. Difference: the caller's (signed) delta lines.
+    /// </summary>
+    private async Task<(List<InvoiceLine> Lines, ExchangeRate PrimaryRate)> BuildRectificativeLinesAsync(
+        RectifyInvoiceRequest request,
+        IReadOnlyList<InvoiceLine> rectifiedLines,
+        Currency rectifiedCurrency,
+        string recipientCountryCode,
+        CancellationToken cancellationToken)
+    {
+        bool copiesRectifiedLines = request.RectificationType == RectificationType.Substitution
+            && (request.Lines is null || request.Lines.Count == 0);
+        (List<InvoiceLine> Lines, ExchangeRate PrimaryRate) result;
+
+        if (copiesRectifiedLines)
+        {
+            ExchangeRate primaryRate = rectifiedCurrency == Currency.EUR
+                ? ExchangeRate.Identity(DateTimeOffset.UtcNow)
+                : await _exchangeRateProvider.GetRateAsync(rectifiedCurrency, Currency.EUR, cancellationToken);
+            result = (BuildSubstitutionLines(rectifiedLines), primaryRate);
+        }
+        else
+        {
+            result = await BuildDifferenceLinesAsync(
+                request.Lines!, rectifiedCurrency.Code, recipientCountryCode, cancellationToken);
+        }
+
+        return result;
+    }
+
     private static List<InvoiceLine> BuildSubstitutionLines(IReadOnlyList<InvoiceLine> lines) =>
         lines
             .Select((l, i) => l.HasCurrencyConversion
                 ? InvoiceLine.CreateWithConversion(
                     i + 1, l.Description, l.Quantity,
-                    l.UnitPriceOrigin, l.UnitPriceEur, l.TaxRate)
+                    l.UnitPriceOrigin, l.UnitPriceEur, l.TaxRate, l.ProductType)
                 : InvoiceLine.CreateInEur(
                     i + 1, l.Description, l.Quantity,
-                    l.UnitPriceEur, l.TaxRate))
+                    l.UnitPriceEur, l.TaxRate, l.ProductType))
             .ToList();
 
     /// <summary>
-    /// Difference: builds the delta lines with per-line currency support.
+    /// Builds the caller's lines (substitution or difference) with per-line currency support.
     /// Returns the lines and the primary exchange rate for the rectificative invoice.
     /// </summary>
     private async Task<(List<InvoiceLine> Lines, ExchangeRate PrimaryRate)> BuildDifferenceLinesAsync(
@@ -198,7 +199,7 @@ public sealed class RectifyInvoiceService
             {
                 line = InvoiceLine.CreateInEur(
                     i + 1, data.Description, data.Quantity,
-                    Money.Of(data.UnitPrice, Currency.EUR), taxRate);
+                    Money.Of(data.UnitPrice, Currency.EUR), taxRate, data.ProductType);
             }
             else
             {
@@ -207,7 +208,7 @@ public sealed class RectifyInvoiceService
                 var unitPriceEur = rate.Apply(unitPriceOrigin);
                 line = InvoiceLine.CreateWithConversion(
                     i + 1, data.Description, data.Quantity,
-                    unitPriceOrigin, unitPriceEur, taxRate);
+                    unitPriceOrigin, unitPriceEur, taxRate, data.ProductType);
             }
             lines.Add(line);
         }

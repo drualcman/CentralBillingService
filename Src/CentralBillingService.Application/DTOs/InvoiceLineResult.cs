@@ -13,4 +13,5 @@ public sealed class InvoiceLineResult
     public required MoneyResult TotalOrigin { get; init; }
     public required int TaxRatePercentage { get; init; }
     public required bool HasCurrencyConversion { get; init; }
+    public ProductType ProductType { get; init; } = ProductType.Service;
 }

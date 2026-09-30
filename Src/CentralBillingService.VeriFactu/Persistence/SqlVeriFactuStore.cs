@@ -63,6 +63,7 @@ public sealed class SqlVeriFactuStore : IVeriFactuStore
                 PreviousNumSerie = previous.NumSerie,
                 PreviousFechaExpedicion = previous.FechaExpedicion,
                 FechaHoraGenRegistro = computation.FechaHoraGenRegistro,
+                InvoiceType = computation.InvoiceType,
                 CreatedUtc = DateTimeOffset.UtcNow,
             });
 

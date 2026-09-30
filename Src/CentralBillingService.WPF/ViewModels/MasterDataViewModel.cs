@@ -45,6 +45,7 @@ public partial class MasterDataViewModel : ObservableObject
     [ObservableProperty] Guid   editSeriesId;
     [ObservableProperty] string editSeriesCode        = "";
     [ObservableProperty] string editSeriesDescription = "";
+    [ObservableProperty] bool   editSeriesIsRectificative;
 
     // ── Product edit fields ───────────────────────────────────────────────────
     [ObservableProperty] Guid    editProductId;
@@ -178,6 +179,7 @@ public partial class MasterDataViewModel : ObservableObject
         SelectedSeries = null;
         EditSeriesId = Guid.NewGuid();
         EditSeriesCode = EditSeriesDescription = "";
+        EditSeriesIsRectificative = false;
         IsEditingSeries = true;
     }
 
@@ -188,6 +190,7 @@ public partial class MasterDataViewModel : ObservableObject
         EditSeriesId          = SelectedSeries.Id;
         EditSeriesCode        = SelectedSeries.Code;
         EditSeriesDescription = SelectedSeries.Description ?? "";
+        EditSeriesIsRectificative = SelectedSeries.IsRectificative;
         IsEditingSeries = true;
     }
 
@@ -205,6 +208,7 @@ public partial class MasterDataViewModel : ObservableObject
 
         existing.Code        = EditSeriesCode.Trim().ToUpperInvariant();
         existing.Description = string.IsNullOrWhiteSpace(EditSeriesDescription) ? null : EditSeriesDescription.Trim();
+        existing.IsRectificative = EditSeriesIsRectificative;
 
         _store.SaveSeries(Series.ToList());
         RefreshList(Series, existing);

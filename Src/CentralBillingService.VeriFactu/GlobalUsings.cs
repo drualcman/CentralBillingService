@@ -9,3 +9,5 @@ global using CentralBillingService.VeriFactu.Persistence;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Options;
+global using CentralBillingService.Domain.Entities;
+global using CentralBillingService.Domain.ValueObjects;

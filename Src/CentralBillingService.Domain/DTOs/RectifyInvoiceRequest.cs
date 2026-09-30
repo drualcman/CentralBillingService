@@ -27,8 +27,8 @@ public sealed class RectifyInvoiceRequest
     public DateOnly? IssueDate { get; init; }
 
     /// <summary>
-    /// Solo requerido para RectificationType.Difference.
-    /// En Substitution se calculan automáticamente desde la original.
+    /// Difference: required, the signed delta lines.
+    /// Substitution: the corrected lines as the invoice should read; when omitted, the original's lines are copied.
     /// </summary>
     public IReadOnlyList<InvoiceLineData>? Lines { get; init; }
 

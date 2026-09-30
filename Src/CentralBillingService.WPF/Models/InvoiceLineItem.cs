@@ -12,6 +12,9 @@ public sealed class InvoiceLineItem : ObservableObject
     private string? _exchangeRateHint;
     private ProductRecord? _selectedProduct;
 
+    /// <summary>Kept from the original line when a rectificative copies it; new lines default to a service.</summary>
+    public ProductType ProductType { get; set; } = ProductType.Service;
+
     public string Description
     {
         get => _description;

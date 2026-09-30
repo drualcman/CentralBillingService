@@ -19,6 +19,21 @@ internal static class FooterSectionBuilder
         BuildExchangeRateRow(footer);
         BuildNotesRow(footer);
         BuildVerificationSection(footer);
+        BuildRectificationNotice(footer);
+    }
+
+    // Last block of the page, below the verification hash (ends at 69mm of the 80mm footer).
+    private static void BuildRectificationNotice(Section footer)
+    {
+        footer.AddColumn(new ColumnSetup
+        {
+            Format = new Format((double)InvoiceReportLayout.ContentWidth, 8)
+            {
+                Position = new Kernel(71, InvoiceReportLayout.Margin),
+                FontDetails = new Font(new Shade(8), new FontStyle(700))
+            },
+            DataColumn = new Item(InvoiceReportLayout.Columns.RectificationNotice)
+        });
     }
 
     private static void BuildTopSeparator(Section footer)

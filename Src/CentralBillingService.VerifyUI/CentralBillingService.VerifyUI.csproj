@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="BlazorBasics.Captcha" Version="1.2.8" />
-    <PackageReference Include="DigitalDoor.Reporting.Blazor" Version="1.18.0" />
+    <PackageReference Include="DigitalDoor.Reporting.Blazor" Version="1.18.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.12" PrivateAssets="all" />
   </ItemGroup>

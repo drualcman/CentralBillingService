@@ -41,7 +41,7 @@ public class FiscalSubmissionOrderingTests
     {
         List<string> submittedSeries = new List<string>();
         IFiscalRegistrar registrar = Substitute.For<IFiscalRegistrar>();
-        registrar.GetPendingSubmissionsUpToAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>())
+        registrar.GetPendingSubmissionsUpToAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new List<string> { "INV-1", "INV-2", "INV-3" });
         registrar.SubmitAsync(Arg.Do<Invoice>(invoice => submittedSeries.Add(invoice.Number.Serie)), Arg.Any<CancellationToken>())
             .Returns(Accepted());
@@ -54,11 +54,65 @@ public class FiscalSubmissionOrderingTests
     }
 
     [Fact]
+    public async Task A_chain_mixing_invoices_and_rectificatives_submits_each_with_its_own_kind()
+    {
+        IInvoiceRepository repository = Substitute.For<IInvoiceRepository>();
+        repository.FindByNumberAsync(FiscalSource, "INV-1", Arg.Any<CancellationToken>())
+            .Returns(InvoiceBuilder.BuildIssued(serie: "INV-1", billingSource: FiscalSource));
+        repository.FindByNumberAsync(FiscalSource, "REC-1", Arg.Any<CancellationToken>()).Returns((Invoice?)null);
+        RectificativeInvoice rectificative = InvoiceBuilder.BuildIssuedRectificative(serie: "REC", billingSource: FiscalSource);
+        repository.FindRectificativeByNumberAsync(FiscalSource, "REC-1", Arg.Any<CancellationToken>()).Returns(rectificative);
+        repository.FindByNumberAsync(FiscalSource, rectificative.OriginalInvoiceNumber.Value, Arg.Any<CancellationToken>())
+            .Returns(InvoiceBuilder.BuildIssued(billingSource: FiscalSource));
+        IFiscalRegistrar registrar = Substitute.For<IFiscalRegistrar>();
+        registrar.GetPendingSubmissionsUpToAsync(FiscalSource, "REC-1", Arg.Any<CancellationToken>())
+            .Returns(new List<string> { "INV-1", "REC-1" });
+        registrar.SubmitAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>()).Returns(Accepted());
+        registrar.SubmitRectificativeAsync(Arg.Any<RectificativeInvoice>(), Arg.Any<RectifiedInvoiceAmounts>(), Arg.Any<CancellationToken>())
+            .Returns(Accepted());
+        SubmitFiscalRecordUseCase useCase = new SubmitFiscalRecordUseCase(
+            repository, BuildRegistry(), FactoryReturning(registrar), Substitute.For<IIso9001>());
+
+        await useCase.ExecuteAsync(new SubmitFiscalRecordCommand("REC-1", FiscalSource));
+
+        Received.InOrder(() =>
+        {
+            registrar.SubmitAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>());
+            registrar.SubmitRectificativeAsync(Arg.Any<RectificativeInvoice>(), Arg.Any<RectifiedInvoiceAmounts>(), Arg.Any<CancellationToken>());
+        });
+    }
+
+    [Fact]
+    public async Task A_rectificative_is_submitted_with_the_amounts_its_rectified_invoice_declared()
+    {
+        IInvoiceRepository repository = Substitute.For<IInvoiceRepository>();
+        RectificativeInvoice rectificative = InvoiceBuilder.BuildIssuedRectificative(serie: "REC", billingSource: FiscalSource);
+        Invoice rectifiedInvoice = InvoiceBuilder.BuildIssued(
+            billingSource: FiscalSource, lines: [InvoiceBuilder.DefaultLine(1, unitPrice: 200m, taxRate: TaxRate.General)]);
+        repository.FindRectificativeByNumberAsync(FiscalSource, "REC-1", Arg.Any<CancellationToken>()).Returns(rectificative);
+        repository.FindByNumberAsync(FiscalSource, rectificative.OriginalInvoiceNumber.Value, Arg.Any<CancellationToken>())
+            .Returns(rectifiedInvoice);
+        IFiscalRegistrar registrar = Substitute.For<IFiscalRegistrar>();
+        registrar.GetPendingSubmissionsUpToAsync(FiscalSource, "REC-1", Arg.Any<CancellationToken>()).Returns(new List<string>());
+        registrar.SubmitRectificativeAsync(Arg.Any<RectificativeInvoice>(), Arg.Any<RectifiedInvoiceAmounts>(), Arg.Any<CancellationToken>())
+            .Returns(Accepted());
+        SubmitFiscalRecordUseCase useCase = new SubmitFiscalRecordUseCase(
+            repository, BuildRegistry(), FactoryReturning(registrar), Substitute.For<IIso9001>());
+
+        await useCase.ExecuteAsync(new SubmitFiscalRecordCommand("REC-1", FiscalSource));
+
+        await registrar.Received(1).SubmitRectificativeAsync(
+            rectificative,
+            Arg.Is<RectifiedInvoiceAmounts>(amounts => amounts.TaxableBaseEur == 200m && amounts.TaxAmountEur == 42m),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task A_failing_predecessor_stops_the_drain_so_later_records_are_not_sent_first()
     {
         List<string> submittedSeries = new List<string>();
         IFiscalRegistrar registrar = Substitute.For<IFiscalRegistrar>();
-        registrar.GetPendingSubmissionsUpToAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>())
+        registrar.GetPendingSubmissionsUpToAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new List<string> { "INV-1", "INV-2" });
         registrar.SubmitAsync(Arg.Do<Invoice>(invoice => submittedSeries.Add(invoice.Number.Serie)), Arg.Any<CancellationToken>())
             .ThrowsAsync(new TimeoutException("AEAT unavailable"));

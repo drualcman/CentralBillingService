@@ -4,21 +4,23 @@ internal static class InvoiceDataBuilder
 {
     private static readonly CultureInfo EsEs = new("es-ES");
 
-    public static async Task<List<ColumnData>> BuildAsync(Invoice invoice, string logoUrl)
+    public static async Task<List<ColumnData>> BuildAsync(Invoice invoice, bool hasTamper, string logoUrl, string? rectificationNotice = null)
     {
         var data = new List<ColumnData>();
-        await AddHeaderDataAsync(data, invoice, logoUrl);
+        await AddHeaderDataAsync(data, invoice, hasTamper, logoUrl);
         AddBodyData(data, invoice);
         await AddFooterDataAsync(data, invoice);
+        if (!string.IsNullOrWhiteSpace(rectificationNotice))
+            data.Add(CreateData(SectionType.Footer, InvoiceReportLayout.Columns.RectificationNotice, rectificationNotice));
         return data;
     }
 
-    private static async Task AddHeaderDataAsync(List<ColumnData> data, Invoice invoice, string logoUrl)
+    private static async Task AddHeaderDataAsync(List<ColumnData> data, Invoice invoice, bool hasTamper, string logoUrl)
     {
         var issuer = invoice.Issuer;
         var recipient = invoice.Recipient;
 
-        if (invoice.HasTamper)
+        if (hasTamper)
             data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.TamperWarning,
                 "FACTURA MODIFICADA — La integridad de este documento ha sido comprometida"));
 

@@ -21,6 +21,12 @@ public interface IInvoiceReadContext
     /// </summary>
     Task<Invoice?> FindByPaymentReferenceAsync(string billingSource, string paymentReference, CancellationToken cancellationToken = default);
 
+    Task<bool> IsSerieUsedByAnotherBillingSourceAsync(
+        string issuerTaxId, string serie, int year, string billingSource, CancellationToken cancellationToken = default);
+
+    Task<bool> IsSerieUsedByOrdinaryInvoicesAsync(
+        string billingSource, string serie, CancellationToken cancellationToken = default);
+
     Task<string?> GetLastHashAsync(
         string billingSource,
         string serie,

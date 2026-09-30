@@ -90,7 +90,8 @@
                                           materialDesign:HintAssist.Hint="Serie rectificativa *"
                                           Style="{StaticResource MaterialDesignOutlinedComboBox}"
                                           IsEditable="True"
-                                          Text="{Binding RectificativeSerie}"
+                                          ToolTip="Serie propia de rectificativas (p.ej. RSUA). Elígela del maestro o escríbela."
+                                          Text="{Binding RectificativeSerie, UpdateSourceTrigger=PropertyChanged}"
                                           ItemsSource="{Binding AvailableSeries}"
                                           DisplayMemberPath="Code" />
                                 <DatePicker Margin="6,0,0,12"
@@ -260,18 +261,18 @@
                                                        HorizontalAlignment="Center" />
                                             <Button Grid.Column="4"
                                                     Style="{StaticResource MaterialDesignFlatButton}"
-                                                    Command="{Binding DataContext.CopyOriginalLineCommand,
+                                                    Command="{Binding DataContext.CancelOriginalLineCommand,
                                                         RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     Visibility="{Binding DataContext.IsDifference,
                                                         RelativeSource={RelativeSource AncestorType=UserControl},
                                                         Converter={StaticResource BoolToVis}}"
-                                                    ToolTip="Copiar como línea de diferencia (cantidad negada)">
+                                                    ToolTip="Añade la línea en negativo. Baja la cantidad (p.ej. -1 de 3) para anular solo una parte.">
                                                 <StackPanel Orientation="Horizontal">
                                                     <materialDesign:PackIcon Kind="ArrowDownBold"
                                                                              Width="14" Height="14"
                                                                              Margin="0,0,4,0" />
-                                                    <TextBlock Text="Rectificar" FontSize="11" />
+                                                    <TextBlock Text="Anular" FontSize="11" />
                                                 </StackPanel>
                                             </Button>
                                         </Grid>
@@ -280,18 +281,33 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!-- Difference lines section (only when Difference mode) -->
+                        <!-- Rectificative lines: corrected invoice (substitution) or signed delta (difference) -->
                         <Border Background="#F0F9FF" CornerRadius="8" Padding="16"
-                                Margin="0,20,0,0"
-                                Visibility="{Binding IsDifference, Converter={StaticResource BoolToVis}}">
+                                Margin="0,20,0,0">
                             <StackPanel>
                                 <Grid Margin="0,0,0,12">
-                                    <TextBlock Text="LÍNEAS DE DIFERENCIA"
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding LinesSectionTitle}"
                                                Style="{StaticResource SectionHeader}"
-                                               VerticalAlignment="Center" Margin="0" />
-                                    <Button HorizontalAlignment="Right"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center" Margin="0,0,12,0" />
+                                    <Button Grid.Column="1"
                                             Style="{StaticResource MaterialDesignFlatButton}"
-                                            Command="{Binding AddLineCommand}">
+                                            Command="{Binding RestoreOriginalLinesCommand}"
+                                            Visibility="{Binding IsSubstitution, Converter={StaticResource BoolToVis}}"
+                                            ToolTip="Vuelve a cargar las líneas de la factura original">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Restore" Margin="0,0,4,0" />
+                                            <TextBlock Text="Restaurar originales" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Grid.Column="2"
+                                            Style="{StaticResource MaterialDesignFlatButton}"
+                                            Command="{Binding LinesEditor.AddLineCommand}">
                                         <StackPanel Orientation="Horizontal">
                                             <materialDesign:PackIcon Kind="Plus" Margin="0,0,4,0" />
                                             <TextBlock Text="Añadir línea" />
@@ -299,7 +315,7 @@
                                     </Button>
                                 </Grid>
 
-                                <ItemsControl ItemsSource="{Binding DifferenceLines}">
+                                <ItemsControl ItemsSource="{Binding LinesEditor.Lines}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type models:InvoiceLineItem}">
                                             <Border BorderBrush="#BFDBFE" BorderThickness="0,0,0,1"
@@ -332,20 +348,23 @@
                                                         <TextBox Grid.Column="2" Margin="0,0,8,0"
                                                                  materialDesign:HintAssist.Hint="Cant."
                                                                  Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                                                 Text="{Binding Quantity}" />
+                                                                 ToolTip="Negativa para anular toda o parte de una línea"
+                                                                 Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" />
                                                         <TextBox Grid.Column="3" Margin="0,0,8,0"
                                                                  materialDesign:HintAssist.Hint="Precio unit."
                                                                  Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                                                 Text="{Binding UnitPrice}" />
+                                                                 Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged}" />
                                                         <ComboBox Grid.Column="4" Margin="0,0,8,0"
-                                                                  materialDesign:HintAssist.Hint="IVA %"
+                                                                  materialDesign:HintAssist.Hint="Imp. %"
                                                                   Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                                  IsEditable="True"
+                                                                  ToolTip="Elige un tipo o escribe otro (entero de 0 a 100)"
                                                                   ItemsSource="{x:Static models:InvoiceLineItem.TaxRates}"
-                                                                  SelectedItem="{Binding TaxRate}" />
+                                                                  Text="{Binding TaxRate, UpdateSourceTrigger=LostFocus}" />
                                                         <Button Grid.Column="5"
                                                                 Style="{StaticResource MaterialDesignIconButton}"
                                                                 Foreground="#EF4444"
-                                                                Command="{Binding DataContext.RemoveLineCommand,
+                                                                Command="{Binding DataContext.LinesEditor.RemoveLineCommand,
                                                                           RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                 CommandParameter="{Binding}"
                                                                 VerticalAlignment="Center">
@@ -380,22 +399,21 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Live totals — only shown for Difference type (raw sums, actual EUR amounts computed at issue time) -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center"
-                            Visibility="{Binding IsDifference, Converter={StaticResource BoolToVis}}">
+                <!-- Live totals of the rectificative (raw sums, actual EUR amounts computed at issue time) -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <StackPanel Margin="0,0,28,0">
                         <TextBlock Text="BASE (est.)" FontSize="10" Foreground="#94A3B8" />
-                        <TextBlock Text="{Binding TotalsSubtotalFormatted}"
+                        <TextBlock Text="{Binding LinesEditor.TotalsSubtotalFormatted}"
                                    FontSize="14" FontWeight="SemiBold" Foreground="#64748B" />
                     </StackPanel>
                     <StackPanel Margin="0,0,28,0">
-                        <TextBlock Text="IVA (est.)" FontSize="10" Foreground="#94A3B8" />
-                        <TextBlock Text="{Binding TotalsTaxFormatted}"
+                        <TextBlock Text="IMPUESTO (est.)" FontSize="10" Foreground="#94A3B8" />
+                        <TextBlock Text="{Binding LinesEditor.TotalsTaxFormatted}"
                                    FontSize="14" FontWeight="SemiBold" Foreground="#64748B" />
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="TOTAL (est.)" FontSize="10" Foreground="#94A3B8" />
-                        <TextBlock Text="{Binding TotalsTotalFormatted}"
+                        <TextBlock Text="{Binding LinesEditor.TotalsTotalFormatted}"
                                    FontSize="18" FontWeight="Bold" Foreground="#1E293B" />
                     </StackPanel>
                 </StackPanel>
