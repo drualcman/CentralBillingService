@@ -12,6 +12,9 @@ public sealed class VeriFactuSubmissionEntity
     public string InvoiceNumber { get; set; } = string.Empty;
     public string IssuerNif { get; set; } = string.Empty;
 
+    /// <summary>Position of this record in its (NIF, billing source) chain: records are submitted in this order.</summary>
+    public long ChainSequence { get; set; }
+
     /// <summary>Pending / Sent / Accepted / AcceptedWithErrors / Rejected (see FiscalSubmissionState).</summary>
     public int State { get; set; }
 

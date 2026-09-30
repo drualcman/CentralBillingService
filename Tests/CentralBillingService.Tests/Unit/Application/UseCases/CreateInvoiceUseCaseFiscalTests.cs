@@ -21,6 +21,10 @@ public class CreateInvoiceUseCaseFiscalTests
         }
         public Task<FiscalSubmissionOutcome> SubmitAsync(Invoice invoice, CancellationToken ct = default) =>
             Task.FromResult(new FiscalSubmissionOutcome(FiscalSubmissionState.Accepted, "CSV", "AEAT-HUELLA", null, null));
+        public Task<IReadOnlyList<string>> GetPendingSubmissionsUpToAsync(Invoice invoice, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+        public Task<string?> GetLatestStalledSubmissionAsync(string billingSource, DateTimeOffset stampedBefore, CancellationToken ct = default) =>
+            Task.FromResult<string?>(null);
     }
 
     private static (CreateInvoiceUseCase useCase, IInvoiceRepository repo, IJobQueue queue, StubRegistrar registrar)

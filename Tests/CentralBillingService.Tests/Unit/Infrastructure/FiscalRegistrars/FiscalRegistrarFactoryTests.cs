@@ -18,6 +18,10 @@ public class FiscalRegistrarFactoryTests
             Task.FromResult(new FiscalStampResult("HUELLA", "https://aeat/qr"));
         public Task<FiscalSubmissionOutcome> SubmitAsync(Invoice invoice, CancellationToken ct = default) =>
             Task.FromResult(new FiscalSubmissionOutcome(FiscalSubmissionState.Accepted, "CSV", "HUELLA", null, null));
+        public Task<IReadOnlyList<string>> GetPendingSubmissionsUpToAsync(Invoice invoice, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+        public Task<string?> GetLatestStalledSubmissionAsync(string billingSource, DateTimeOffset stampedBefore, CancellationToken ct = default) =>
+            Task.FromResult<string?>(null);
     }
 
     /// <summary>Records the config it was built with, so tests can assert per-source binding.</summary>

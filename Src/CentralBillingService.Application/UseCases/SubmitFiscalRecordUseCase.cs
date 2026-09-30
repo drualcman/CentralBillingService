@@ -36,16 +36,30 @@ public sealed class SubmitFiscalRecordUseCase
         var config = _registry.GetConfig(command.BillingSource);
         var registrar = _registrarFactory.GetFor(config);
 
-        var invoice = await _repository.FindByNumberAsync(
-                command.BillingSource, command.InvoiceNumber, cancellationToken)
-            ?? throw new InvalidOperationException(
-                $"Invoice '{command.InvoiceNumber}' not found for billing source '{command.BillingSource}'.");
+        Invoice invoice = await LoadInvoiceAsync(command.BillingSource, command.InvoiceNumber, cancellationToken);
 
-        var outcome = await registrar.SubmitAsync(invoice, cancellationToken);
+        // Chained authorities require records in stamping order: first report every still-pending
+        // predecessor of this invoice's chain, oldest first. A failure stops the drain and is rethrown,
+        // so the message is retried and a later record is never reported before an earlier one.
+        IReadOnlyList<string> pendingPredecessors = await registrar.GetPendingSubmissionsUpToAsync(invoice, cancellationToken);
+        foreach (string predecessorNumber in pendingPredecessors.Where(number => number != command.InvoiceNumber))
+        {
+            Invoice predecessor = await LoadInvoiceAsync(command.BillingSource, predecessorNumber, cancellationToken);
+            FiscalSubmissionOutcome predecessorOutcome = await registrar.SubmitAsync(predecessor, cancellationToken);
+            await _iso9001.Register(predecessorNumber, this,
+                $"Fiscal submission result (drained before {command.InvoiceNumber}): {predecessorOutcome.State}", predecessorOutcome);
+        }
+
+        FiscalSubmissionOutcome outcome = await registrar.SubmitAsync(invoice, cancellationToken);
 
         await _iso9001.Register(command.InvoiceNumber, this,
             $"Fiscal submission result: {outcome.State}", outcome);
 
         return outcome;
     }
+
+    private async Task<Invoice> LoadInvoiceAsync(string billingSource, string invoiceNumber, CancellationToken cancellationToken) =>
+        await _repository.FindByNumberAsync(billingSource, invoiceNumber, cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"Invoice '{invoiceNumber}' not found for billing source '{billingSource}'.");
 }

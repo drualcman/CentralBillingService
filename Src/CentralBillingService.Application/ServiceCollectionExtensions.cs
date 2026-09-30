@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
@@ -27,6 +29,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<CheckInvoiceIntegrityUseCase>();
         services.AddScoped<ProcessQueuedCreateInvoiceUseCase>();
         services.AddScoped<SubmitFiscalRecordUseCase>();
+        services.AddScoped<RetryStalledFiscalSubmissionsUseCase>();
+        services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<GenerateInvoiceQrUseCase>();
         services.AddScoped<GenerateInvoiceReportUseCase>();
         services.AddScoped<GenerateInvoiceUseCase>();

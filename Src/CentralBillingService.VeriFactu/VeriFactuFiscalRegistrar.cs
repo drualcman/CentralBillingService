@@ -105,13 +105,26 @@ public sealed class VeriFactuFiscalRegistrar : IFiscalRegistrar
         return new StampComputation(computedHuella, fechaHoraGen);
     }
 
-    public async Task<FiscalSubmissionOutcome> SubmitAsync(DomainInvoice invoice, CancellationToken cancellationToken = default)
+    public Task<FiscalSubmissionOutcome> SubmitAsync(DomainInvoice invoice, CancellationToken cancellationToken = default) =>
+        _store.RunExclusiveOnChainAsync(
+            invoice.Issuer.TaxId.Value, invoice.BillingSource,
+            () => SubmitHoldingChainLockAsync(invoice, cancellationToken),
+            cancellationToken);
+
+    private async Task<FiscalSubmissionOutcome> SubmitHoldingChainLockAsync(DomainInvoice invoice, CancellationToken cancellationToken)
     {
         var submission = await _store.GetSubmissionAsync(invoice.BillingSource, invoice.Number.Value, cancellationToken);
 
         if (submission is null)
             throw new InvalidOperationException(
                 $"No stamped submission found for invoice '{invoice.Number.Value}' — StampAsync must run before SubmitAsync.");
+
+        // Idempotent: a redelivered message (or a drain that already covered this record) must not
+        // re-send a record the AEAT has already answered.
+        if (submission.State != (int)FiscalSubmissionState.Pending)
+            return new FiscalSubmissionOutcome(
+                (FiscalSubmissionState)submission.State, submission.Csv, submission.Huella,
+                submission.ErrorCode, submission.ErrorDescription);
 
         FiscalSubmissionOutcome outcome;
         try
@@ -145,7 +158,7 @@ public sealed class VeriFactuFiscalRegistrar : IFiscalRegistrar
         }
 
         submission.State = (int)outcome.State;
-        submission.Csv = outcome.Csv;
+        submission.Csv = outcome.Csv ?? submission.Csv; // a duplicate (3000) answer carries no CSV: keep the original
         submission.ErrorCode = outcome.ErrorCode;
         submission.ErrorDescription = outcome.ErrorDescription;
         submission.SentUtc = DateTimeOffset.UtcNow;
@@ -154,6 +167,19 @@ public sealed class VeriFactuFiscalRegistrar : IFiscalRegistrar
 
         return outcome;
     }
+
+    public async Task<IReadOnlyList<string>> GetPendingSubmissionsUpToAsync(DomainInvoice invoice, CancellationToken cancellationToken = default)
+    {
+        VeriFactuSubmissionEntity? submission = await _store.GetSubmissionAsync(invoice.BillingSource, invoice.Number.Value, cancellationToken);
+        IReadOnlyList<string> pendingInvoiceNumbers = submission is null
+            ? Array.Empty<string>()
+            : await _store.GetPendingInChainUpToAsync(submission.IssuerNif, submission.BillingSource, submission.ChainSequence, cancellationToken);
+
+        return pendingInvoiceNumbers;
+    }
+
+    public Task<string?> GetLatestStalledSubmissionAsync(string billingSource, DateTimeOffset stampedBefore, CancellationToken cancellationToken = default) =>
+        _store.GetLatestPendingStampedBeforeAsync(billingSource, stampedBefore, cancellationToken);
 
     /// <summary>Reproduces the exact record that produced our stored huella (our DB chain of custody).</summary>
     private static void ApplyStoredChain(RegistroAlta registro, string issuerNif, VeriFactuSubmissionEntity submission)

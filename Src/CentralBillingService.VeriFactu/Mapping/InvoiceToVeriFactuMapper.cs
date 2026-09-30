@@ -53,6 +53,14 @@ public sealed class InvoiceToVeriFactuMapper
         : invoice.Lines.Count > 0 ? invoice.Lines[0].Description
         : $"Factura {invoice.Number.Value}";
 
+    /// <summary>
+    /// Rounds to cents AND forces a two-decimal scale. The library writes amounts with the decimal's
+    /// own scale (15m → "15"), but the AEAT computes the huella with "15.00"; without this, round
+    /// amounts (e.g. 0 % tax) produce a huella the AEAT flags as incorrect (error 2000).
+    /// </summary>
+    private static decimal ToCents(decimal amount) =>
+        decimal.Round(amount, 2, MidpointRounding.AwayFromZero) + 0.00m;
+
     private static List<VfTaxItem> BuildTaxItems(DomainInvoice invoice)
     {
         var tax = InferTax(invoice);
@@ -71,12 +79,12 @@ public sealed class InvoiceToVeriFactuMapper
                         ? new VfTaxItem // servicios: no sujeta por localización
                         {
                             TaxType = CalificacionOperacion.N2,
-                            Tax = tax, TaxRate = 0m, TaxBase = baseEur, TaxAmount = 0m,
+                            Tax = tax, TaxRate = 0m, TaxBase = ToCents(baseEur), TaxAmount = ToCents(0m),
                         }
                         : new VfTaxItem // bienes: entrega exenta (intracomunitaria E5 / exportación E2)
                         {
                             TaxException = euCustomer ? CausaExencion.E5 : CausaExencion.E2,
-                            Tax = tax, TaxRate = 0m, TaxBase = baseEur, TaxAmount = 0m,
+                            Tax = tax, TaxRate = 0m, TaxBase = ToCents(baseEur), TaxAmount = ToCents(0m),
                         };
                 })
                 .ToList();
@@ -91,8 +99,8 @@ public sealed class InvoiceToVeriFactuMapper
                 TaxType = CalificacionOperacion.S1,
                 Tax = tax,
                 TaxRate = g.Key,
-                TaxBase = g.Sum(l => l.TaxableBaseEur.Amount),
-                TaxAmount = g.Sum(l => l.TaxAmountEur.Amount),
+                TaxBase = ToCents(g.Sum(l => l.TaxableBaseEur.Amount)),
+                TaxAmount = ToCents(g.Sum(l => l.TaxAmountEur.Amount)),
             })
             .ToList();
     }

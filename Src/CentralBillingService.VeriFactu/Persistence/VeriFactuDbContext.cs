@@ -43,6 +43,7 @@ public sealed class VeriFactuDbContext : DbContext
             e.Property(x => x.ErrorDescription).HasMaxLength(500);
             e.HasIndex(x => new { x.BillingSource, x.InvoiceNumber }).IsUnique();
             e.HasIndex(x => x.State);
+            e.HasIndex(x => new { x.IssuerNif, x.BillingSource, x.ChainSequence });
         });
     }
 }

@@ -17,5 +17,20 @@ public interface IVeriFactuStore
     Task<VeriFactuSubmissionEntity?> GetSubmissionAsync(
         string billingSource, string invoiceNumber, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Runs <paramref name="action"/> holding an exclusive, cross-process lock on the (NIF, billing source)
+    /// chain, so two workers never submit the same chain concurrently (no duplicate sends, no lost CSV).
+    /// </summary>
+    Task<T> RunExclusiveOnChainAsync<T>(
+        string nif, string billingSource, Func<Task<T>> action, CancellationToken cancellationToken = default);
+
+    /// <summary>Pending invoice numbers of the chain with sequence ≤ <paramref name="chainSequence"/>, in chain order.</summary>
+    Task<IReadOnlyList<string>> GetPendingInChainUpToAsync(
+        string nif, string billingSource, long chainSequence, CancellationToken cancellationToken = default);
+
+    /// <summary>Highest-sequence pending invoice number of the billing source stamped before the cutoff.</summary>
+    Task<string?> GetLatestPendingStampedBeforeAsync(
+        string billingSource, DateTimeOffset stampedBefore, CancellationToken cancellationToken = default);
+
     Task UpdateSubmissionAsync(VeriFactuSubmissionEntity entity, CancellationToken cancellationToken = default);
 }

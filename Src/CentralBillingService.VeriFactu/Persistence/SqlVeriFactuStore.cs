@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace CentralBillingService.VeriFactu.Persistence;
 
 public sealed class SqlVeriFactuStore : IVeriFactuStore
@@ -54,6 +56,7 @@ public sealed class SqlVeriFactuStore : IVeriFactuStore
                 BillingSource = billingSource,
                 InvoiceNumber = invoiceNumber,
                 IssuerNif = nif,
+                ChainSequence = chain.Sequence,
                 State = (int)FiscalSubmissionState.Pending,
                 Huella = computation.Huella,
                 PreviousHuella = previous.Huella,
@@ -73,6 +76,51 @@ public sealed class SqlVeriFactuStore : IVeriFactuStore
         string billingSource, string invoiceNumber, CancellationToken cancellationToken = default) =>
         _db.Submissions.FirstOrDefaultAsync(
             x => x.BillingSource == billingSource && x.InvoiceNumber == invoiceNumber, cancellationToken);
+
+    public async Task<T> RunExclusiveOnChainAsync<T>(
+        string nif, string billingSource, Func<Task<T>> action, CancellationToken cancellationToken = default)
+    {
+        IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            // Fresh reads inside the lock: another worker may have just submitted this record.
+            _db.ChangeTracker.Clear();
+            await using IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+            string lockResource = $"verifactu-submit:{nif}:{billingSource}";
+            await _db.Database.ExecuteSqlInterpolatedAsync(
+                $"EXEC sp_getapplock @Resource = {lockResource}, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 120000",
+                cancellationToken);
+
+            T result = await action();
+
+            await transaction.CommitAsync(cancellationToken);
+            return result;
+        });
+    }
+
+    public async Task<IReadOnlyList<string>> GetPendingInChainUpToAsync(
+        string nif, string billingSource, long chainSequence, CancellationToken cancellationToken = default) =>
+        await _db.Submissions
+            .AsNoTracking()
+            .Where(x => x.IssuerNif == nif
+                && x.BillingSource == billingSource
+                && x.ChainSequence <= chainSequence
+                && x.State == (int)FiscalSubmissionState.Pending)
+            .OrderBy(x => x.ChainSequence)
+            .Select(x => x.InvoiceNumber)
+            .ToListAsync(cancellationToken);
+
+    public Task<string?> GetLatestPendingStampedBeforeAsync(
+        string billingSource, DateTimeOffset stampedBefore, CancellationToken cancellationToken = default) =>
+        _db.Submissions
+            .AsNoTracking()
+            .Where(x => x.BillingSource == billingSource
+                && x.State == (int)FiscalSubmissionState.Pending
+                && x.CreatedUtc < stampedBefore)
+            .OrderByDescending(x => x.ChainSequence)
+            .Select(x => x.InvoiceNumber)
+            .FirstOrDefaultAsync(cancellationToken);
 
     public async Task UpdateSubmissionAsync(VeriFactuSubmissionEntity entity, CancellationToken cancellationToken = default)
     {
