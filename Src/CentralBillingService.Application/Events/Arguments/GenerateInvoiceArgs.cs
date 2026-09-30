@@ -6,7 +6,8 @@ public class GenerateInvoiceArgs(
     string hash,
     DateOnly issueDate,
     decimal totalEurAmount,
-    string recipientTaxId) : IDomainEvent
+    string recipientTaxId,
+    string? fiscalQrContent = null) : IDomainEvent
 {
     public string InvoiceNumber => invoiceNumber;
     public string BillingSource => billingSource;
@@ -14,4 +15,7 @@ public class GenerateInvoiceArgs(
     public DateOnly IssueDate => issueDate;
     public decimal TotalEurAmount => totalEurAmount;
     public string RecipientTaxId => recipientTaxId;
+
+    /// <summary>Fiscal QR content (AEAT URL) when the source has a fiscal registrar; else null.</summary>
+    public string? FiscalQrContent => fiscalQrContent;
 }

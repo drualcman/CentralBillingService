@@ -251,6 +251,19 @@ internal sealed class SqlInvoiceWriteContext(IOptions<DatabaseOptions> dbOptions
         await SaveChangesAsync(cancellationToken);
     }
 
+    public async Task UpdateFiscalStampAsync(
+        Guid id, string fiscalStamp, string? fiscalQrContent = null, CancellationToken cancellationToken = default)
+    {
+        var entity = await Invoices.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (entity is null)
+            return;
+
+        entity.FiscalStamp = fiscalStamp;
+        if (!string.IsNullOrWhiteSpace(fiscalQrContent))
+            entity.FiscalQrContent = fiscalQrContent;
+        await SaveChangesAsync(cancellationToken);
+    }
+
     // ── Private ────────────────────────────────────────────────────────────
 
     private async Task UpdateSequenceHashAsync(

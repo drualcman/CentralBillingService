@@ -67,6 +67,13 @@ public interface IInvoiceWriteContext
     Task SaveAsync(Invoice invoice, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Targeted update of a single invoice's fiscal registrar stamp (e.g. VeriFactu huella),
+    /// set after creation once the external registrar produced the fingerprint. No-op if the
+    /// invoice does not exist. Must not alter any other column.
+    /// </summary>
+    Task UpdateFiscalStampAsync(Guid id, string fiscalStamp, string? fiscalQrContent = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Persists a rectificative invoice and updates the original invoice status
     /// in a single atomic operation.
     ///

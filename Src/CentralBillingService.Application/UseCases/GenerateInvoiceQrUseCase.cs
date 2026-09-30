@@ -35,13 +35,18 @@ public sealed class GenerateInvoiceQrUseCase
     {
         await _iso9001.Register(command.InvoiceNumber, this, "Generating QR code", command);
 
-        var verificationUrl = _urlProvider.GetVerificationUrl(
-            command.BillingSource,
-            command.InvoiceNumber,
-            command.Hash,
-            command.IssueDate,
-            command.TotalEurAmount,
-            command.RecipientTaxId);
+        // A fiscally-registered invoice encodes the tax authority's own QR (e.g. AEAT ValidarQR),
+        // produced by the fiscal registrar. Sources with no registrar fall back to the system's
+        // own verification URL (our verify UI).
+        var verificationUrl = !string.IsNullOrWhiteSpace(command.FiscalQrContent)
+            ? command.FiscalQrContent!
+            : _urlProvider.GetVerificationUrl(
+                command.BillingSource,
+                command.InvoiceNumber,
+                command.Hash,
+                command.IssueDate,
+                command.TotalEurAmount,
+                command.RecipientTaxId);
 
         var pngBytes = await _qrGenerator.GenerateAsync(verificationUrl, cancellationToken);
 

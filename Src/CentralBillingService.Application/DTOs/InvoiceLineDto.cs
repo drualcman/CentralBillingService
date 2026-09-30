@@ -16,4 +16,10 @@ public sealed class InvoiceLineDto
     /// Null means inherit the invoice-level default (OriginCurrencyCode or EUR).
     /// </summary>
     public string? CurrencyCode { get; init; }
+
+    /// <summary>
+    /// Service (default) or Good. The concrete billing source declares it per product; it drives
+    /// how foreign sales are classified for fiscal reporting (e.g. VeriFactu not-subject vs export).
+    /// </summary>
+    public ProductType ProductType { get; init; } = ProductType.Service;
 }

@@ -8,11 +8,19 @@ internal static class HeaderSectionBuilder
     private const decimal MetaValueX = 110m;
     private const decimal MetaW = 20m;
     private const decimal MetaValueW = 90m;
+    private const decimal FiscalQrX = InvoiceReportLayout.Margin;   // AEAT: top-left, before the invoice content
+    private const decimal FiscalQrY = 7m;
+    private const decimal LogoSize = 30m;
+    private const decimal LogoY = 10m;
+    private const decimal LogoBesideFiscalQrX = 45m;
+    private const decimal FiscalQrSize = 30m;   // AEAT: between 30x30 and 40x40 mm
+    private const decimal FiscalQrLegendHeight = 4m;
 
     public static void Build(Section header)
     {
         BuildTamperBanner(header);
         BuildLogo(header);
+        BuildFiscalQr(header);
         BuildIssuerInfo(header);
         BuildInvoiceMetadata(header);
         BuildRecipientBlock(header);
@@ -38,8 +46,35 @@ internal static class HeaderSectionBuilder
     {
         header.AddColumn(new ColumnSetup
         {
-            Format = new Format(30, 30) { Position = new Kernel(10, 10) },
+            Format = new Format((double)LogoSize, (double)LogoSize) { Position = new Kernel(LogoY, InvoiceReportLayout.Margin) },
             DataColumn = new Item(InvoiceReportLayout.Columns.CompanyLogo)
+        });
+        header.AddColumn(new ColumnSetup
+        {
+            Format = new Format((double)LogoSize, (double)LogoSize) { Position = new Kernel(LogoY, LogoBesideFiscalQrX) },
+            DataColumn = new Item(InvoiceReportLayout.Columns.CompanyLogoBesideFiscalQr)
+        });
+    }
+
+    private static void BuildFiscalQr(Section header)
+    {
+        header.AddColumn(new ColumnSetup
+        {
+            Format = new Format((double)FiscalQrSize, (double)FiscalQrSize)
+            {
+                Position = new Kernel(FiscalQrY, FiscalQrX)
+            },
+            DataColumn = new Item(InvoiceReportLayout.Columns.FiscalQrCode)
+        });
+        header.AddColumn(new ColumnSetup
+        {
+            Format = new Format((double)FiscalQrSize, (double)FiscalQrLegendHeight)
+            {
+                Position = new Kernel(FiscalQrY + FiscalQrSize, FiscalQrX),
+                TextAlignment = TextAlignment.Center,
+                FontDetails = new Font(new Shade(9), new FontStyle(700))
+            },
+            DataColumn = new Item(InvoiceReportLayout.Columns.FiscalQrLegend)
         });
     }
 

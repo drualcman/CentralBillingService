@@ -105,6 +105,25 @@ public sealed class Invoice
     /// </summary>
     public string? QrCodeBlobUrl { get; private set; }
 
+    /// <summary>
+    /// Official fiscal stamp produced by the external fiscal registrar for this
+    /// invoice's billing source (e.g. the VeriFactu "huella" for Spain, a CFDI seal
+    /// for Mexico, etc.). Null for billing sources with no fiscal registrar.
+    ///
+    /// This is deliberately NOT part of the internal integrity hash (<see cref="Hash"/>):
+    /// the internal hash keeps its full-field tamper coverage, while this holds the
+    /// authority-conformant fingerprint that is displayed and printed on the invoice.
+    /// </summary>
+    public string? FiscalStamp { get; private set; }
+
+    /// <summary>
+    /// The QR content produced by the fiscal registrar (for VeriFactu, the AEAT "ValidarQR" URL).
+    /// When set, the QR image encodes THIS instead of the system's own verification URL, so a
+    /// scan of a fiscally-registered invoice goes to the tax authority. Null for non-fiscal
+    /// sources (they fall back to the system verification URL). NOT part of the internal hash.
+    /// </summary>
+    public string? FiscalQrContent { get; private set; }
+
     // ── Constructor privado ────────────────────────────────────────────────
 
     private Invoice(
@@ -262,7 +281,9 @@ public sealed class Invoice
         string? notes,
         string? transactionData = null,
         string? paymentMethod = null,
-        string? qrCodeBlobUrl = null)
+        string? qrCodeBlobUrl = null,
+        string? fiscalStamp = null,
+        string? fiscalQrContent = null)
     {
         var invoice = new Invoice(
             id, number, billingSource, issuer, recipient,
@@ -273,6 +294,8 @@ public sealed class Invoice
         invoice.Status = status;
         invoice.RectifiedBy = rectifiedBy;
         invoice.QrCodeBlobUrl = qrCodeBlobUrl;
+        invoice.FiscalStamp = fiscalStamp;
+        invoice.FiscalQrContent = fiscalQrContent;
         return invoice;
     }
 
@@ -281,6 +304,20 @@ public sealed class Invoice
     /// Called by the application layer after the QR is generated and uploaded.
     /// </summary>
     public void AttachQrCode(string blobUrl) => QrCodeBlobUrl = blobUrl;
+
+    /// <summary>
+    /// Records the official fiscal stamp (e.g. VeriFactu huella) computed by the
+    /// external fiscal registrar. Called by the application layer at creation time,
+    /// before persistence, so the stamp is printed on the invoice.
+    /// </summary>
+    public void AttachFiscalStamp(string stamp) => FiscalStamp = stamp;
+
+    /// <summary>
+    /// Records the fiscal QR content (e.g. the AEAT ValidarQR URL) produced by the fiscal
+    /// registrar, so the QR image encodes the authority's URL instead of the system's own.
+    /// Called at creation time, before the QR image is generated.
+    /// </summary>
+    public void AttachFiscalQr(string qrContent) => FiscalQrContent = qrContent;
 
     // ── Transiciones de estado ─────────────────────────────────────────────
 

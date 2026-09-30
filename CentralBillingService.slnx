@@ -12,6 +12,7 @@
   <Project Path="Src/CentralBillingService.Persistence.SqlServer/CentralBillingService.Persistence.SqlServer.csproj" Id="950e08c2-7d79-48bc-a317-f60e57378104" />
   <Project Path="Src/CentralBillingService.Reports/CentralBillingService.Reports.csproj" />
   <Project Path="Src/CentralBillingService.VerifyUI/CentralBillingService.VerifyUI.csproj" />
+  <Project Path="Src/CentralBillingService.VeriFactu/CentralBillingService.VeriFactu.csproj" />
   <Project Path="Src/CentralBillingService.WPF/CentralBillingService.WPF.csproj" />
   <Project Path="Tests/CentralBillingService.Tests/CentralBillingService.Tests.csproj" />
 </Solution>

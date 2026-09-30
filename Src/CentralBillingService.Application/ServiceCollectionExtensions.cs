@@ -26,6 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<VerifyInvoiceIntegrityUseCase>();
         services.AddScoped<CheckInvoiceIntegrityUseCase>();
         services.AddScoped<ProcessQueuedCreateInvoiceUseCase>();
+        services.AddScoped<SubmitFiscalRecordUseCase>();
         services.AddScoped<GenerateInvoiceQrUseCase>();
         services.AddScoped<GenerateInvoiceReportUseCase>();
         services.AddScoped<GenerateInvoiceUseCase>();

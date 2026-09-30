@@ -77,6 +77,8 @@ internal static class InvoiceMapper
         PaymentMethod = invoice.PaymentMethod,
         TransactionData = invoice.TransactionData,
         QrCodeBlobUrl = invoice.QrCodeBlobUrl,
+        FiscalStamp = invoice.FiscalStamp,
+        FiscalQrContent = invoice.FiscalQrContent,
 
         Lines = invoice.Lines.Select(l => ToLineEntity(l, invoice.Id)).ToList(),
     };
@@ -150,6 +152,8 @@ internal static class InvoiceMapper
         PaymentMethod = invoice.PaymentMethod,
         TransactionData = invoice.TransactionData,
         QrCodeBlobUrl = invoice.QrCodeBlobUrl,
+        FiscalStamp = invoice.FiscalStamp,
+        FiscalQrContent = invoice.FiscalQrContent,
 
         Lines = invoice.Lines.Select(l => ToLineEntity(l, invoice.Id)).ToList(),
     };
@@ -162,6 +166,7 @@ internal static class InvoiceMapper
         Description = line.Description,
         Quantity = line.Quantity,
         TaxRatePercentage = line.TaxRate.Percentage,
+        ProductType = line.ProductType.ToString(),
         UnitPriceEur = line.UnitPriceEur.Amount,
         TaxableBaseEur = line.TaxableBaseEur.Amount,
         TaxAmountEur = line.TaxAmountEur.Amount,
@@ -218,7 +223,9 @@ internal static class InvoiceMapper
             notes: e.Notes,
             transactionData: e.TransactionData,
             paymentMethod: e.PaymentMethod,
-            qrCodeBlobUrl: e.QrCodeBlobUrl);
+            qrCodeBlobUrl: e.QrCodeBlobUrl,
+            fiscalStamp: e.FiscalStamp,
+            fiscalQrContent: e.FiscalQrContent);
     }
 
     internal static RectificativeInvoice ToRectificativeDomain(InvoiceEntity e)
@@ -268,21 +275,24 @@ internal static class InvoiceMapper
                 : null,
             transactionData: e.TransactionData,
             paymentMethod: e.PaymentMethod,
-            qrCodeBlobUrl: e.QrCodeBlobUrl);
+            qrCodeBlobUrl: e.QrCodeBlobUrl,
+            fiscalStamp: e.FiscalStamp,
+            fiscalQrContent: e.FiscalQrContent);
     }
 
     private static InvoiceLine ToLineDomain(InvoiceLineEntity l, string invoiceCurrencyCode)
     {
         var taxRate = TaxRate.Of(l.TaxRatePercentage);
         var unitPriceEur = Money.Of(l.UnitPriceEur, Currency.EUR);
+        var productType = Enum.TryParse<ProductType>(l.ProductType, out var pt) ? pt : ProductType.Service;
 
         if (!l.HasCurrencyConversion)
-            return InvoiceLine.CreateInEur(l.LineNumber, l.Description, l.Quantity, unitPriceEur, taxRate);
+            return InvoiceLine.CreateInEur(l.LineNumber, l.Description, l.Quantity, unitPriceEur, taxRate, productType);
 
         var originCurrency = Currency.From(l.OriginCurrencyCode);
         var unitPriceOrigin = Money.Of(l.UnitPriceOrigin, originCurrency);
         return InvoiceLine.CreateWithConversion(
-            l.LineNumber, l.Description, l.Quantity, unitPriceOrigin, unitPriceEur, taxRate);
+            l.LineNumber, l.Description, l.Quantity, unitPriceOrigin, unitPriceEur, taxRate, productType);
     }
 
     private static BillingParty ToParty(

@@ -9,12 +9,14 @@ public sealed class AzureQueueJobQueue : IJobQueue
     private readonly string _connectionString;
     private readonly string _qrQueueName;
     private readonly string _invoicesQueueName;
+    private readonly string _fiscalSubmissionQueueName;
 
     public AzureQueueJobQueue(IOptions<CbsOptions> options)
     {
         _connectionString = options.Value.QrBlobConnectionString;
         _qrQueueName = options.Value.QrCodeQueueName;
         _invoicesQueueName = options.Value.Invoices;
+        _fiscalSubmissionQueueName = options.Value.FiscalSubmissionQueueName;
     }
 
     public async Task EnqueueQrAsync(GenerateInvoiceQrCommand command, CancellationToken cancellationToken = default)
@@ -27,6 +29,12 @@ public sealed class AzureQueueJobQueue : IJobQueue
     {
         var json = JsonSerializer.Serialize(command);
         await EnqueueAsync(_connectionString, _invoicesQueueName, json, cancellationToken);
+    }
+
+    public async Task EnqueueFiscalSubmissionAsync(SubmitFiscalRecordCommand command, CancellationToken cancellationToken = default)
+    {
+        var json = JsonSerializer.Serialize(command);
+        await EnqueueAsync(_connectionString, _fiscalSubmissionQueueName, json, cancellationToken);
     }
 
     public async Task EnqueueAsync(string connectionString, string queueName,

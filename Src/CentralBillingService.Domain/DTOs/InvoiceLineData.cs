@@ -19,4 +19,7 @@ public sealed class InvoiceLineData
     /// Null means inherit the invoice-level default (usually EUR).
     /// </summary>
     public string? CurrencyCode { get; init; }
+
+    /// <summary>Service or physical good. Defined by the billing source; defaults to Service.</summary>
+    public ProductType ProductType { get; init; } = ProductType.Service;
 }

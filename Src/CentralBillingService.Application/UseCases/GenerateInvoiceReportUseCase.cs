@@ -27,7 +27,7 @@ public class GenerateInvoiceReportUseCase(IInvoiceRepository repository,
                     rectificative.Recipient, rectificative.IssueDate, null, rectificative.CreatedAt, rectificative.Lines.ToList(),
                     rectificative.AppliedExchangeRate, rectificative.Hash, rectificative.PreviousHash, rectificative.Status,
                     rectificative.PaymentReference, null, rectificative.Notes, rectificative.TransactionData, rectificative.PaymentMethod,
-                    rectificative.QrCodeBlobUrl);
+                    rectificative.QrCodeBlobUrl, rectificative.FiscalStamp, rectificative.FiscalQrContent);
             else
                 invoice = null;
         }

@@ -133,7 +133,7 @@ public sealed class CreateInvoiceService
             {
                 line = InvoiceLine.CreateInEur(
                     i + 1, data.Description, data.Quantity,
-                    Money.Of(data.UnitPrice, Currency.EUR), taxRate);
+                    Money.Of(data.UnitPrice, Currency.EUR), taxRate, data.ProductType);
             }
             else
             {
@@ -142,7 +142,7 @@ public sealed class CreateInvoiceService
                 var unitPriceEur = rate.Apply(unitPriceOrigin);
                 line = InvoiceLine.CreateWithConversion(
                     i + 1, data.Description, data.Quantity,
-                    unitPriceOrigin, unitPriceEur, taxRate);
+                    unitPriceOrigin, unitPriceEur, taxRate, data.ProductType);
             }
             lines.Add(line);
         }

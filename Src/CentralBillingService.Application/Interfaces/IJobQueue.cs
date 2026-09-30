@@ -9,6 +9,12 @@ public interface IJobQueue
 {
     Task EnqueueQrAsync(GenerateInvoiceQrCommand command, CancellationToken cancellationToken = default);
     Task EnqueuePdfAsync(GenerateInvoiceReportCommand command, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Enqueues a fiscal-authority submission job (e.g. AEAT VeriFactu) for async processing
+    /// after the invoice has been persisted and stamped.
+    /// </summary>
+    Task EnqueueFiscalSubmissionAsync(SubmitFiscalRecordCommand command, CancellationToken cancellationToken = default);
     Task EnqueueAsync(string connectionString, string queueName,
         string data, CancellationToken cancellationToken = default);
 }

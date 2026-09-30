@@ -7,11 +7,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Azure.Storage.Blobs" Version="12.29.0" />
-		<PackageReference Include="Azure.Storage.Queues" Version="12.27.0" />
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.29.2" />
+		<PackageReference Include="Azure.Storage.Queues" Version="12.27.1" />
 		<PackageReference Include="DigitalDoor.Reporting.Presenters.PDF" Version="1.17.71" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.9" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.12" />
 		<PackageReference Include="QRCoder" Version="1.8.0" />
+		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.12" />
 	</ItemGroup>
 
 	<ItemGroup>

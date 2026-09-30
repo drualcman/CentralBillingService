@@ -117,5 +117,10 @@ internal static class InvoiceReportLayout
         public const string HashLabel = "HashLabel";
         public const string HashValue = "HashValue";
         public const string QrCode = "QrCode";
+
+        // Header — tax-authority QR (Orden HAC/1177/2024 art. 21: first page, top, legend below)
+        public const string FiscalQrCode = "FiscalQrCode";
+        public const string FiscalQrLegend = "FiscalQrLegend";
+        public const string CompanyLogoBesideFiscalQr = "CompanyLogoBesideFiscalQr";
     }
 }

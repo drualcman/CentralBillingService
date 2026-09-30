@@ -47,6 +47,11 @@ public partial class App : System.Windows.Application
                     services.AddSqlServerPersistence(opts =>
                         cfg.GetSection(DatabaseOptions.SectionKey).Bind(opts));
 
+                    // VeriFactu fiscal registrar (AEAT). The WPF creates AND stamps invoices
+                    // in-process, so the registrar must be wired here too (the Function only
+                    // handles the async AEAT submission). Selected per source by Registrar.Type.
+                    services.AddVeriFactuRegistrar(cfg.GetConnectionString("CbsDb") ?? string.Empty);
+
                     services.AddSingleton<IConfiguration>(cfg);
 
                     // Master data (local JSON store)
@@ -70,9 +75,6 @@ public partial class App : System.Windows.Application
                 .Build();
 
             await _host.StartAsync();
-
-            splash.SetStatus("Aplicando migraciones de base de datos...");
-            await _host.Services.ApplyMigrationsAsync();
 
             splash.SetStatus("Iniciando interfaz...");
             var window = _host.Services.GetRequiredService<MainWindow>();

@@ -4,7 +4,7 @@ public class CbsOptions
 {
     public const string SectionKey = nameof(CbsOptions);
 
-    public BillingSourceConfig[] BillingSources { get; set; }
+    public BillingSourceConfig[] BillingSources { get; set; } = [];
 
     /// <summary>
     /// Base URL of this system's API (e.g. "https://billing.mycompany.com").
@@ -29,4 +29,7 @@ public class CbsOptions
 
     /// <summary>Azure Storage Queue name where invoice generation jobs are sent.</summary>
     public string Invoices { get; set; } = "invoices";
+
+    /// <summary>Azure Storage Queue name where fiscal-authority submission jobs (e.g. VeriFactu) are sent.</summary>
+    public string FiscalSubmissionQueueName { get; set; } = "cbs-fiscal-submission";
 }

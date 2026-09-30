@@ -97,6 +97,20 @@ public sealed class InvoiceEntity
     // ── QR code ───────────────────────────────────────────────────────────
     public string? QrCodeBlobUrl { get; set; }
 
+    // ── Fiscal registrar stamp (e.g. VeriFactu huella) ─────────────────────
+    /// <summary>
+    /// Authority-conformant fingerprint produced by the external fiscal registrar,
+    /// shown/printed on the invoice. Null for sources with no fiscal registrar.
+    /// Distinct from <see cref="Hash"/> (the internal integrity hash).
+    /// </summary>
+    public string? FiscalStamp { get; set; }
+
+    /// <summary>
+    /// Fiscal QR content (e.g. AEAT ValidarQR URL) produced by the fiscal registrar. When set,
+    /// the QR image encodes this instead of the system verification URL. Null for non-fiscal sources.
+    /// </summary>
+    public string? FiscalQrContent { get; set; }
+
     // ── Navigation ────────────────────────────────────────────────────────
     public ICollection<InvoiceLineEntity> Lines { get; set; } = [];
 }

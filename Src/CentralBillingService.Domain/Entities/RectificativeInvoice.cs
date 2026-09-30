@@ -103,6 +103,16 @@ public sealed class RectificativeInvoice
     /// </summary>
     public string? QrCodeBlobUrl { get; private set; }
 
+    /// <summary>
+    /// Official fiscal stamp produced by the external fiscal registrar (e.g. the
+    /// VeriFactu "huella"). Null for billing sources with no fiscal registrar.
+    /// Not part of the internal integrity hash — see <see cref="Invoice.FiscalStamp"/>.
+    /// </summary>
+    public string? FiscalStamp { get; private set; }
+
+    /// <summary>Fiscal QR content (e.g. AEAT ValidarQR URL) — see <see cref="Invoice.FiscalQrContent"/>.</summary>
+    public string? FiscalQrContent { get; private set; }
+
     // ── Constructor privado ────────────────────────────────────────────────
 
     private RectificativeInvoice(
@@ -342,7 +352,9 @@ public sealed class RectificativeInvoice
         InvoiceNumber? rectifiedBy = null,
         string? transactionData = null,
         string? paymentMethod = null,
-        string? qrCodeBlobUrl = null)
+        string? qrCodeBlobUrl = null,
+        string? fiscalStamp = null,
+        string? fiscalQrContent = null)
     {
         var invoice = new RectificativeInvoice(
             id, number, billingSource, originalNumber, originalIssueDate,
@@ -355,6 +367,8 @@ public sealed class RectificativeInvoice
         invoice.RectifiedBy = rectifiedBy;
         if (qrCodeBlobUrl is not null)
             invoice.AttachQrCode(qrCodeBlobUrl);
+        invoice.FiscalStamp = fiscalStamp;
+        invoice.FiscalQrContent = fiscalQrContent;
         return invoice;
     }
 
@@ -439,6 +453,15 @@ public sealed class RectificativeInvoice
     /// Called by the application layer after the QR is generated and uploaded.
     /// </summary>
     public void AttachQrCode(string blobUrl) => QrCodeBlobUrl = blobUrl;
+
+    /// <summary>
+    /// Records the official fiscal stamp (e.g. VeriFactu huella) computed by the
+    /// external fiscal registrar. Called by the application layer at creation time.
+    /// </summary>
+    public void AttachFiscalStamp(string stamp) => FiscalStamp = stamp;
+
+    /// <summary>Records the fiscal QR content — see <see cref="Invoice.AttachFiscalQr"/>.</summary>
+    public void AttachFiscalQr(string qrContent) => FiscalQrContent = qrContent;
 
     public override string ToString() =>
         $"{Number} [REC→{OriginalInvoiceNumber}] | {Recipient.DisplayName} | {TotalEur} | {Status}";

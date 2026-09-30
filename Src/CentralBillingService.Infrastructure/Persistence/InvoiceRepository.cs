@@ -57,6 +57,9 @@ public sealed class InvoiceRepository : IInvoiceRepository
     public Task SaveAsync(Invoice invoice, CancellationToken cancellationToken = default) =>
         _write.SaveAsync(invoice, cancellationToken);
 
+    public Task UpdateFiscalStampAsync(Guid id, string fiscalStamp, string? fiscalQrContent = null, CancellationToken cancellationToken = default) =>
+        _write.UpdateFiscalStampAsync(id, fiscalStamp, fiscalQrContent, cancellationToken);
+
     public Task<Invoice> CreateAtomicAsync(
         string billingSource,
         string serie,

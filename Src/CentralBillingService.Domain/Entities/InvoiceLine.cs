@@ -37,13 +37,17 @@ public sealed class InvoiceLine
 
     public TaxRate TaxRate { get; }
 
+    /// <summary>Economic nature of the line (service or good). Drives fiscal classification abroad.</summary>
+    public ProductType ProductType { get; }
+
     private InvoiceLine(
         int lineNumber,
         string description,
         int quantity,
         Money unitPriceEur,
         Money unitPriceOrigin,
-        TaxRate taxRate)
+        TaxRate taxRate,
+        ProductType productType)
     {
         LineNumber = lineNumber;
         Description = description;
@@ -51,6 +55,7 @@ public sealed class InvoiceLine
         UnitPriceEur = unitPriceEur;
         UnitPriceOrigin = unitPriceOrigin;
         TaxRate = taxRate;
+        ProductType = productType;
 
         TaxableBaseEur = unitPriceEur.Multiply(quantity);
         TaxAmountEur = taxRate.CalculateTaxOn(TaxableBaseEur);
@@ -67,13 +72,14 @@ public sealed class InvoiceLine
         string description,
         int quantity,
         Money unitPriceEur,
-        TaxRate taxRate)
+        TaxRate taxRate,
+        ProductType productType = ProductType.Service)
     {
         ValidateCommon(lineNumber, description, quantity, unitPriceEur);
 
         return new InvoiceLine(
             lineNumber, description, quantity,
-            unitPriceEur, unitPriceEur, taxRate);
+            unitPriceEur, unitPriceEur, taxRate, productType);
     }
 
     /// <summary>
@@ -87,7 +93,8 @@ public sealed class InvoiceLine
         int quantity,
         Money unitPriceOrigin,
         Money unitPriceEur,
-        TaxRate taxRate)
+        TaxRate taxRate,
+        ProductType productType = ProductType.Service)
     {
         if (unitPriceOrigin.Currency == Currency.EUR)
             throw new DomainException(
@@ -97,7 +104,7 @@ public sealed class InvoiceLine
 
         return new InvoiceLine(
             lineNumber, description, quantity,
-            unitPriceEur, unitPriceOrigin, taxRate);
+            unitPriceEur, unitPriceOrigin, taxRate, productType);
     }
 
     public bool HasCurrencyConversion => UnitPriceOrigin.Currency != Currency.EUR;

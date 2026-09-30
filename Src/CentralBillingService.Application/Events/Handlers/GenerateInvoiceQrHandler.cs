@@ -24,5 +24,6 @@ internal class GenerateInvoiceQrHandler(
                     invoice.Hash,
                     invoice.IssueDate,
                     invoice.TotalEurAmount,
-                    invoice.RecipientTaxId);
+                    invoice.RecipientTaxId,
+                    invoice.FiscalQrContent);
 }

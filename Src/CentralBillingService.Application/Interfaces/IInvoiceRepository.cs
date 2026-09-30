@@ -75,6 +75,18 @@ public interface IInvoiceRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Persists the fiscal registrar outputs (the "huella" stamp and the authority QR content,
+    /// e.g. the AEAT ValidarQR URL) onto an already-created invoice. Called after creation, once
+    /// the external fiscal registrar has produced them. Targeted update — does not touch any other
+    /// field. <paramref name="fiscalQrContent"/> is optional. No-op if the invoice does not exist.
+    /// </summary>
+    Task UpdateFiscalStampAsync(
+        Guid id,
+        string fiscalStamp,
+        string? fiscalQrContent = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Reserves the next sequence number and persists the resulting invoice atomically,
     /// in a single transaction. Use this for billing sources whose number authority is the
     /// local database (see <see cref="IInvoiceNumberProvider.ReservesFromLocalDatabase"/>):

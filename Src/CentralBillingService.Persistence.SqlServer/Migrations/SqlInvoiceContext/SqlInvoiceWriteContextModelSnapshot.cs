@@ -17,7 +17,7 @@ namespace CentralBillingService.Persistence.SqlServer.Migrations.SqlInvoiceConte
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -57,6 +57,14 @@ namespace CentralBillingService.Persistence.SqlServer.Migrations.SqlInvoiceConte
 
                     b.Property<decimal>("ExchangeRateValue")
                         .HasColumnType("decimal(18,8)");
+
+                    b.Property<string>("FiscalQrContent")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<string>("FiscalStamp")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
 
                     b.Property<string>("Hash")
                         .IsRequired()
@@ -330,6 +338,12 @@ namespace CentralBillingService.Persistence.SqlServer.Migrations.SqlInvoiceConte
                         .IsRequired()
                         .HasMaxLength(3)
                         .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("ProductType")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("Service");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");

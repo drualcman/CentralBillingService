@@ -7,11 +7,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="DigitalDoor.Reporting" Version="1.17.71" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.11" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.11" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
-		<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.11" />
+		<PackageReference Include="DigitalDoor.Reporting" Version="1.18.0" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.12" />
 	</ItemGroup>
 
 </Project>

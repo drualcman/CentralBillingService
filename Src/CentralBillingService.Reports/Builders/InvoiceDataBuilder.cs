@@ -25,7 +25,10 @@ internal static class InvoiceDataBuilder
         if (!string.IsNullOrEmpty(logoUrl))
         {
             byte[] logo = await DownloadUrlHelper.GetBytes(logoUrl);
-            data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.CompanyLogo, logo));
+            string logoColumn = HasFiscalQr(invoice)
+                ? InvoiceReportLayout.Columns.CompanyLogoBesideFiscalQr
+                : InvoiceReportLayout.Columns.CompanyLogo;
+            data.Add(CreateData(SectionType.Header, logoColumn, logo));
         }
 
         // Trade name is the prominent name; legal name shown smaller below when they differ
@@ -148,13 +151,34 @@ internal static class InvoiceDataBuilder
                 FormatOrigin(totalOrig, curr)));
         }
 
+        await AddQrCodeDataAsync(data, invoice);
+    }
+
+    /// <summary>
+    /// A fiscally-registered invoice (VeriFactu) prints the AEAT QR at the top of the first page with
+    /// the mandatory "VERI*FACTU" legend below it; any other invoice keeps the system QR in the footer.
+    /// </summary>
+    private static async Task AddQrCodeDataAsync(List<ColumnData> data, Invoice invoice)
+    {
         if (!string.IsNullOrWhiteSpace(invoice.QrCodeBlobUrl))
         {
             byte[] qrBytes = await DownloadUrlHelper.GetBytes(invoice.QrCodeBlobUrl);
-            if (qrBytes.Length > 0)
+            if (qrBytes.Length > 0 && HasFiscalQr(invoice))
+            {
+                data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.FiscalQrCode, qrBytes));
+                data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.FiscalQrLegend, FiscalQrLegendText));
+            }
+            else if (qrBytes.Length > 0)
+            {
                 data.Add(CreateData(SectionType.Footer, InvoiceReportLayout.Columns.QrCode, qrBytes));
+            }
         }
     }
+
+    private const string FiscalQrLegendText = "VERI*FACTU";
+
+    private static bool HasFiscalQr(Invoice invoice) =>
+        !string.IsNullOrWhiteSpace(invoice.FiscalQrContent) && !string.IsNullOrWhiteSpace(invoice.QrCodeBlobUrl);
 
     private static string FormatAmount(decimal amount) => amount.ToString("N2", EsEs);
 

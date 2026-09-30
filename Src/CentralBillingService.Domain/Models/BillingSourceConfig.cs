@@ -20,6 +20,12 @@ public sealed class BillingSourceConfig
     /// <summary>How invoice numbers are reserved for this source. Defaults to local DB.</summary>
     public NumberProviderConfig NumberProvider { get; set; } = new();
 
+    /// <summary>
+    /// Which fiscal registrar (tax-authority reporting) this source uses. Defaults to "None".
+    /// Set Type = "VeriFactu" to report invoices of this source to the Spanish AEAT.
+    /// </summary>
+    public RegistrarConfig Registrar { get; set; } = new();
+
     /// <summary>If set, the result of queue-triggered invoice creation is published here.</summary>
     public ResultQueueConfig? ResultQueue { get; set; }
 

@@ -73,6 +73,12 @@ internal static class ContextConfigurations
             e.Property(x => x.Notes).HasMaxLength(1000);
             e.Property(x => x.QrCodeBlobUrl).HasMaxLength(500);
 
+            // Fiscal registrar stamp — sized generously to stay authority-agnostic
+            // (VeriFactu huella is 64 hex chars; other authorities' seals are longer).
+            e.Property(x => x.FiscalStamp).HasMaxLength(1024);
+            // AEAT ValidarQR URLs are short, but stay generous to remain authority-agnostic.
+            e.Property(x => x.FiscalQrContent).HasMaxLength(1024);
+
             // Indexes
             e.HasIndex(x => x.InvoiceNumber).IsUnique();
             e.HasIndex(x => new { x.BillingSource, x.Serie, x.Year, x.SequenceNumber }).IsUnique();
@@ -109,6 +115,9 @@ internal static class ContextConfigurations
 
             e.Property(x => x.Description).HasMaxLength(500).IsRequired();
             e.Property(x => x.OriginCurrencyCode).HasMaxLength(3).IsRequired();
+            // Nullable in the DB (no backfill needed for pre-existing lines); new rows default to
+            // "Service". A null/blank is mapped back to ProductType.Service in the domain mapper.
+            e.Property(x => x.ProductType).HasMaxLength(10).HasDefaultValue("Service");
 
             e.Property(x => x.UnitPriceEur).HasColumnType("decimal(18,4)");
             e.Property(x => x.TaxableBaseEur).HasColumnType("decimal(18,4)");

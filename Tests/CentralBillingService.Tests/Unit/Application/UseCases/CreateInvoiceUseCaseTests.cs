@@ -30,9 +30,13 @@ public class CreateInvoiceUseCaseTests
             .GetLastHashAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns((string?)null);
 
+        var fiscalRegistrarFactory = Substitute.For<IFiscalRegistrarFactory>();
+        var jobQueue = Substitute.For<IJobQueue>();
+
         _useCase = new CreateInvoiceUseCase(
             domainService, registry, _repository, _eventDispatcher,
-            _numberProviderFactory, blobStorage, Substitute.For<IIso9001>());
+            _numberProviderFactory, fiscalRegistrarFactory, jobQueue,
+            blobStorage, Substitute.For<IIso9001>());
     }
 
     private static CreateInvoiceCommand BuildCommand(string currencyCode = "EUR") => new()

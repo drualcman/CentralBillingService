@@ -1,0 +1,11 @@
+global using CentralBillingService.Application.Interfaces;
+global using CentralBillingService.Application.Models;
+global using CentralBillingService.Domain.Models;
+global using CentralBillingService.VeriFactu;
+global using CentralBillingService.VeriFactu.Entities;
+global using CentralBillingService.VeriFactu.Mapping;
+global using CentralBillingService.VeriFactu.Options;
+global using CentralBillingService.VeriFactu.Persistence;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.Extensions.Logging;
+global using Microsoft.Extensions.Options;

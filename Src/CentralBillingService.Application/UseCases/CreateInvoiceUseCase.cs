@@ -25,6 +25,8 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
     private readonly IInvoiceRepository _repository;
     private readonly IInvoiceEventDispatcher _eventDispatcher;
     private readonly IInvoiceNumberProviderFactory _numberProviderFactory;
+    private readonly IFiscalRegistrarFactory _fiscalRegistrarFactory;
+    private readonly IJobQueue _jobQueue;
     private readonly IBlobStorageService _blobStorage;
     private readonly IIso9001 _iso9001;
 
@@ -34,6 +36,8 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
         IInvoiceRepository repository,
         IInvoiceEventDispatcher eventDispatcher,
         IInvoiceNumberProviderFactory numberProviderFactory,
+        IFiscalRegistrarFactory fiscalRegistrarFactory,
+        IJobQueue jobQueue,
         IBlobStorageService blobStorage,
         IIso9001 iso9001)
     {
@@ -42,6 +46,8 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
         _repository = repository;
         _eventDispatcher = eventDispatcher;
         _numberProviderFactory = numberProviderFactory;
+        _fiscalRegistrarFactory = fiscalRegistrarFactory;
+        _jobQueue = jobQueue;
         _blobStorage = blobStorage;
         _iso9001 = iso9001;
     }
@@ -132,9 +138,16 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
                 return racedResult;
             }
 
-            var result = InvoiceResultMapper.ToResult(invoice);
+            await _iso9001.Register(reference, this, "Invoice created and persisted",
+                InvoiceResultMapper.ToResult(invoice));
 
-            await _iso9001.Register(reference, this, "Invoice created and persisted", result);
+            // 8b. Fiscal registrar: stamp the invoice with the authority-conformant fingerprint
+            //     (e.g. VeriFactu huella) and enqueue submission. Runs BEFORE the event dispatch
+            //     below so the async PDF pipeline picks up the stamp. Best-effort — a failure here
+            //     never rolls back the (already legally numbered and persisted) invoice.
+            await StampAndEnqueueFiscalAsync(config, invoice, cancellationToken);
+
+            var result = InvoiceResultMapper.ToResult(invoice);
 
             // 9. Dispatch events — failures here do NOT roll back the invoice
             await DispatchSafelyAsync(invoice, cancellationToken);
@@ -209,11 +222,48 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
             UnitPrice = l.UnitPrice,
             TaxRatePercentage = l.TaxRatePercentage,
             CurrencyCode = l.CurrencyCode,
+            ProductType = l.ProductType,
         })],
         PaymentMethod = cmd.PaymentMethod,
         PaymentReference = cmd.PaymentReference,
         TransactionData = cmd.TransactionData
     };
+
+    /// <summary>
+    /// Runs the billing source's fiscal registrar: stamps the invoice with the
+    /// authority fingerprint (persisted via a targeted update) and enqueues the async
+    /// authority submission. No-op for sources with Registrar.Type = "None".
+    /// Best-effort: any failure is logged but never fails invoice creation — the invoice
+    /// is already legally numbered and persisted, and submission is retried by the worker.
+    /// </summary>
+    private async Task StampAndEnqueueFiscalAsync(
+        BillingSourceConfig config, Invoice invoice, CancellationToken cancellationToken)
+    {
+        if (config.Registrar is null || config.Registrar.IsNone)
+            return;
+
+        try
+        {
+            var registrar = _fiscalRegistrarFactory.GetFor(config);
+
+            var stamp = await registrar.StampAsync(invoice, cancellationToken);
+            if (stamp.HasStamp)
+            {
+                invoice.AttachFiscalStamp(stamp.Huella!);
+                if (!string.IsNullOrWhiteSpace(stamp.QrContent))
+                    invoice.AttachFiscalQr(stamp.QrContent!);
+                await _repository.UpdateFiscalStampAsync(
+                    invoice.Id, stamp.Huella!, stamp.QrContent, cancellationToken);
+            }
+
+            await _jobQueue.EnqueueFiscalSubmissionAsync(
+                new SubmitFiscalRecordCommand(invoice.Number.Value, invoice.BillingSource), cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            await _iso9001.Error(invoice.Number.Value, this, ex);
+        }
+    }
 
     private async Task DispatchSafelyAsync(Invoice invoice, CancellationToken cancellationToken)
     {

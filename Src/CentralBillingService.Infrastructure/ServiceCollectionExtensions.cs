@@ -60,6 +60,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IInvoiceNumberProviderStrategy, ExternalApiNumberProviderStrategy>();
         services.AddScoped<IInvoiceEventDispatcher, InvoiceEventDispatcher>();
 
+        // Fiscal registrar factory — selects the IFiscalRegistrar per BillingSource based on
+        // RegistrarConfig.Type. "None" (no fiscal reporting) is always available. Concrete
+        // authority adapters (e.g. VeriFactu) register their own IFiscalRegistrar from their
+        // project via services.AddVeriFactuRegistrar(...).
+        services.AddScoped<IFiscalRegistrarBuilder, CentralBillingService.Infrastructure.FiscalRegistrars.NoneFiscalRegistrarBuilder>();
+        services.AddScoped<IFiscalRegistrarFactory, CentralBillingService.Infrastructure.FiscalRegistrars.FiscalRegistrarFactory>();
+
         // Result dispatch for queue-triggered invoice creation
         services.AddScoped<IInvoiceResultQueuePublisher, InvoiceResultQueuePublisher>();
         services.AddHttpClient<IInvoiceResultCallbackNotifier, InvoiceResultCallbackNotifier>();

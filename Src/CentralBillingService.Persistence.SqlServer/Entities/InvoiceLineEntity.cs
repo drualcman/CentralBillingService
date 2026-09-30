@@ -17,6 +17,12 @@ public sealed class InvoiceLineEntity
     public int Quantity { get; set; }
     public int TaxRatePercentage { get; set; }
 
+    /// <summary>
+    /// Economic nature of the line ("Service" or "Good"). Nullable at the DB level so existing
+    /// rows survive the migration without a data backfill; a null is read back as "Service".
+    /// </summary>
+    public string? ProductType { get; set; }
+
     // ── Amounts in EUR ─────────────────────────────────────────────────────
     public decimal UnitPriceEur { get; set; }
     public decimal TaxableBaseEur { get; set; }
