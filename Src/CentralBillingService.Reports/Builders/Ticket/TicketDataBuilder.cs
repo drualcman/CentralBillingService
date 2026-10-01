@@ -65,10 +65,6 @@ internal static class TicketDataBuilder
 
     private static void AddFooter(List<ColumnData> data, Invoice invoice, string? rectificationNotice)
     {
-        string payment = string.IsNullOrEmpty(invoice.PaymentReference)
-            ? $"Pago: {invoice.PaymentMethod}"
-            : $"Pago: {invoice.PaymentMethod} · Ref. {invoice.PaymentReference}";
-
         data.AddRange(new[]
         {
             ReportCells.Footer(Columns.TotalsSeparator, " "),
@@ -79,12 +75,14 @@ internal static class TicketDataBuilder
             ReportCells.Footer(Columns.TotalLabel, "TOTAL €"),
             ReportCells.Footer(Columns.TotalValue, ReportCells.Amount(invoice.TotalEur.Amount)),
             ReportCells.Footer(Columns.PaymentSeparator, " "),
-            ReportCells.Footer(Columns.Payment, payment),
+            ReportCells.Footer(Columns.Payment, $"Pago: {invoice.PaymentMethod}"),
             ReportCells.Footer(Columns.Notes, invoice.Notes ?? string.Empty),
             ReportCells.Footer(Columns.Origin, $"Origen: {invoice.BillingSource}"),
             ReportCells.Footer(Columns.Hash, invoice.Hash),
         });
 
+        if (!string.IsNullOrEmpty(invoice.PaymentReference))
+            data.Add(ReportCells.Footer(Columns.PaymentReference, $"Ref. {invoice.PaymentReference}"));
         if (invoice.IsInOriginCurrency)
             data.Add(ReportCells.Footer(Columns.ExchangeRate,
                 $"Tipo de cambio: 1 {invoice.AppliedExchangeRate.From} = {invoice.AppliedExchangeRate.Rate:F4} EUR"));

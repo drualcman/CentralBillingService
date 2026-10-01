@@ -15,13 +15,17 @@ internal static class HeaderSectionBuilder
     private const decimal LogoBesideFiscalQrX = 45m;
     private const decimal FiscalQrSize = 30m;   // AEAT: between 30x30 and 40x40 mm
     private const decimal FiscalQrLegendHeight = 4m;
+    private const decimal IssuerBesideFiscalQrX = LogoBesideFiscalQrX + LogoSize + 5m;
 
-    public static void Build(Section header)
+    public static void Build(Section header, bool printsFiscalQr)
     {
         BuildTamperBanner(header);
         BuildLogo(header);
         BuildFiscalQr(header);
-        BuildIssuerInfo(header);
+        if (printsFiscalQr)
+            BuildIssuerInfoBesideFiscalQr(header);
+        else
+            BuildIssuerInfo(header);
         BuildInvoiceMetadata(header);
         BuildRecipientBlock(header);
         BuildTableHeader(header);
@@ -124,6 +128,30 @@ internal static class HeaderSectionBuilder
             DataColumn = new Item(InvoiceReportLayout.Columns.IssuerTaxId)
         });
     }
+
+    // QR + logo take the left 75 mm: the issuer gets the narrower right side, tax id before the address
+    // so a long address can wrap onto a second line without running into anything.
+    private static void BuildIssuerInfoBesideFiscalQr(Section header)
+    {
+        const decimal width = InvoiceReportLayout.PageWidth - InvoiceReportLayout.Margin - IssuerBesideFiscalQrX;
+
+        header.AddColumn(IssuerCell(InvoiceReportLayout.Columns.IssuerName, 10, 8, width, new Font(new Shade(14), new FontStyle(700))));
+        header.AddColumn(IssuerCell(InvoiceReportLayout.Columns.IssuerLegalName, 19, 5, width, new Font(new Shade(9, InvoiceReportLayout.GrayText))));
+        header.AddColumn(IssuerCell(InvoiceReportLayout.Columns.IssuerTaxId, 25, 5, width, new Font(new Shade(10))));
+        header.AddColumn(IssuerCell(InvoiceReportLayout.Columns.IssuerAddress, 31, 10, width, new Font(new Shade(10))));
+    }
+
+    private static ColumnSetup IssuerCell(string column, decimal y, double height, decimal width, Font font) =>
+        new ColumnSetup
+        {
+            Format = new Format((double)width, height)
+            {
+                Position = new Kernel(y, IssuerBesideFiscalQrX),
+                TextAlignment = TextAlignment.Right,
+                FontDetails = font
+            },
+            DataColumn = new Item(column)
+        };
 
     private static void BuildInvoiceMetadata(Section header)
     {

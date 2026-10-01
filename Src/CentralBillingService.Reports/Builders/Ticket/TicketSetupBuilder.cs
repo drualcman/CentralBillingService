@@ -58,10 +58,10 @@ internal static class TicketSetupBuilder
         header.AddColumn(TicketCellFormats.Text(Columns.IssuerTaxId, 52, 4, 8, alignment: TextAlignment.Center));
         header.AddColumn(TicketCellFormats.Text(Columns.IssuerAddress, 56, 8, 8, alignment: TextAlignment.Center));
         header.AddColumn(TicketCellFormats.Separator(Columns.HeaderSeparator, 65));
-        header.AddColumn(TicketCellFormats.Text(Columns.Title, 67, 5, 9, bold: true));
-        header.AddColumn(TicketCellFormats.Text(Columns.Number, 72, 4, 8, width: HalfWidth + 8m));
-        header.AddColumn(TicketCellFormats.Text(Columns.Date, 72, 4, 8, alignment: TextAlignment.Right,
-            x: TicketReportLayout.Margin + HalfWidth + 8m, width: HalfWidth - 8m));
+        header.AddColumn(TicketCellFormats.Text(Columns.Title, 67, 5, 9, bold: true, width: HalfWidth + 12m));
+        header.AddColumn(TicketCellFormats.Text(Columns.Date, 67.5m, 4, 8, alignment: TextAlignment.Right,
+            x: TicketReportLayout.Margin + HalfWidth + 12m, width: HalfWidth - 12m));
+        header.AddColumn(TicketCellFormats.Text(Columns.Number, 72, 4, 8));
         header.AddColumn(TicketCellFormats.Text(Columns.RecipientName, 77, 4, 8));
         header.AddColumn(TicketCellFormats.Text(Columns.RecipientTaxId, 81, 4, 8));
         header.AddColumn(TicketCellFormats.Separator(Columns.LinesSeparator, 87));
@@ -94,10 +94,11 @@ internal static class TicketSetupBuilder
         footer.AddColumn(TicketCellFormats.Text(Columns.TotalValue, 13, 7, 12, bold: true, alignment: TextAlignment.Right, x: valueX, width: valueWidth));
         footer.AddColumn(TicketCellFormats.Separator(Columns.PaymentSeparator, 22));
         footer.AddColumn(TicketCellFormats.Text(Columns.Payment, 24, 4, 7.5));
-        footer.AddColumn(TicketCellFormats.Text(Columns.ExchangeRate, 28, 4, 7, color: TicketReportLayout.GrayText));
-        footer.AddColumn(TicketCellFormats.Text(Columns.Notes, 32, 6, 7, color: TicketReportLayout.GrayText));
-        footer.AddColumn(TicketCellFormats.Text(Columns.Origin, 39, 4, 7, color: TicketReportLayout.GrayText));
-        footer.AddColumn(TicketCellFormats.Text(Columns.Hash, 43, 7, 6.5, color: "#555555"));
-        footer.AddColumn(TicketCellFormats.Text(Columns.RectificationNotice, 51, 12, 7, bold: true));
+        footer.AddColumn(TicketCellFormats.Text(Columns.PaymentReference, 28, 4, 7, color: TicketReportLayout.GrayText));
+        footer.AddColumn(TicketCellFormats.Text(Columns.ExchangeRate, 32, 4, 7, color: TicketReportLayout.GrayText));
+        footer.AddColumn(TicketCellFormats.Text(Columns.Notes, 36, 14, 7, color: TicketReportLayout.GrayText));
+        footer.AddColumn(TicketCellFormats.Text(Columns.Origin, 51, 4, 7, color: TicketReportLayout.GrayText));
+        footer.AddColumn(TicketCellFormats.Text(Columns.Hash, 55, 7, 6.5, color: "#555555"));
+        footer.AddColumn(TicketCellFormats.Text(Columns.RectificationNotice, 63, 12, 7, bold: true));
     }
 }

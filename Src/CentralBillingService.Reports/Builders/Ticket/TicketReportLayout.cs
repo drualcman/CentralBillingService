@@ -8,7 +8,7 @@ internal static class TicketReportLayout
     public const decimal ContentWidth = 72m;
     public const decimal HeaderHeight = 89m;
     public const decimal BodyRowHeight = 10m;
-    public const decimal FooterHeight = 64m;
+    public const decimal FooterHeight = 76m;
     public const decimal FiscalQrSize = 30m;   // AEAT: between 30x30 and 40x40 mm
     public const string SeparatorColor = "#999999";
     public const string GrayText = "#666666";
@@ -46,6 +46,7 @@ internal static class TicketReportLayout
         public const string TotalValue = "TicketTotalValue";
         public const string PaymentSeparator = "TicketPaymentSeparator";
         public const string Payment = "TicketPayment";
+        public const string PaymentReference = "TicketPaymentReference";
         public const string ExchangeRate = "TicketExchangeRate";
         public const string Notes = "TicketNotes";
         public const string Origin = "TicketOrigin";

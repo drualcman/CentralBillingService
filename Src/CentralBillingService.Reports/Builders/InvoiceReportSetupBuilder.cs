@@ -2,7 +2,7 @@ namespace CentralBillingService.Reports.Builders;
 
 internal static class InvoiceReportSetupBuilder
 {
-    public static Setup Build(bool hasOriginCurrency = false)
+    public static Setup Build(bool hasOriginCurrency = false, bool printsFiscalQr = false)
     {
         double rowHeight = hasOriginCurrency
             ? (double)InvoiceReportLayout.BodyRowHeightWithOrigin
@@ -25,7 +25,7 @@ internal static class InvoiceReportSetupBuilder
             Footer = new Section { Format = new Format(210, (double)InvoiceReportLayout.FooterHeight) }
         };
 
-        HeaderSectionBuilder.Build(setup.Header);
+        HeaderSectionBuilder.Build(setup.Header, printsFiscalQr);
         BodySectionBuilder.Build(setup.Body, hasOriginCurrency);
         FooterSectionBuilder.Build(setup.Footer);
 
