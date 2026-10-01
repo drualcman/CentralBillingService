@@ -5,3 +5,6 @@ global using DigitalDoor.Reporting.Entities.Models;
 global using DigitalDoor.Reporting.Entities.ValueObjects;
 global using DigitalDoor.Reporting.Entities.ViewModels;
 global using System.Globalization;
+global using CentralBillingService.Domain.ValueObjects;
+global using CentralBillingService.Reports.Layouts;
+global using CentralBillingService.Reports.Builders.Ticket;

@@ -113,6 +113,9 @@ public sealed class RectificativeInvoice
     /// <summary>Fiscal QR content (e.g. AEAT ValidarQR URL) — see <see cref="Invoice.FiscalQrContent"/>.</summary>
     public string? FiscalQrContent { get; private set; }
 
+    /// <summary>Printed model — see <see cref="Invoice.Layout"/>. Presentation only — NOT part of the hash.</summary>
+    public string Layout { get; private set; } = InvoiceLayoutNames.Invoice;
+
     // ── Constructor privado ────────────────────────────────────────────────
 
     private RectificativeInvoice(
@@ -354,7 +357,8 @@ public sealed class RectificativeInvoice
         string? paymentMethod = null,
         string? qrCodeBlobUrl = null,
         string? fiscalStamp = null,
-        string? fiscalQrContent = null)
+        string? fiscalQrContent = null,
+        string? layout = null)
     {
         var invoice = new RectificativeInvoice(
             id, number, billingSource, originalNumber, originalIssueDate,
@@ -369,8 +373,12 @@ public sealed class RectificativeInvoice
             invoice.AttachQrCode(qrCodeBlobUrl);
         invoice.FiscalStamp = fiscalStamp;
         invoice.FiscalQrContent = fiscalQrContent;
+        invoice.Layout = InvoiceLayoutNames.Resolve(layout, null);
         return invoice;
     }
+
+    /// <summary>Sets the printed model; an unknown name falls back to <see cref="InvoiceLayoutNames.Invoice"/>.</summary>
+    public void AssignLayout(string layout) => Layout = InvoiceLayoutNames.Resolve(layout, null);
 
     // ── Transiciones de estado ─────────────────────────────────────────────
 

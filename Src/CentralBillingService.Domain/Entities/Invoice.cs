@@ -124,6 +124,9 @@ public sealed class Invoice
     /// </summary>
     public string? FiscalQrContent { get; private set; }
 
+    /// <summary>Printed model (see <see cref="InvoiceLayoutNames"/>). Presentation only — NOT part of the hash.</summary>
+    public string Layout { get; private set; } = InvoiceLayoutNames.Invoice;
+
     // ── Constructor privado ────────────────────────────────────────────────
 
     private Invoice(
@@ -283,7 +286,8 @@ public sealed class Invoice
         string? paymentMethod = null,
         string? qrCodeBlobUrl = null,
         string? fiscalStamp = null,
-        string? fiscalQrContent = null)
+        string? fiscalQrContent = null,
+        string? layout = null)
     {
         var invoice = new Invoice(
             id, number, billingSource, issuer, recipient,
@@ -296,8 +300,12 @@ public sealed class Invoice
         invoice.QrCodeBlobUrl = qrCodeBlobUrl;
         invoice.FiscalStamp = fiscalStamp;
         invoice.FiscalQrContent = fiscalQrContent;
+        invoice.Layout = InvoiceLayoutNames.Resolve(layout, null);
         return invoice;
     }
+
+    /// <summary>Sets the printed model; an unknown name falls back to <see cref="InvoiceLayoutNames.Invoice"/>.</summary>
+    public void AssignLayout(string layout) => Layout = InvoiceLayoutNames.Resolve(layout, null);
 
     /// <summary>
     /// Records the blob URL where this invoice's QR code image is stored.

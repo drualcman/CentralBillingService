@@ -98,6 +98,7 @@ public sealed class CreateInvoiceUseCase : ICreateInvoiceUseCase
                 var built = await _domainService.ExecuteAsync(domainRequest, reservedNumber, previousHash, ct);
                 built.AttachQrCode(_blobStorage.GetQrUrl(
                     InvoiceHelper.GetQrFileName(built.BillingSource, built.Number.Value)));
+                built.AssignLayout(InvoiceLayoutNames.Resolve(command.Layout, config.DefaultLayout));
                 return built;
             }
 

@@ -73,6 +73,8 @@ internal static class BodySectionBuilder
             DataColumn = new Item("Detail", InvoiceReportLayout.Columns.TotalValue)
         });
 
+        BuildSubscriptionColumns(body, cellH);
+
         if (!hasOriginCurrency) return;
 
         var originFont = new Font(new Shade(8, InvoiceReportLayout.GrayText));
@@ -109,6 +111,20 @@ internal static class BodySectionBuilder
                 FontDetails = originBoldFont
             },
             DataColumn = new Item("Detail", InvoiceReportLayout.Columns.TotalOriginValue)
+        });
+    }
+
+    // Unused cells stay empty, so every A4 model can share this body: a product row fills the classic
+    // columns, a subscription row the wide description + total.
+    private static void BuildSubscriptionColumns(Section body, double cellH)
+    {
+        const decimal descriptionX = InvoiceReportLayout.ColDescX + 3;
+        double wideDescriptionW = (double)(InvoiceReportLayout.ColTotalX - descriptionX - 5m);
+
+        body.AddColumn(new ColumnSetup
+        {
+            Format = new Format(wideDescriptionW, cellH) { Position = new Kernel(1, descriptionX) },
+            DataColumn = new Item("Detail", InvoiceReportLayout.Columns.SubscriptionDescriptionValue)
         });
     }
 }

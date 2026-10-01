@@ -87,6 +87,9 @@ internal static class InvoiceReportLayout
         public const string TotalValue = "TotalValue";
         public const string TotalOriginValue = "TotalOriginValue";
 
+        // Body — subscription rows (wide description, total only)
+        public const string SubscriptionDescriptionValue = "SubscriptionDescriptionValue";
+
         // Footer — totales
         public const string TotalSeparator = "TotalSeparator";
         public const string SubtotalLabel = "SubtotalLabel";

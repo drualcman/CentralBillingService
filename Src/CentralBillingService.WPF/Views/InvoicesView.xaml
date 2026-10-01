@@ -50,6 +50,18 @@
                     </Button>
 
                     <Button Style="{StaticResource MaterialDesignFlatButton}"
+                            Command="{Binding PreviewInvoiceCommand}"
+                            CommandParameter="{Binding SelectedInvoice}"
+                            IsEnabled="{Binding SelectedInvoice, Converter={StaticResource NullToVis}}"
+                            ToolTip="Ver o reimprimir la factura seleccionada con cualquier modelo"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Printer" Margin="0,0,6,0" />
+                            <TextBlock Text="Reimprimir" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource MaterialDesignFlatButton}"
                             Command="{Binding VerifyCommand}"
                             CommandParameter="{Binding SelectedInvoice}"
                             IsEnabled="{Binding SelectedInvoice, Converter={StaticResource NullToVis}}"
@@ -346,6 +358,20 @@
                         <DataGridTextColumn Header="Rectificada por"
                                             Binding="{Binding RectifiedByNumber}"
                                             Width="140" />
+
+                        <DataGridTemplateColumn Header="" Width="52" CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource MaterialDesignIconButton}"
+                                            Command="{Binding DataContext.PreviewInvoiceCommand,
+                                                RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Ver / reimprimir">
+                                        <materialDesign:PackIcon Kind="Printer" Width="18" Height="18" />
+                                    </Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </materialDesign:Card>

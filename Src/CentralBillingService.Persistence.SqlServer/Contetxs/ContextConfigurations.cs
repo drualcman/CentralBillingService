@@ -78,6 +78,8 @@ internal static class ContextConfigurations
             e.Property(x => x.FiscalStamp).HasMaxLength(1024);
             // AEAT ValidarQR URLs are short, but stay generous to remain authority-agnostic.
             e.Property(x => x.FiscalQrContent).HasMaxLength(1024);
+            // Existing invoices were all printed with the classic model.
+            e.Property(x => x.Layout).HasMaxLength(30).IsRequired().HasDefaultValue("Invoice");
 
             // Indexes
             e.HasIndex(x => x.InvoiceNumber).IsUnique();

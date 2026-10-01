@@ -14,4 +14,5 @@ internal sealed class CreateInvoiceRequest
     public required string PaymentMethod { get; init; }
     public required string PaymentReference { get; init; }
     public string? TransactionData { get; init; }
+    public string? Layout { get; init; }
 }

@@ -119,11 +119,19 @@
                                          ToolTip="Se añade tras el número correlativo: SERIE-AÑO-0001[sufijo]" />
                             </UniformGrid>
 
-                            <ComboBox Margin="0,0,0,12"
-                                      materialDesign:HintAssist.Hint="Método de pago *"
-                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                      SelectedItem="{Binding PaymentMethod}"
-                                      ItemsSource="{x:Static vm:CreateInvoiceViewModel.PaymentMethods}" />
+                            <UniformGrid Columns="2">
+                                <ComboBox Margin="0,0,6,12"
+                                          materialDesign:HintAssist.Hint="Método de pago *"
+                                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                          SelectedItem="{Binding PaymentMethod}"
+                                          ItemsSource="{x:Static vm:CreateInvoiceViewModel.PaymentMethods}" />
+                                <ComboBox Margin="6,0,0,12"
+                                          materialDesign:HintAssist.Hint="Modelo de factura"
+                                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                          ToolTip="Cómo se imprimirá la factura. Se guarda con ella y se usa siempre al regenerarla."
+                                          SelectedItem="{Binding Layout}"
+                                          ItemsSource="{x:Static vm:CreateInvoiceViewModel.Layouts}" />
+                            </UniformGrid>
 
                             <DockPanel Margin="0,0,0,4">
                                 <Button DockPanel.Dock="Right"

@@ -148,6 +148,16 @@ public partial class InvoicesViewModel : ObservableObject
     {
         if (invoice is null) return;
         var vm = new InvoiceDetailViewModel(_scopeFactory, BillingSource, invoice.InvoiceNumber,
+            goBack: () => _navigate(this), navigate: _navigate);
+        _navigate(vm);
+        _ = vm.LoadAsync();
+    }
+
+    [RelayCommand]
+    void PreviewInvoice(InvoiceSummaryResult? invoice)
+    {
+        if (invoice is null) return;
+        var vm = new InvoicePreviewViewModel(_scopeFactory, invoice.InvoiceNumber, BillingSource.Name,
             goBack: () => _navigate(this));
         _navigate(vm);
         _ = vm.LoadAsync();

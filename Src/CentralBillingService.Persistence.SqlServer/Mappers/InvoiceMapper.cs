@@ -79,6 +79,7 @@ internal static class InvoiceMapper
         QrCodeBlobUrl = invoice.QrCodeBlobUrl,
         FiscalStamp = invoice.FiscalStamp,
         FiscalQrContent = invoice.FiscalQrContent,
+        Layout = invoice.Layout,
 
         Lines = invoice.Lines.Select(l => ToLineEntity(l, invoice.Id)).ToList(),
     };
@@ -154,6 +155,7 @@ internal static class InvoiceMapper
         QrCodeBlobUrl = invoice.QrCodeBlobUrl,
         FiscalStamp = invoice.FiscalStamp,
         FiscalQrContent = invoice.FiscalQrContent,
+        Layout = invoice.Layout,
 
         Lines = invoice.Lines.Select(l => ToLineEntity(l, invoice.Id)).ToList(),
     };
@@ -225,7 +227,8 @@ internal static class InvoiceMapper
             paymentMethod: e.PaymentMethod,
             qrCodeBlobUrl: e.QrCodeBlobUrl,
             fiscalStamp: e.FiscalStamp,
-            fiscalQrContent: e.FiscalQrContent);
+            fiscalQrContent: e.FiscalQrContent,
+            layout: e.Layout);
     }
 
     internal static RectificativeInvoice ToRectificativeDomain(InvoiceEntity e)
@@ -277,7 +280,8 @@ internal static class InvoiceMapper
             paymentMethod: e.PaymentMethod,
             qrCodeBlobUrl: e.QrCodeBlobUrl,
             fiscalStamp: e.FiscalStamp,
-            fiscalQrContent: e.FiscalQrContent);
+            fiscalQrContent: e.FiscalQrContent,
+            layout: e.Layout);
     }
 
     private static InvoiceLine ToLineDomain(InvoiceLineEntity l, string invoiceCurrencyCode)

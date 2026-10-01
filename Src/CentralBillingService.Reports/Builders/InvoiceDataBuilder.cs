@@ -1,159 +1,126 @@
 namespace CentralBillingService.Reports.Builders;
 
+/// <summary>
+/// Data of the A4 models: they share header, totals footer and legal blocks, and differ only in the
+/// lines table (its column titles and how each line becomes body rows).
+/// </summary>
 internal static class InvoiceDataBuilder
 {
-    private static readonly CultureInfo EsEs = new("es-ES");
+    public const string TamperWarningText = "FACTURA MODIFICADA — La integridad de este documento ha sido comprometida";
 
-    public static async Task<List<ColumnData>> BuildAsync(Invoice invoice, bool hasTamper, string logoUrl, string? rectificationNotice = null)
+    public static async Task<List<ColumnData>> BuildAsync(
+        InvoiceReportContent content, InvoiceTableHeaders tableHeaders, Action<List<ColumnData>, Invoice> addBodyRows)
     {
-        var data = new List<ColumnData>();
-        await AddHeaderDataAsync(data, invoice, hasTamper, logoUrl);
-        AddBodyData(data, invoice);
-        await AddFooterDataAsync(data, invoice);
-        if (!string.IsNullOrWhiteSpace(rectificationNotice))
-            data.Add(CreateData(SectionType.Footer, InvoiceReportLayout.Columns.RectificationNotice, rectificationNotice));
+        Invoice invoice = content.Invoice;
+        List<ColumnData> data = new List<ColumnData>();
+        await AddHeaderDataAsync(data, invoice, content.HasTamper, content.LogoUrl);
+        AddTableHeaders(data, tableHeaders);
+        addBodyRows(data, invoice);
+        AddFooterData(data, invoice);
+        await AddQrCodeDataAsync(data, invoice);
+        if (!string.IsNullOrWhiteSpace(content.RectificationNotice))
+            data.Add(ReportCells.Footer(InvoiceReportLayout.Columns.RectificationNotice, content.RectificationNotice));
         return data;
     }
 
     private static async Task AddHeaderDataAsync(List<ColumnData> data, Invoice invoice, bool hasTamper, string logoUrl)
     {
-        var issuer = invoice.Issuer;
-        var recipient = invoice.Recipient;
+        BillingParty issuer = invoice.Issuer;
+        BillingParty recipient = invoice.Recipient;
 
         if (hasTamper)
-            data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.TamperWarning,
-                "FACTURA MODIFICADA — La integridad de este documento ha sido comprometida"));
+            data.Add(ReportCells.Header(InvoiceReportLayout.Columns.TamperWarning, TamperWarningText));
 
         if (!string.IsNullOrEmpty(logoUrl))
         {
             byte[] logo = await DownloadUrlHelper.GetBytes(logoUrl);
-            string logoColumn = HasFiscalQr(invoice)
+            string logoColumn = FiscalQr.IsPrinted(invoice)
                 ? InvoiceReportLayout.Columns.CompanyLogoBesideFiscalQr
                 : InvoiceReportLayout.Columns.CompanyLogo;
-            data.Add(CreateData(SectionType.Header, logoColumn, logo));
+            data.Add(ReportCells.Header(logoColumn, logo));
         }
 
         // Trade name is the prominent name; legal name shown smaller below when they differ
-        var tradeName = issuer.TradeName;
-        data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.IssuerName,
-            tradeName ?? issuer.LegalName));
-        if (tradeName is not null)
-            data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.IssuerLegalName,
-                issuer.LegalName));
+        data.Add(ReportCells.Header(InvoiceReportLayout.Columns.IssuerName, issuer.TradeName ?? issuer.LegalName));
+        if (issuer.TradeName is not null)
+            data.Add(ReportCells.Header(InvoiceReportLayout.Columns.IssuerLegalName, issuer.LegalName));
 
         data.AddRange(new[]
         {
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.IssuerAddress, issuer.Address.ToSingleLine()),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.IssuerTaxId, $"NIF: {issuer.TaxId.Value}"),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.InvoiceTitle, "FACTURA"),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.InvoiceNumberLabel, "Nº Factura:"),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.InvoiceNumberValue, invoice.Number.Value),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.IssuedDateLabel, "Fecha:"),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.IssuedDateValue, invoice.IssueDate.ToString("dd/MM/yyyy")),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.InfoBox, " "),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.RecipientLabel, "Cliente:"),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.RecipientName, recipient.DisplayName),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.RecipientAddress, recipient.Address.ToSingleLine()),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.RecipientTaxIdLabel, "NIF/CIF/VAT-ID:"),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.RecipientTaxIdValue, recipient.TaxId.Value),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.TableHeaderBg, " "),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.DescriptionHeader, "Descripción"),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.QtyHeader, "Cant."),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.UnitPriceHeader, "P.U. (€)"),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.TaxRateHeader, "IGIC %"),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.TaxableBaseHeader, "Base €"),
-            CreateData(SectionType.Header, InvoiceReportLayout.Columns.TotalHeader, "Total €"),
+            ReportCells.Header(InvoiceReportLayout.Columns.IssuerAddress, issuer.Address.ToSingleLine()),
+            ReportCells.Header(InvoiceReportLayout.Columns.IssuerTaxId, $"NIF: {issuer.TaxId.Value}"),
+            ReportCells.Header(InvoiceReportLayout.Columns.InvoiceTitle, "FACTURA"),
+            ReportCells.Header(InvoiceReportLayout.Columns.InvoiceNumberLabel, "Nº Factura:"),
+            ReportCells.Header(InvoiceReportLayout.Columns.InvoiceNumberValue, invoice.Number.Value),
+            ReportCells.Header(InvoiceReportLayout.Columns.IssuedDateLabel, "Fecha:"),
+            ReportCells.Header(InvoiceReportLayout.Columns.IssuedDateValue, invoice.IssueDate.ToString("dd/MM/yyyy")),
+            ReportCells.Header(InvoiceReportLayout.Columns.InfoBox, " "),
+            ReportCells.Header(InvoiceReportLayout.Columns.RecipientLabel, "Cliente:"),
+            ReportCells.Header(InvoiceReportLayout.Columns.RecipientName, recipient.DisplayName),
+            ReportCells.Header(InvoiceReportLayout.Columns.RecipientAddress, recipient.Address.ToSingleLine()),
+            ReportCells.Header(InvoiceReportLayout.Columns.RecipientTaxIdLabel, "NIF/CIF/VAT-ID:"),
+            ReportCells.Header(InvoiceReportLayout.Columns.RecipientTaxIdValue, recipient.TaxId.Value),
+            ReportCells.Header(InvoiceReportLayout.Columns.TableHeaderBg, " "),
         });
     }
 
-    private static void AddBodyData(List<ColumnData> data, Invoice invoice)
+    private static void AddTableHeaders(List<ColumnData> data, InvoiceTableHeaders headers)
     {
-        if (invoice.Lines.Count == 0)
-        {
-            data.Add(CreateBodyData(1, InvoiceReportLayout.Columns.DescriptionValue, "Sin líneas"));
-            data.Add(CreateBodyData(1, InvoiceReportLayout.Columns.QtyValue, "0"));
-            data.Add(CreateBodyData(1, InvoiceReportLayout.Columns.UnitPriceValue, "0,00"));
-            data.Add(CreateBodyData(1, InvoiceReportLayout.Columns.TaxRateValue, "0%"));
-            data.Add(CreateBodyData(1, InvoiceReportLayout.Columns.TaxableBaseValue, "0,00"));
-            data.Add(CreateBodyData(1, InvoiceReportLayout.Columns.TotalValue, "0,00"));
-            return;
-        }
-
-        foreach (var line in invoice.Lines)
-        {
-            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.DescriptionValue, line.Description));
-            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.QtyValue, line.Quantity.ToString()));
-            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.UnitPriceValue, FormatAmount(line.UnitPriceEur.Amount)));
-            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TaxRateValue, $"{line.TaxRate.Percentage}%"));
-            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TaxableBaseValue, FormatAmount(line.TaxableBaseEur.Amount)));
-            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TotalValue, FormatAmount(line.TotalEur.Amount)));
-
-            if (!line.HasCurrencyConversion)
-                continue;
-
-            var curr = line.UnitPriceOrigin.Currency.Code;
-            decimal taxOriginLine = line.TotalOrigin.Amount * line.TaxRate.Percentage / 100m;
-            decimal totalOriginLine = line.TotalOrigin.Amount + taxOriginLine;
-
-            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.UnitPriceOriginValue,
-                FormatOrigin(line.UnitPriceOrigin.Amount, curr)));
-            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TaxableBaseOriginValue,
-                FormatOrigin(line.TotalOrigin.Amount, curr)));
-            data.Add(CreateBodyData(line.LineNumber, InvoiceReportLayout.Columns.TotalOriginValue,
-                FormatOrigin(totalOriginLine, curr)));
-        }
+        AddHeaderIfPresent(data, InvoiceReportLayout.Columns.DescriptionHeader, headers.Description);
+        AddHeaderIfPresent(data, InvoiceReportLayout.Columns.QtyHeader, headers.Quantity);
+        AddHeaderIfPresent(data, InvoiceReportLayout.Columns.UnitPriceHeader, headers.UnitPrice);
+        AddHeaderIfPresent(data, InvoiceReportLayout.Columns.TaxRateHeader, headers.TaxRate);
+        AddHeaderIfPresent(data, InvoiceReportLayout.Columns.TaxableBaseHeader, headers.TaxableBase);
+        AddHeaderIfPresent(data, InvoiceReportLayout.Columns.TotalHeader, headers.Total);
     }
 
-    private static async Task AddFooterDataAsync(List<ColumnData> data, Invoice invoice)
+    private static void AddHeaderIfPresent(List<ColumnData> data, string column, string? title)
+    {
+        if (!string.IsNullOrEmpty(title))
+            data.Add(ReportCells.Header(column, title));
+    }
+
+    private static void AddFooterData(List<ColumnData> data, Invoice invoice)
     {
         string exchangeRateInfo = invoice.IsInOriginCurrency
             ? $"Tipo de cambio: 1 {invoice.AppliedExchangeRate.From} = {invoice.AppliedExchangeRate.Rate:F4} EUR"
             : string.Empty;
-
-        string paymentMethod = invoice.PaymentMethod ?? string.Empty;
-        string paymentReference = string.IsNullOrEmpty(invoice.PaymentReference)
-            ? string.Empty
-            : $"Ref.: {invoice.PaymentReference}";
+        string paymentReference = string.IsNullOrEmpty(invoice.PaymentReference) ? string.Empty : $"Ref.: {invoice.PaymentReference}";
 
         data.AddRange(new[]
         {
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TotalSeparator, " "),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.SubtotalLabel, "Base imponible:"),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.SubtotalValue, FormatAmount(invoice.TaxableBaseEur.Amount)),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TaxLabel, "IGIC total:"),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TaxValue, FormatAmount(invoice.TotalTaxAmountEur.Amount)),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TotalSeparatorBottom, " "),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TotalLabel, "TOTAL"),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TotalFooterValue, FormatAmount(invoice.TotalEur.Amount)),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.PaymentMethodLabel, "Forma de pago:"),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.PaymentMethodValue, paymentMethod),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.PaymentReference, paymentReference),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.ExchangeRateRow, exchangeRateInfo),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.NotesValue, invoice.Notes ?? string.Empty),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.VerificationSeparator, " "),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.VerificationTitle, "VERIFICACIÓN"),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.BillingSourceLabel, "Código de origen:"),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.BillingSourceValue, invoice.BillingSource),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.HashLabel, "Hash SHA-256:"),
-            CreateData(SectionType.Footer, InvoiceReportLayout.Columns.HashValue, invoice.Hash),
+            ReportCells.Footer(InvoiceReportLayout.Columns.TotalSeparator, " "),
+            ReportCells.Footer(InvoiceReportLayout.Columns.SubtotalLabel, "Base imponible:"),
+            ReportCells.Footer(InvoiceReportLayout.Columns.SubtotalValue, ReportCells.Amount(invoice.TaxableBaseEur.Amount)),
+            ReportCells.Footer(InvoiceReportLayout.Columns.TaxLabel, "IGIC total:"),
+            ReportCells.Footer(InvoiceReportLayout.Columns.TaxValue, ReportCells.Amount(invoice.TotalTaxAmountEur.Amount)),
+            ReportCells.Footer(InvoiceReportLayout.Columns.TotalSeparatorBottom, " "),
+            ReportCells.Footer(InvoiceReportLayout.Columns.TotalLabel, "TOTAL"),
+            ReportCells.Footer(InvoiceReportLayout.Columns.TotalFooterValue, ReportCells.Amount(invoice.TotalEur.Amount)),
+            ReportCells.Footer(InvoiceReportLayout.Columns.PaymentMethodLabel, "Forma de pago:"),
+            ReportCells.Footer(InvoiceReportLayout.Columns.PaymentMethodValue, invoice.PaymentMethod ?? string.Empty),
+            ReportCells.Footer(InvoiceReportLayout.Columns.PaymentReference, paymentReference),
+            ReportCells.Footer(InvoiceReportLayout.Columns.ExchangeRateRow, exchangeRateInfo),
+            ReportCells.Footer(InvoiceReportLayout.Columns.NotesValue, invoice.Notes ?? string.Empty),
+            ReportCells.Footer(InvoiceReportLayout.Columns.VerificationSeparator, " "),
+            ReportCells.Footer(InvoiceReportLayout.Columns.VerificationTitle, "VERIFICACIÓN"),
+            ReportCells.Footer(InvoiceReportLayout.Columns.BillingSourceLabel, "Código de origen:"),
+            ReportCells.Footer(InvoiceReportLayout.Columns.BillingSourceValue, invoice.BillingSource),
+            ReportCells.Footer(InvoiceReportLayout.Columns.HashLabel, "Hash SHA-256:"),
+            ReportCells.Footer(InvoiceReportLayout.Columns.HashValue, invoice.Hash),
         });
 
         if (invoice.IsInOriginCurrency)
         {
-            var curr = invoice.AppliedExchangeRate.From.Code;
-            decimal subtotalOrig = invoice.TotalInOriginCurrency.Amount;
-            decimal taxOrig = invoice.Lines.Sum(l => l.TotalOrigin.Amount * l.TaxRate.Percentage / 100m);
-            decimal totalOrig = subtotalOrig + taxOrig;
+            string currency = invoice.AppliedExchangeRate.From.Code;
+            decimal subtotalOrigin = invoice.TotalInOriginCurrency.Amount;
+            decimal taxOrigin = invoice.Lines.Sum(line => line.TotalOrigin.Amount * line.TaxRate.Percentage / 100m);
 
-            data.Add(CreateData(SectionType.Footer, InvoiceReportLayout.Columns.SubtotalOriginValue,
-                FormatOrigin(subtotalOrig, curr)));
-            data.Add(CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TaxOriginValue,
-                FormatOrigin(taxOrig, curr)));
-            data.Add(CreateData(SectionType.Footer, InvoiceReportLayout.Columns.TotalOriginFooterValue,
-                FormatOrigin(totalOrig, curr)));
+            data.Add(ReportCells.Footer(InvoiceReportLayout.Columns.SubtotalOriginValue, ReportCells.OriginAmount(subtotalOrigin, currency)));
+            data.Add(ReportCells.Footer(InvoiceReportLayout.Columns.TaxOriginValue, ReportCells.OriginAmount(taxOrigin, currency)));
+            data.Add(ReportCells.Footer(InvoiceReportLayout.Columns.TotalOriginFooterValue,
+                ReportCells.OriginAmount(subtotalOrigin + taxOrigin, currency)));
         }
-
-        await AddQrCodeDataAsync(data, invoice);
     }
 
     /// <summary>
@@ -162,34 +129,15 @@ internal static class InvoiceDataBuilder
     /// </summary>
     private static async Task AddQrCodeDataAsync(List<ColumnData> data, Invoice invoice)
     {
-        if (!string.IsNullOrWhiteSpace(invoice.QrCodeBlobUrl))
+        byte[] qrBytes = await FiscalQr.LoadImageAsync(invoice);
+        if (qrBytes.Length > 0 && FiscalQr.IsPrinted(invoice))
         {
-            byte[] qrBytes = await DownloadUrlHelper.GetBytes(invoice.QrCodeBlobUrl);
-            if (qrBytes.Length > 0 && HasFiscalQr(invoice))
-            {
-                data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.FiscalQrCode, qrBytes));
-                data.Add(CreateData(SectionType.Header, InvoiceReportLayout.Columns.FiscalQrLegend, FiscalQrLegendText));
-            }
-            else if (qrBytes.Length > 0)
-            {
-                data.Add(CreateData(SectionType.Footer, InvoiceReportLayout.Columns.QrCode, qrBytes));
-            }
+            data.Add(ReportCells.Header(InvoiceReportLayout.Columns.FiscalQrCode, qrBytes));
+            data.Add(ReportCells.Header(InvoiceReportLayout.Columns.FiscalQrLegend, FiscalQr.LegendText));
+        }
+        else if (qrBytes.Length > 0)
+        {
+            data.Add(ReportCells.Footer(InvoiceReportLayout.Columns.QrCode, qrBytes));
         }
     }
-
-    private const string FiscalQrLegendText = "VERI*FACTU";
-
-    private static bool HasFiscalQr(Invoice invoice) =>
-        !string.IsNullOrWhiteSpace(invoice.FiscalQrContent) && !string.IsNullOrWhiteSpace(invoice.QrCodeBlobUrl);
-
-    private static string FormatAmount(decimal amount) => amount.ToString("N2", EsEs);
-
-    private static string FormatOrigin(decimal amount, string currencyCode)
-        => $"{amount.ToString("N2", EsEs)} {currencyCode}";
-
-    private static ColumnData CreateData(SectionType section, string col, object value)
-        => new() { Section = section, Column = new Item(col), Value = value };
-
-    private static ColumnData CreateBodyData(int row, string col, object value)
-        => new() { Section = SectionType.Body, Column = new Item("Detail", col), Value = value, Row = row };
 }

@@ -111,6 +111,9 @@ public sealed class InvoiceEntity
     /// </summary>
     public string? FiscalQrContent { get; set; }
 
+    /// <summary>Printed model the invoice was created with ("Invoice", "Ticket", …). Presentation only.</summary>
+    public string Layout { get; set; } = "Invoice";
+
     // ── Navigation ────────────────────────────────────────────────────────
     public ICollection<InvoiceLineEntity> Lines { get; set; } = [];
 }

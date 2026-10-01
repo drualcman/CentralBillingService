@@ -41,6 +41,7 @@ public sealed class CreateInvoiceFunction
                 PaymentMethod = request.PaymentMethod,
                 PaymentReference = request.PaymentReference,
                 TransactionData = request.TransactionData,
+                Layout = request.Layout,
             };
         }
         catch (Exception ex)

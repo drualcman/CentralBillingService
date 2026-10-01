@@ -14,6 +14,15 @@ public partial class InvoicePreviewViewModel : ObservableObject
     [ObservableProperty] string? errorMessage;
     [ObservableProperty] string? pdfTempPath;
 
+    public const string StoredLayoutOption = "Guardado con la factura";
+
+    /// <summary>Reprint with any model to compare them; the stored one is not changed.</summary>
+    public static IReadOnlyList<string> LayoutOptions { get; } = [StoredLayoutOption, .. InvoiceLayoutNames.All];
+
+    [ObservableProperty] string selectedLayoutOption = StoredLayoutOption;
+
+    partial void OnSelectedLayoutOptionChanged(string value) => _ = LoadAsync();
+
     public InvoicePreviewViewModel(
         IServiceScopeFactory scopeFactory,
         string invoiceNumber,
@@ -39,7 +48,8 @@ public partial class InvoicePreviewViewModel : ObservableObject
             var pdfGenerator = scope.ServiceProvider.GetRequiredService<IReportAsBytes>();
 
             var reportModel = await reportUseCase.GenerateInvoiceViewModel(
-                new GenerateInvoiceReportCommand(InvoiceNumber, BillingSourceName),
+                new GenerateInvoiceReportCommand(InvoiceNumber, BillingSourceName,
+                    SelectedLayoutOption == StoredLayoutOption ? null : SelectedLayoutOption),
                 CancellationToken.None);
 
             var pdfBytes = await pdfGenerator.GenerateReport(reportModel);

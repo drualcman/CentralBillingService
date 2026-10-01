@@ -59,4 +59,10 @@ public sealed class CreateInvoiceCommand
     public required string PaymentReference { get; init; }
 
     public string? TransactionData { get; init; }
+
+    /// <summary>
+    /// Printed model: "Invoice", "Ticket" or "Subscription". Optional: null or unknown uses the
+    /// billing source's DefaultLayout (or "Invoice"). Presentation only.
+    /// </summary>
+    public string? Layout { get; init; }
 }

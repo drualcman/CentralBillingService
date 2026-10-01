@@ -24,7 +24,15 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
+
+                <ComboBox Grid.Column="2" Width="210"
+                          materialDesign:HintAssist.Hint="Modelo"
+                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                          ToolTip="Reimprime con otro modelo para compararlo. No cambia el guardado con la factura."
+                          ItemsSource="{Binding LayoutOptions}"
+                          SelectedItem="{Binding SelectedLayoutOption}" />
 
                 <Button Grid.Column="0"
                         Style="{StaticResource MaterialDesignFlatButton}"

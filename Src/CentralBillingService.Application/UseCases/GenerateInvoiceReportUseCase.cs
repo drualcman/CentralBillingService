@@ -34,7 +34,7 @@ public class GenerateInvoiceReportUseCase(IInvoiceRepository repository,
                     rectificative.Recipient, rectificative.IssueDate, null, rectificative.CreatedAt, rectificative.Lines.ToList(),
                     rectificative.AppliedExchangeRate, rectificative.Hash, rectificative.PreviousHash, rectificative.Status,
                     rectificative.PaymentReference, null, rectificative.Notes, rectificative.TransactionData, rectificative.PaymentMethod,
-                    rectificative.QrCodeBlobUrl, rectificative.FiscalStamp, rectificative.FiscalQrContent);
+                    rectificative.QrCodeBlobUrl, rectificative.FiscalStamp, rectificative.FiscalQrContent, rectificative.Layout);
             }
             else
                 invoice = null;
@@ -50,6 +50,10 @@ public class GenerateInvoiceReportUseCase(IInvoiceRepository repository,
             logger.LogError("Invoice {InvoiceNumber} not found for report generation.", command.InvoiceNumber);
             throw new NotFoundException($"No invoice found for '{command.InvoiceNumber}'.");
         }
+
+        // In-memory only: this use case never persists the invoice.
+        if (!string.IsNullOrWhiteSpace(command.LayoutOverride))
+            invoice.AssignLayout(command.LayoutOverride);
 
         if (hasTamper)
             logger.LogWarning(

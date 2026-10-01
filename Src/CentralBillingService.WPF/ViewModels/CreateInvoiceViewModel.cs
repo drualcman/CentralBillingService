@@ -1,5 +1,6 @@
 using CentralBillingService.Application.Interfaces;
 using CentralBillingService.Domain.Interfaces;
+using CentralBillingService.Domain.Services;
 using CentralBillingService.Domain.ValueObjects;
 using CentralBillingService.WPF.Services;
 
@@ -57,6 +58,11 @@ public partial class CreateInvoiceViewModel : ObservableObject
     public static string[] PaymentMethods { get; } =
         ["TRANSFER", "CARD", "CASH", "PAYPAL", "CRYPTO", "OTHER"];
 
+    public static IReadOnlyList<string> Layouts => InvoiceLayoutNames.All;
+
+    /// <summary>Printed model stored with the invoice; starts as the billing source's default.</summary>
+    [ObservableProperty] string layout = InvoiceLayoutNames.Invoice;
+
     [ObservableProperty] string? saveToMasterMessage;
 
     // Live totals (raw sums of unit prices × quantities; actual EUR amounts computed by backend)
@@ -92,6 +98,24 @@ public partial class CreateInvoiceViewModel : ObservableObject
         // Pre-fill a unique payment reference so a manual invoice is never left empty and can't
         // collide with an existing one by accident. The user may replace it with a real reference.
         SetGeneratedReference();
+        Layout = LoadDefaultLayout();
+    }
+
+    private string LoadDefaultLayout()
+    {
+        string defaultLayout = InvoiceLayoutNames.Invoice;
+        try
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            BillingSourceRegistry registry = scope.ServiceProvider.GetRequiredService<BillingSourceRegistry>();
+            defaultLayout = InvoiceLayoutNames.Resolve(null, registry.GetConfig(BillingSource.Name).DefaultLayout);
+        }
+        catch (Exception)
+        {
+            defaultLayout = InvoiceLayoutNames.Invoice;
+        }
+
+        return defaultLayout;
     }
 
     // When a change comes from typing (not our own generation), verify uniqueness as soon as the
@@ -276,6 +300,7 @@ public partial class CreateInvoiceViewModel : ObservableObject
                 PaymentMethod = PaymentMethod,
                 PaymentReference = PaymentReference.Trim(),
                 TransactionData = string.IsNullOrWhiteSpace(TransactionData) ? null : TransactionData.Trim(),
+                Layout = Layout,
                 Recipient = new RecipientDto
                 {
                     LegalName = RecipientLegalName.Trim(),

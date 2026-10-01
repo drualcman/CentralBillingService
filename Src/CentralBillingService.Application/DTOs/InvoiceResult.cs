@@ -55,4 +55,7 @@ public sealed class InvoiceResult
     /// Null if the QR has not been generated yet (best-effort post-creation step).
     /// </summary>
     public string? QrCodeBlobUrl { get; init; }
+
+    /// <summary>Printed model the invoice was created with ("Invoice", "Ticket", …).</summary>
+    public string Layout { get; init; } = "Invoice";
 }

@@ -26,6 +26,12 @@ public sealed class BillingSourceConfig
     /// </summary>
     public RegistrarConfig Registrar { get; set; } = new();
 
+    /// <summary>
+    /// Printed model used when a request names no layout (or an unknown one). See InvoiceLayoutNames;
+    /// null or unknown = "Invoice".
+    /// </summary>
+    public string? DefaultLayout { get; set; }
+
     /// <summary>If set, the result of queue-triggered invoice creation is published here.</summary>
     public ResultQueueConfig? ResultQueue { get; set; }
 

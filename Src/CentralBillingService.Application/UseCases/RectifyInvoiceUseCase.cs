@@ -98,6 +98,7 @@ public sealed class RectifyInvoiceUseCase
                 domainResult.Rectificative.AttachQrCode(
                     _blobStorage.GetQrUrl(
                         InvoiceHelper.GetQrFileName(domainResult.Rectificative.BillingSource, domainResult.Rectificative.Number.Value)));
+                domainResult.Rectificative.AssignLayout(originalInvoice.Layout);
 
                 await _repository.SaveRectificativeAsync(
                     domainResult.Rectificative, domainResult.UpdatedOriginal, cancellationToken);
@@ -138,6 +139,7 @@ public sealed class RectifyInvoiceUseCase
 
             domainResult2.Rectificative.AttachQrCode(_blobStorage
                 .GetQrUrl(InvoiceHelper.GetQrFileName(domainResult2.Rectificative.BillingSource, domainResult2.Rectificative.Number.Value)));
+            domainResult2.Rectificative.AssignLayout(originalRectificative.Layout);
 
             await _repository.SaveRectificativeFromRectificativeAsync(
                 domainResult2.Rectificative, domainResult2.UpdatedOriginal, cancellationToken);

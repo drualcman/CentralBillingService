@@ -31,6 +31,7 @@ internal static class InvoiceResultMapper
         PaymentReference = invoice.PaymentReference,
         HasTamper = invoice.HasTamper,
         QrCodeBlobUrl = invoice.QrCodeBlobUrl,
+        Layout = invoice.Layout,
     };
 
     internal static InvoiceResult ToResult(RectificativeInvoice invoice) => new()

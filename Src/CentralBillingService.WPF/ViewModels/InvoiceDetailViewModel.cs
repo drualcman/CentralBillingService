@@ -4,6 +4,7 @@ public partial class InvoiceDetailViewModel : ObservableObject
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly Action _goBack;
+    private readonly Action<object> _navigate;
 
     public BillingSourceSummary BillingSource { get; }
     public string InvoiceNumber { get; }
@@ -18,10 +19,12 @@ public partial class InvoiceDetailViewModel : ObservableObject
         IServiceScopeFactory scopeFactory,
         BillingSourceSummary billingSource,
         string invoiceNumber,
-        Action goBack)
+        Action goBack,
+        Action<object> navigate)
     {
         _scopeFactory = scopeFactory;
         _goBack = goBack;
+        _navigate = navigate;
         BillingSource = billingSource;
         InvoiceNumber = invoiceNumber;
     }
@@ -55,6 +58,15 @@ public partial class InvoiceDetailViewModel : ObservableObject
 
     [RelayCommand]
     void GoBack() => _goBack();
+
+    [RelayCommand]
+    void Reprint()
+    {
+        InvoicePreviewViewModel preview = new InvoicePreviewViewModel(_scopeFactory, InvoiceNumber, BillingSource.Name,
+            goBack: () => _navigate(this));
+        _navigate(preview);
+        _ = preview.LoadAsync();
+    }
 
     [RelayCommand]
     async Task SendPdfByEmail()
