@@ -144,25 +144,54 @@
                                    FontSize="12" TextWrapping="Wrap" />
                     </Border>
 
-                    <!-- Row 1: Key + Secret + (disabled note) -->
-                    <UniformGrid Columns="3" Margin="0,0,0,4">
-                        <StackPanel Margin="0,0,8,0">
+                    <!-- Row 1: Key + Secret + Website + Layout -->
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
                             <TextBlock Style="{StaticResource FieldLabel}" Text="Identificador * (ej: web-tienda)" />
                             <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                      Text="{Binding EditKey, UpdateSourceTrigger=PropertyChanged}"
                                      IsEnabled="{Binding IsNewRecord}" />
                         </StackPanel>
-                        <StackPanel Margin="4,0,8,0">
-                            <TextBlock Style="{StaticResource FieldLabel}" Text="Secreto (token) *" />
-                            <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                     Text="{Binding EditSecret, UpdateSourceTrigger=PropertyChanged}" />
+                        <StackPanel Grid.Column="1" Margin="4,0,8,0">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Secreto (token de acceso) *" />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Command="{Binding CopySecretCommand}"
+                                        ToolTip="Copiar token al portapapeles"
+                                        Width="36" Height="36" Margin="4,0,0,0">
+                                    <materialDesign:PackIcon Kind="ContentCopy" />
+                                </Button>
+                                <Button DockPanel.Dock="Right"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Command="{Binding GenerateSecretCommand}"
+                                        ToolTip="Generar un nuevo token de acceso"
+                                        Width="36" Height="36" Margin="4,0,0,0">
+                                    <materialDesign:PackIcon Kind="KeyRefresh" />
+                                </Button>
+                                <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         FontFamily="Consolas"
+                                         Text="{Binding EditSecret, UpdateSourceTrigger=PropertyChanged}" />
+                            </DockPanel>
                         </StackPanel>
-                        <StackPanel Margin="4,0,0,0">
+                        <StackPanel Grid.Column="2" Margin="4,0,8,0">
                             <TextBlock Style="{StaticResource FieldLabel}" Text="URL web (opcional)" />
                             <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                      Text="{Binding EditWebsite, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
-                    </UniformGrid>
+                        <StackPanel Grid.Column="3" Margin="4,0,0,0">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Formato por defecto" />
+                            <ComboBox Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                      ItemsSource="{Binding LayoutOptions}"
+                                      SelectedItem="{Binding EditDefaultLayout}" />
+                        </StackPanel>
+                    </Grid>
 
                     <!-- Row 2: Fiscal data -->
                     <UniformGrid Columns="4" Margin="0,4,0,4">
@@ -188,8 +217,8 @@
                         </StackPanel>
                     </UniformGrid>
 
-                    <!-- Row 3: Contact + address -->
-                    <UniformGrid Columns="5" Margin="0,4,0,12">
+                    <!-- Row 3: Contact -->
+                    <UniformGrid Columns="4" Margin="0,4,0,4">
                         <StackPanel Margin="0,0,8,0">
                             <TextBlock Style="{StaticResource FieldLabel}" Text="Email *" />
                             <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
@@ -205,15 +234,34 @@
                             <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                      Text="{Binding EditAddressLine1, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
-                        <StackPanel Margin="4,0,8,0">
+                        <StackPanel Margin="4,0,0,0">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Dirección (línea 2)" />
+                            <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     Text="{Binding EditAddressLine2, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </UniformGrid>
+
+                    <!-- Row 4: Address -->
+                    <UniformGrid Columns="4" Margin="0,4,0,12">
+                        <StackPanel Margin="0,0,8,0">
                             <TextBlock Style="{StaticResource FieldLabel}" Text="Ciudad *" />
                             <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                      Text="{Binding EditCity, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
-                        <StackPanel Margin="4,0,0,0">
+                        <StackPanel Margin="4,0,8,0">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Provincia" />
+                            <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     Text="{Binding EditProvince, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Margin="4,0,8,0">
                             <TextBlock Style="{StaticResource FieldLabel}" Text="Código postal *" />
                             <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                      Text="{Binding EditPostalCode, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Margin="4,0,0,0">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="País dirección (ES, GB…)" />
+                            <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     Text="{Binding EditAddressCountryCode, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </UniformGrid>
 

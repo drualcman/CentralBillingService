@@ -4,36 +4,21 @@ namespace CentralBillingService.WPF.Services;
 
 public class AppSettingsService
 {
-    private readonly string _path =
+    private readonly string SettingsPath =
         Path.Combine(AppContext.BaseDirectory, "appsettings.json");
 
     public List<BillingSourceRecord> LoadBillingSources()
     {
-        var json = File.ReadAllText(_path);
-        var root = JsonNode.Parse(json)!;
-        var array = root["CbsOptions"]?["BillingSources"]?.AsArray() ?? [];
-        var result = new List<BillingSourceRecord>();
+        JsonNode root = JsonNode.Parse(File.ReadAllText(SettingsPath))!;
+        JsonArray array = root["CbsOptions"]?["BillingSources"]?.AsArray() ?? [];
+        List<BillingSourceRecord> result = [];
 
-        foreach (var s in array)
+        foreach (JsonNode? source in array)
         {
-            if (s is null) continue;
-            var issuer = s["Issuer"];
-            result.Add(new BillingSourceRecord
+            if (source is not null)
             {
-                Key                = s["BillingSource"]?.GetValue<string>()      ?? "",
-                Secret             = s["Secret"]?.GetValue<string>()              ?? "",
-                LegalName          = issuer?["LegalName"]?.GetValue<string>()     ?? "",
-                TradeName          = issuer?["TradeName"]?.GetValue<string>(),
-                TaxIdValue         = issuer?["TaxIdValue"]?.GetValue<string>()    ?? "",
-                TaxIdCountryCode   = issuer?["TaxIdCountryCode"]?.GetValue<string>() ?? "ES",
-                Email              = issuer?["Email"]?.GetValue<string>()         ?? "",
-                Phone              = issuer?["Phone"]?.GetValue<string>(),
-                Website            = issuer?["Website"]?.GetValue<string>(),
-                AddressLine1       = issuer?["AddressLine1"]?.GetValue<string>()  ?? "",
-                City               = issuer?["City"]?.GetValue<string>()          ?? "",
-                PostalCode         = issuer?["PostalCode"]?.GetValue<string>()    ?? "",
-                AddressCountryCode = issuer?["AddressCountryCode"]?.GetValue<string>() ?? "ES",
-            });
+                result.Add(ToRecord(source));
+            }
         }
 
         return result;
@@ -41,34 +26,84 @@ public class AppSettingsService
 
     public void SaveBillingSources(IEnumerable<BillingSourceRecord> records)
     {
-        var json = File.ReadAllText(_path);
-        var root = JsonNode.Parse(json)!;
+        JsonNode root = JsonNode.Parse(File.ReadAllText(SettingsPath))!;
+        JsonArray previousSources = root["CbsOptions"]?["BillingSources"]?.AsArray() ?? [];
 
-        var array = new JsonArray();
-        foreach (var r in records)
+        JsonArray array = new JsonArray();
+        foreach (BillingSourceRecord record in records)
         {
-            array.Add(new JsonObject
-            {
-                ["BillingSource"] = r.Key,
-                ["Secret"]        = r.Secret,
-                ["Issuer"]        = new JsonObject
-                {
-                    ["LegalName"]          = r.LegalName,
-                    ["TradeName"]          = r.TradeName,
-                    ["TaxIdValue"]         = r.TaxIdValue,
-                    ["TaxIdCountryCode"]   = r.TaxIdCountryCode,
-                    ["Email"]              = r.Email,
-                    ["Phone"]              = r.Phone,
-                    ["Website"]            = r.Website,
-                    ["AddressLine1"]       = r.AddressLine1,
-                    ["City"]               = r.City,
-                    ["PostalCode"]         = r.PostalCode,
-                    ["AddressCountryCode"] = r.AddressCountryCode,
-                },
-            });
+            JsonObject source = FindSourceClone(previousSources, record.Key) ?? new JsonObject();
+            ApplyRecord(source, record);
+            array.Add(source);
         }
 
         root["CbsOptions"]!["BillingSources"] = array;
-        File.WriteAllText(_path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(SettingsPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    private static BillingSourceRecord ToRecord(JsonNode source)
+    {
+        JsonNode? issuer = source["Issuer"];
+        return new BillingSourceRecord
+        {
+            Key                = source["BillingSource"]?.GetValue<string>()      ?? "",
+            Secret             = source["Secret"]?.GetValue<string>()             ?? "",
+            DefaultLayout      = source["DefaultLayout"]?.GetValue<string>(),
+            LegalName          = issuer?["LegalName"]?.GetValue<string>()         ?? "",
+            TradeName          = issuer?["TradeName"]?.GetValue<string>(),
+            TaxIdValue         = issuer?["TaxIdValue"]?.GetValue<string>()        ?? "",
+            TaxIdCountryCode   = issuer?["TaxIdCountryCode"]?.GetValue<string>()  ?? "ES",
+            Email              = issuer?["Email"]?.GetValue<string>()             ?? "",
+            Phone              = issuer?["Phone"]?.GetValue<string>(),
+            Website            = issuer?["Website"]?.GetValue<string>(),
+            AddressLine1       = issuer?["AddressLine1"]?.GetValue<string>()      ?? "",
+            AddressLine2       = issuer?["AddressLine2"]?.GetValue<string>(),
+            City               = issuer?["City"]?.GetValue<string>()              ?? "",
+            Province           = issuer?["Province"]?.GetValue<string>(),
+            PostalCode         = issuer?["PostalCode"]?.GetValue<string>()        ?? "",
+            AddressCountryCode = issuer?["AddressCountryCode"]?.GetValue<string>() ?? "ES",
+        };
+    }
+
+    private static JsonObject? FindSourceClone(JsonArray sources, string key)
+    {
+        JsonNode? match = sources.FirstOrDefault(source =>
+            string.Equals(source?["BillingSource"]?.GetValue<string>(), key, StringComparison.OrdinalIgnoreCase));
+        return match?.DeepClone().AsObject();
+    }
+
+    private static void ApplyRecord(JsonObject source, BillingSourceRecord record)
+    {
+        source["BillingSource"] = record.Key;
+        source["Secret"]        = record.Secret;
+        SetOrRemove(source, "DefaultLayout", record.DefaultLayout);
+
+        JsonObject issuer = source["Issuer"] as JsonObject ?? new JsonObject();
+        issuer["LegalName"]          = record.LegalName;
+        SetOrRemove(issuer, "TradeName", record.TradeName);
+        issuer["TaxIdValue"]         = record.TaxIdValue;
+        issuer["TaxIdCountryCode"]   = record.TaxIdCountryCode;
+        issuer["Email"]              = record.Email;
+        SetOrRemove(issuer, "Phone", record.Phone);
+        SetOrRemove(issuer, "Website", record.Website);
+        issuer["AddressLine1"]       = record.AddressLine1;
+        SetOrRemove(issuer, "AddressLine2", record.AddressLine2);
+        issuer["City"]               = record.City;
+        SetOrRemove(issuer, "Province", record.Province);
+        issuer["PostalCode"]         = record.PostalCode;
+        issuer["AddressCountryCode"] = record.AddressCountryCode;
+        source["Issuer"] = issuer;
+    }
+
+    private static void SetOrRemove(JsonObject target, string propertyName, string? value)
+    {
+        if (value is null)
+        {
+            target.Remove(propertyName);
+        }
+        else
+        {
+            target[propertyName] = value;
+        }
     }
 }

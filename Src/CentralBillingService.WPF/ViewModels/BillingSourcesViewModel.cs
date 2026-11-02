@@ -24,10 +24,15 @@ public partial class BillingSourcesViewModel : ObservableObject
     [ObservableProperty] string editPhone              = "";
     [ObservableProperty] string editWebsite            = "";
     [ObservableProperty] string editAddressLine1       = "";
+    [ObservableProperty] string editAddressLine2       = "";
     [ObservableProperty] string editCity               = "";
+    [ObservableProperty] string editProvince           = "";
     [ObservableProperty] string editPostalCode         = "";
     [ObservableProperty] string editAddressCountryCode = "ES";
+    [ObservableProperty] string editDefaultLayout      = InvoiceLayoutNames.Invoice;
     [ObservableProperty] string? editError;
+
+    public IReadOnlyList<string> LayoutOptions { get; } = InvoiceLayoutNames.All;
 
     public BillingSourcesViewModel(AppSettingsService service, Action onSaved)
     {
@@ -47,8 +52,10 @@ public partial class BillingSourcesViewModel : ObservableObject
         EditTaxIdValue = "";
         EditTaxIdCountryCode = "ES";
         EditEmail = EditPhone = EditWebsite = "";
-        EditAddressLine1 = EditCity = EditPostalCode = "";
+        EditAddressLine1 = EditAddressLine2 = EditCity = EditProvince = EditPostalCode = "";
         EditAddressCountryCode = "ES";
+        EditDefaultLayout = InvoiceLayoutNames.Invoice;
+        EditSecret = AccessTokenGenerator.GenerateAccessToken();
         EditError = null;
         IsEditing = true;
     }
@@ -69,9 +76,12 @@ public partial class BillingSourcesViewModel : ObservableObject
         EditPhone              = s.Phone              ?? "";
         EditWebsite            = s.Website            ?? "";
         EditAddressLine1       = s.AddressLine1;
+        EditAddressLine2       = s.AddressLine2       ?? "";
         EditCity               = s.City;
+        EditProvince           = s.Province           ?? "";
         EditPostalCode         = s.PostalCode;
         EditAddressCountryCode = s.AddressCountryCode;
+        EditDefaultLayout      = InvoiceLayoutNames.Resolve(null, s.DefaultLayout);
         EditError = null;
         IsEditing = true;
     }
@@ -118,9 +128,12 @@ public partial class BillingSourcesViewModel : ObservableObject
         existing.Phone              = string.IsNullOrWhiteSpace(EditPhone)              ? null : EditPhone.Trim();
         existing.Website            = string.IsNullOrWhiteSpace(EditWebsite)            ? null : EditWebsite.Trim();
         existing.AddressLine1       = EditAddressLine1.Trim();
+        existing.AddressLine2       = string.IsNullOrWhiteSpace(EditAddressLine2)       ? null : EditAddressLine2.Trim();
         existing.City               = EditCity.Trim();
+        existing.Province           = string.IsNullOrWhiteSpace(EditProvince)           ? null : EditProvince.Trim();
         existing.PostalCode         = EditPostalCode.Trim();
         existing.AddressCountryCode = EditAddressCountryCode.Trim().ToUpperInvariant();
+        existing.DefaultLayout      = InvoiceLayoutNames.Resolve(null, EditDefaultLayout);
 
         _service.SaveBillingSources(Sources);
         RefreshList(Sources, existing);
@@ -138,6 +151,33 @@ public partial class BillingSourcesViewModel : ObservableObject
         IsEditing = false;
         SelectedSource = null;
         _onSaved();
+    }
+
+    [RelayCommand]
+    void GenerateSecret()
+    {
+        bool replaceConfirmed = IsNewRecord || string.IsNullOrWhiteSpace(EditSecret);
+        if (!replaceConfirmed)
+        {
+            MessageBoxResult answer = MessageBox.Show(
+                "Se generará un nuevo token para esta fuente. Los clientes que usen el token actual dejarán de autenticarse hasta que se les entregue el nuevo.\n\n¿Continuar?",
+                "Generar nuevo token", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            replaceConfirmed = answer == MessageBoxResult.Yes;
+        }
+
+        if (replaceConfirmed)
+        {
+            EditSecret = AccessTokenGenerator.GenerateAccessToken();
+        }
+    }
+
+    [RelayCommand]
+    void CopySecret()
+    {
+        if (!string.IsNullOrWhiteSpace(EditSecret))
+        {
+            Clipboard.SetText(EditSecret);
+        }
     }
 
     [RelayCommand]
