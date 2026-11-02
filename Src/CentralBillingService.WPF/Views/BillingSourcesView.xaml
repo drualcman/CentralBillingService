@@ -173,7 +173,7 @@
                                         Command="{Binding GenerateSecretCommand}"
                                         ToolTip="Generar un nuevo token de acceso"
                                         Width="36" Height="36" Margin="4,0,0,0">
-                                    <materialDesign:PackIcon Kind="KeyRefresh" />
+                                    <materialDesign:PackIcon Kind="KeyChange" />
                                 </Button>
                                 <TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          FontFamily="Consolas"

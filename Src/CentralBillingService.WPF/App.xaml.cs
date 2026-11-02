@@ -10,6 +10,7 @@ public partial class App : System.Windows.Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        DispatcherUnhandledException += OnDispatcherUnhandledException;
 
         var splash = new SplashWindow();
         splash.Show();
@@ -85,6 +86,15 @@ public partial class App : System.Windows.Application
         {
             splash.ShowError(ex.Message);
         }
+    }
+
+    private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+    {
+        Exception rootException = e.Exception.GetBaseException();
+        MessageBox.Show(
+            $"Se ha producido un error inesperado:\n\n{rootException.Message}",
+            "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        e.Handled = true;
     }
 
     protected override async void OnExit(ExitEventArgs e)
